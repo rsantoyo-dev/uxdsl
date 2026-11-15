@@ -103,10 +103,17 @@ function asStageWarning(message, options) {
   return { text };
 }
 
+/** A Dart Sass debug call, written the way the stage reports it: at the @debug rule. */
+function asStageDebug(message, options) {
+  const text = `UXD_SASS_WARNING: DEBUG: ${message.split('\n')[0]}`;
+  if (options.span && options.span.url) return { text, file: fileURLToPath(options.span.url), line: options.span.start.line + 1, column: options.span.start.column + 1 };
+  return { text };
+}
+
 /** Dart Sass alone on `entry` inside `dir` (cwd = dir), with the stage's default load paths. */
 function dartSass(dir, entry, options = {}) {
   const warnings = [];
-  const logger = { warn: (message, opts) => warnings.push(asStageWarning(message, opts)), debug() {} };
+  const logger = { warn: (message, opts) => warnings.push(asStageWarning(message, opts)), debug: (message, opts) => warnings.push(asStageDebug(message, opts)) };
   const file = path.join(dir, entry);
   return inDir(dir, () => {
     try {
@@ -1094,7 +1101,7 @@ test('MIG-B9-12: a build that defines no shadowing function runs Dart Sass once 
 const many = (n, fn) => Array.from({ length: n }, (_, i) => fn(i)).join('');
 const TOKENS = ' padding: space(2) space(3);';
 
-test('MIG-B9-12: deprecation warnings are located, capped by Sass, and silenceDeprecations removes a type; @warn is reported; debug is dropped', () => {
+test('MIG-B9-12: deprecation warnings are located, capped by Sass, and silenceDeprecations removes a type; @warn is reported; @debug is reported as a warning', () => {
   assertSameAsTwin(twin({ 'entry.uxdsl': `.z {${TOKENS} }\n@import "a";\n`, '_a.uxdsl': `.a {${TOKENS} }\n` }), 'an import deprecation');
   const located = twin({ 'entry.uxdsl': `.a {${TOKENS} w: (10px/2); }\n` });
   assertSameAsTwin(located, 'a deprecation after protected tokens');
@@ -1109,7 +1116,7 @@ test('MIG-B9-12: deprecation warnings are located, capped by Sass, and silenceDe
   assertSameAsTwin(twin({ 'entry.uxdsl': `.a {${TOKENS} }\n@warn "root warn";\n` }), '@warn at the root');
   const debug = twin({ 'entry.uxdsl': '@debug "dbg";\n.a { b: c; }\n' });
   assertSameAsTwin(debug, '@debug');
-  assert.deepEqual(debug.actual.warnings, []);
+  assert.deepEqual(debug.actual.warnings.map((w) => `${path.basename(w.file)}:${w.line}:${w.column} ${w.text}`), ['entry.uxdsl:1:1 UXD_SASS_WARNING: DEBUG: dbg']);
   const notices = twin({ 'entry.uxdsl': '.a { b: c; }\n' }, { sassOptions: { silenceDeprecations: ['mixed-decls', 'not-a-real-id'] } });
   assertSameAsTwin(notices, 'an obsolete and an unknown id');
   assert.deepEqual(notices.actual.warnings, [

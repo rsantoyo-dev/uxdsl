@@ -139,17 +139,19 @@ change to it is built as written. `init` writes the pair through
 ## From SCSS: rename and keep building
 
 UXDSL is to SCSS what TypeScript is to JavaScript: every SCSS file is a valid
-UXDSL file, except in three cases that
+UXDSL file, except in two cases that
 [`compile.md`](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/uxdsl/docs/integrations/compile.md#sass-inside-compile)
 documents: a `$variable` Sass keeps as written fails as `UXD_SASS_CONTEXT`,
-text Sass prints that is not CSS fails as a parse error, and a project
-function named with the Sass stage's internal prefix `uxdsl-probe-` can
-change the output. Dart Sass compiles a `.uxdsl` file first, so `@use`,
+and text Sass prints that is not CSS fails as a parse error. Dart Sass compiles a `.uxdsl` file first, so `@use`,
 mixins, functions, maps, nesting and the rest of Sass work as they always
 have, and UXDSL's tokens, responsive values and directives are there when you
-want them. No UXDSL name is reserved: a project `@function` named like a UXDSL function
+want them. No name is reserved: a project `@function` named like a UXDSL function
 (`space()`, `md()`) keeps working, and the build warns, once per definition,
-with `UXD_FUNCTION_SHADOWED`, that it hides the token of that name.
+with `UXD_FUNCTION_SHADOWED`, that it hides the token of that name. Each
+`@debug` Sass evaluates is a warning at its rule, `UXD_SASS_WARNING: DEBUG: …`,
+and a misspelled function with a dotted key (`palete(primary.main)`) in a
+declaration's value names the function meant, as it does through the PostCSS plugin, even in a mixin nothing
+includes.
 
 1. **Rename** each `.scss` file to `.uxdsl`. Rename it rather than copy it: a
    `.scss` twin beside a `.uxdsl` file makes `@use './card'` ambiguous (Dart
