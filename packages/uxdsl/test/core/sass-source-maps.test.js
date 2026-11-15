@@ -12,7 +12,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const os = require('node:os');
+const { temporaryDirectory } = require('../helpers/temporary-directory');
 const path = require('node:path');
 const postcss = require('postcss');
 const { SourceMapConsumer } = require('source-map-js');
@@ -135,7 +135,7 @@ test('MIG-B9-13: the final map names only the author\'s files, relative to `to`,
   assert.equal(inline.css.slice(0, inline.css.lastIndexOf(marker)), off.css);
 
   // A source that holds a sourceMappingURL comment of its own: Dart Sass drops it, and the three modes still agree.
-  const annotated = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-sass-maps-annotated-')), 'annotated.uxdsl');
+  const annotated = path.join(temporaryDirectory('uxdsl-sass-maps-annotated-'), 'annotated.uxdsl');
   const compileAnnotated = (sourceMap) => core.compile({ source: '/*# sourceMappingURL=foo.css.map */\n.a { padding: space(2); }\n', from: annotated }, { sourceMap });
   const [a, b, c] = [await compileAnnotated(false), await compileAnnotated('external'), await compileAnnotated('inline')];
   assert.equal(b.css, a.css);
@@ -144,7 +144,7 @@ test('MIG-B9-13: the final map names only the author\'s files, relative to `to`,
 });
 
 test('MIG-B9-13: the final map names an author\'s file as PostCSS names it: relative to `to` (to the working directory without it) and URL-encoded', async () => {
-  const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-sass-maps-encoded-')));
+  const dir = fs.realpathSync(temporaryDirectory('uxdsl-sass-maps-encoded-'));
   const file = path.join(dir, 'my src #1', 'a?.uxdsl');
   const text = '.a {\n  color: red;\n}\n';
   fs.mkdirSync(path.dirname(file));
@@ -216,7 +216,7 @@ test('MIG-B9-13: a relocated error ends where it starts and carries the author\'
   assert.equal(heavy.caret, heavy.text.indexOf('inset: space(404)'), 'the caret is under column 66');
 
   // PostCSS frames a line over 160 characters from 20 characters before the column to 20 after the end column.
-  const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-sass-maps-long-')));
+  const dir = fs.realpathSync(temporaryDirectory('uxdsl-sass-maps-long-'));
   const long = `${Array.from({ length: 12 }, (_, index) => `.selector-number-${index}`).join(', ')} { padding: space(404); }`;
   assert.ok(long.length > 160, 'the author\'s line is over 160 characters');
   fs.writeFileSync(path.join(dir, 'long.uxdsl'), `${long}\n`);
@@ -231,7 +231,7 @@ test('MIG-B9-13: a relocated error ends where it starts and carries the author\'
 
 /** A project whose partial's mixin and entry each hold a declaration referencing a palette token nothing defines. */
 function referenceProject() {
-  const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-sass-maps-references-')));
+  const dir = fs.realpathSync(temporaryDirectory('uxdsl-sass-maps-references-'));
   fs.writeFileSync(path.join(dir, '_mix.uxdsl'), '@mixin warned {\n  &__w {\n    box-shadow: 0 0 0 space(1) var(--uxdsl__palette__primry-main);\n  }\n}\n');
   fs.writeFileSync(path.join(dir, 'entry.uxdsl'), '@use "mix";\n\n.card {\n  @include mix.warned;\n  .inner { color: red; box-shadow: 0 0 0 space(1) var(--uxdsl__palette__primry-main); }\n}\n');
   return path.join(dir, 'entry.uxdsl');
@@ -314,7 +314,7 @@ test('MIG-B9-13: a diagnostic with no author position names the entry without li
 });
 
 test('MIG-B9-13: a parse error in CSS compile() did not get from Dart Sass (the theme the plugin generates, a references.css entry) keeps PostCSS\'s position in that CSS and names no author file', async () => {
-  const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-sass-maps-own-css-')));
+  const dir = fs.realpathSync(temporaryDirectory('uxdsl-sass-maps-own-css-'));
   const file = path.join(dir, 'e.uxdsl');
   const text = '.a {\n  color: red;\n}\n.b {\n  padding: space(1);\n  margin: 0;\n}\n';
   fs.writeFileSync(file, text);
@@ -381,7 +381,7 @@ test('MIG-B9-13: a plugin warning, an onWarning issue or a ReferenceIntegrityErr
 });
 
 test('MIG-B9-13: a top-level comment whose text starts with "# sourceMappingURL=", which Dart Sass keeps, is removed in the three sourceMap modes alike, as PostCSS removes it when it writes no map', async () => {
-  const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-sass-maps-annotation-')));
+  const dir = fs.realpathSync(temporaryDirectory('uxdsl-sass-maps-annotation-'));
   const marker = '\n/*# sourceMappingURL=data:application/json;charset=utf-8;base64,';
   const sources = {
     spaced: '/* # sourceMappingURL=x.map */\n.a { padding: space(2); }\n',

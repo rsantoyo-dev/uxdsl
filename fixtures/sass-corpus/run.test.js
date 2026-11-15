@@ -188,3 +188,32 @@ test('MIG-B9-20: the corpus runner passes compile() no includeTheme: Bootstrap h
   assert.equal(fake.configs.length, 5, 'four timed compiles and the mixed one');
   for (const config of fake.configs) assert.equal(config === undefined || !('includeTheme' in config), true, JSON.stringify(config));
 });
+
+test('MIG-B9-25: a corpus root kept with --keep holds the corpus as installed, without the mixed check\'s two files', async () => {
+  for (const mixedThrows of [false, true]) {
+    const fake = fakeCorpus([300, 300, 300, 300], [400, 400, 400, 400]);
+    const install = fake.install;
+    fake.install = (root) => {
+      const installed = install(root);
+      fs.writeFileSync(installed.entryUxdsl, '.a { color: red; }\n');
+      return installed;
+    };
+    const compile = fake.compile;
+    fake.compile = async (input, config) => {
+      if (mixedThrows && path.basename(input.entry) === 'with-extras.uxdsl') throw new Error('the mixed compile fails');
+      return compile(input, config);
+    };
+    const lines = [];
+    const run = runCorpus({ args: parseArgs(['--keep']), sass: fake.sass, sassVersion: 'fake', compile: fake.compile, install: fake.install, now: fake.now, log: (line) => lines.push(line) });
+    try {
+      if (mixedThrows) await assert.rejects(run, /the mixed compile fails/);
+      else assert.equal(await run, true, lines.join('\n'));
+      assert.equal(fake.roots.length, 1, 'one corpus root');
+      const [root] = fake.roots;
+      assert.ok(lines.includes(`Kept ${root}`), lines.join('\n'));
+      assert.deepEqual(fs.readdirSync(path.join(root, 'corpus')), ['bootstrap.uxdsl'], `the mixed compile ${mixedThrows ? 'throws' : 'succeeds'}: the kept corpus holds what the install put there`);
+    } finally {
+      for (const root of fake.roots) removeCorpusRoot(root);
+    }
+  }
+});

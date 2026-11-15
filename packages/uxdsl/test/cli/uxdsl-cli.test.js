@@ -8,7 +8,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const os = require('node:os');
+const { temporaryDirectory } = require('../helpers/temporary-directory');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const postcss = require('postcss');
@@ -50,7 +50,7 @@ function mkTmpDir() {
   // path via path.join(dir, ...) that differs textually from the real
   // path the code under test actually resolves to, despite naming the
   // exact same file on disk.
-  return fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-cli-test-')));
+  return fs.realpathSync(temporaryDirectory('uxdsl-cli-test-'));
 }
 
 function write(dir, relPath, content) {
@@ -873,7 +873,7 @@ test('MIG-B6-22: normalizeStrictThemeScope rejects a stray comma instead of sile
 });
 
 test('MIG-B6-22 (subprocess): --strict-theme=, and --strict-theme=palette,,fonts fail instead of silently disabling strict mode', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-cli-flags-'));
+  const dir = temporaryDirectory('uxdsl-cli-flags-');
   fs.mkdirSync(path.join(dir, 'src'));
   fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), "module.exports = { entry: './src/a.uxdsl', outFile: './out/a.css' };");
   fs.writeFileSync(path.join(dir, 'src', 'a.uxdsl'), '.a { color: red; }\n');
@@ -1015,7 +1015,7 @@ test('MIG-B6-22: parseCommandArgv reports every unknown flag when more than one 
 // esperado" section.
 
 test('MIG-B6-22 (subprocess): --strict-thme (typo) fails with exit 1 and a suggestion', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-cli-flags-'));
+  const dir = temporaryDirectory('uxdsl-cli-flags-');
   fs.mkdirSync(path.join(dir, 'src'));
   fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), "module.exports = { entry: './src/a.uxdsl', outFile: './out/a.css' };");
   fs.writeFileSync(path.join(dir, 'src', 'a.uxdsl'), '.a { color: red; }\n');
@@ -1025,7 +1025,7 @@ test('MIG-B6-22 (subprocess): --strict-thme (typo) fails with exit 1 and a sugge
 });
 
 test('MIG-B6-22 (subprocess): --strict-theme=pallete (typo family) fails with exit 1 and a suggestion', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-cli-flags-'));
+  const dir = temporaryDirectory('uxdsl-cli-flags-');
   fs.mkdirSync(path.join(dir, 'src'));
   fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), "module.exports = { entry: './src/a.uxdsl', outFile: './out/a.css' };");
   fs.writeFileSync(path.join(dir, 'src', 'a.uxdsl'), '.a { color: red; }\n');
@@ -1035,7 +1035,7 @@ test('MIG-B6-22 (subprocess): --strict-theme=pallete (typo family) fails with ex
 });
 
 test('phase 2 (3, subprocess): --strict-theme needs a scope; =true and the bare flag are refused, =false points at --no-strict-theme, the scoped form runs the check', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-cli-flags-'));
+  const dir = temporaryDirectory('uxdsl-cli-flags-');
   fs.mkdirSync(path.join(dir, 'src'));
   fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), "module.exports = { entry: './src/a.uxdsl', outFile: './out/a.css' };");
   fs.writeFileSync(path.join(dir, 'uxdsl.theme.cjs'), "module.exports = { palette: { primary: { main: '#00aa00' } } };");
@@ -1064,7 +1064,7 @@ test('phase 2 (3, subprocess): --strict-theme needs a scope; =true and the bare 
 });
 
 test('MIG-B6-22 (subprocess): a flag valid for another command fails as unknown for this one', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-cli-flags-'));
+  const dir = temporaryDirectory('uxdsl-cli-flags-');
   fs.mkdirSync(path.join(dir, 'src'));
   fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), "module.exports = { entry: './src/a.uxdsl', outFile: './out/a.css' };");
   fs.writeFileSync(path.join(dir, 'src', 'a.uxdsl'), '.a { color: red; }\n');
@@ -1428,7 +1428,7 @@ test("MIG-B9-20: '[uxdsl] Theme config detected' is printed only for an entry th
 // --- MIG-B6-21 (FEAT-008): source maps ---
 
 function mkSourceMapProject(configExtra = '') {
-  const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-cli-map-')));
+  const dir = fs.realpathSync(temporaryDirectory('uxdsl-cli-map-'));
   fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
   fs.writeFileSync(path.join(dir, 'src', 'entry.uxdsl'), '.plain { color: red; }\n.spaced { padding: density(4); }\n');
   fs.writeFileSync(
@@ -1518,7 +1518,7 @@ test('phase 2 (3): the config key is spelled "sourcemap", like the flag; "source
 });
 
 test('MIG-B6-21: a multi-entry build that fails writes neither CSS nor map for any entry', () => {
-  const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-cli-map-')));
+  const dir = fs.realpathSync(temporaryDirectory('uxdsl-cli-map-'));
   fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
   fs.writeFileSync(path.join(dir, 'src', 'a.uxdsl'), '.ok { color: red; }\n');
   fs.writeFileSync(path.join(dir, 'src', 'b.uxdsl'), '.bad { padding: density(999); }\n');

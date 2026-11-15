@@ -15,6 +15,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
+const { temporaryDirectory } = require('../helpers/temporary-directory');
 const path = require('node:path');
 const { pathToFileURL, fileURLToPath } = require('node:url');
 const { spawnSync } = require('node:child_process');
@@ -54,7 +55,7 @@ function write(dir, files) {
 
 /** Writes `files` ({ relativePath: text | Buffer | null for a directory }) into a fresh real directory. */
 function project(files) {
-  const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-sass-stage-')));
+  const dir = fs.realpathSync(temporaryDirectory('uxdsl-sass-stage-'));
   write(dir, files);
   return dir;
 }

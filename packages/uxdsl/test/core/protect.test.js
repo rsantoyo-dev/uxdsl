@@ -8,7 +8,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const os = require('node:os');
+const { temporaryDirectory } = require('../helpers/temporary-directory');
 const path = require('node:path');
 const postcss = require('postcss');
 const sass = require('sass');
@@ -106,7 +106,7 @@ for (const [id, source, expected, options = {}] of CASES) {
 
 // --- T2: the same 63 cases through compile() -------------------------------------
 
-const compileDir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-protect-compile-')));
+const compileDir = fs.realpathSync(temporaryDirectory('uxdsl-protect-compile-'));
 
 /** compile() on a case, as the file `<id>.uxdsl`: `{ css, warnings, located }` (warning codes, and the warnings themselves) or `{ error }`. */
 async function throughCompile(id, source) {

@@ -9,7 +9,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const os = require('node:os');
+const { temporaryDirectory } = require('./helpers/temporary-directory');
 const path = require('node:path');
 const postcss = require('postcss');
 const config = require('../dist/config.js');
@@ -17,7 +17,7 @@ const exported = require('../dist/plugin');
 const plugin = exported.default || exported;
 
 function mkTmpDir() {
-  return fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'postcss-uxdsl-config-test-')));
+  return fs.realpathSync(temporaryDirectory('postcss-uxdsl-config-test-'));
 }
 
 function write(dir, relPath, content) {

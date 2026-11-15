@@ -11,7 +11,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const os = require('node:os');
+const { temporaryDirectory } = require('../helpers/temporary-directory');
 const path = require('node:path');
 const postcss = require('postcss');
 const csstree = require('css-tree');
@@ -21,7 +21,7 @@ const { CASES, expectedErrors, SASS_VERSION } = require('./sass-matrix.cases.js'
 const { normalize, liveSass, sassVersion, expectationFor } = require('./sass-matrix.record.js');
 
 const FIXTURES = path.join(__dirname, 'fixtures/scss-subset');
-const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-sass-matrix-'));
+const dir = temporaryDirectory('uxdsl-sass-matrix-');
 for (const file of fs.readdirSync(FIXTURES)) fs.copyFileSync(path.join(FIXTURES, file), path.join(dir, file));
 
 /** Everything that would make a compiled stylesheet invalid or Sass-flavoured
@@ -121,7 +121,7 @@ test('MIG-B9-10: every recorded Sass CSS is valid CSS with no Sass construct lef
 // --- compile() adds nothing to Dart Sass's output: every "sass" case that
 // compiles is compared byte for byte with live Dart Sass on the same text.
 
-const bytesDir = fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-sass-matrix-bytes-'));
+const bytesDir = temporaryDirectory('uxdsl-sass-matrix-bytes-');
 for (const file of fs.readdirSync(FIXTURES)) fs.copyFileSync(path.join(FIXTURES, file), path.join(bytesDir, file));
 const silentLogger = { warn() {}, debug() {} };
 

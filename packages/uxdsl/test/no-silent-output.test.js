@@ -8,7 +8,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const os = require('node:os');
+const { temporaryDirectory: makeTemporaryDirectory } = require('./helpers/temporary-directory');
 const path = require('node:path');
 const postcss = require('postcss');
 
@@ -118,7 +118,7 @@ function positionOf(source, word) {
   const index = lines.findIndex((line) => line.includes(word));
   return [index + 1, lines[index].indexOf(word) + 1];
 }
-const temporaryDirectory = () => fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-sass-context-')));
+const temporaryDirectory = () => fs.realpathSync(makeTemporaryDirectory('uxdsl-sass-context-'));
 
 test('MIG-B9-13: a $variable reaching the plugin alone is UXD_SASS_CONTEXT, located', () => {
   for (const source of [

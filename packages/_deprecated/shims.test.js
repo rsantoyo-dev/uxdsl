@@ -14,7 +14,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const os = require('node:os');
+const { temporaryDirectory } = require('../uxdsl/test/helpers/temporary-directory');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { createRequire } = require('node:module');
@@ -54,7 +54,7 @@ const MAPPING = {
 
 /** A project whose node_modules holds the built `uxdsl` and the shims, as npm installs them. */
 function install() {
-  const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-shims-')));
+  const dir = fs.realpathSync(temporaryDirectory('uxdsl-shims-'));
   const nm = path.join(dir, 'node_modules');
   fs.mkdirSync(nm);
   fs.symlinkSync(UXDSL_DIR, path.join(nm, 'uxdsl'), 'dir');

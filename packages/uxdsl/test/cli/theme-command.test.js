@@ -8,14 +8,14 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const os = require('node:os');
+const { temporaryDirectory } = require('../helpers/temporary-directory');
 const path = require('node:path');
 
 const cli = require('../../bin/uxdsl.js');
 const { DEFAULT_THEME } = require('../helpers/ds-runtime');
 
 function mkTmpDir() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-theme-cmd-test-'));
+  return temporaryDirectory('uxdsl-theme-cmd-test-');
 }
 
 function write(dir, relPath, content) {

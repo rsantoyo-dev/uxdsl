@@ -38,7 +38,9 @@ fresh directory that holds nothing else,
 it afterwards. It is outside the temporary directory, so what that directory
 holds is not on the corpus's path; the run prints where the corpus root is.
 `--keep` keeps it and prints its path: it holds `node_modules/bootstrap`, which
-`UXDSL_SASS_CORPUS` accepts in `packages/uxdsl/test/core/protect.test.js`.
+`UXDSL_SASS_CORPUS` accepts in `packages/uxdsl/test/core/protect.test.js`, and
+the corpus as installed, the renamed Bootstrap files only: the mixed check's
+two files are removed after its compile, whether it succeeds or throws.
 
 **Deprecation warnings.** Dart Sass delivers at most five warnings per
 deprecation type to a logger, then one summary of the rest; the

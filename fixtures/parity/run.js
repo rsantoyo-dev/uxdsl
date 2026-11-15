@@ -13,7 +13,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const os = require('node:os');
+const { temporaryDirectory } = require('../../packages/uxdsl/test/helpers/temporary-directory');
 const { spawnSync } = require('node:child_process');
 
 const ROOT = path.resolve(__dirname, '..', '..');
@@ -133,7 +133,7 @@ function normalizeError(message, caseDir) {
 async function runCase(name) {
   const caseDir = path.join(CASES_DIR, name);
   const entry = path.join(caseDir, 'entry.uxdsl');
-  const tmpOut = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-parity-')), 'out.css');
+  const tmpOut = path.join(temporaryDirectory('uxdsl-parity-'), 'out.css');
 
   const cli = runCli(entry, tmpOut);
   const coreResult = await runCore(entry);

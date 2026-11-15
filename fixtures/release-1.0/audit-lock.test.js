@@ -3,7 +3,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const os = require('node:os');
+const { temporaryDirectory } = require('../../packages/uxdsl/test/helpers/temporary-directory');
 const path = require('node:path');
 const { auditLockfile } = require('./run');
 const { PACKAGE_DIR } = require('../lib/tarball-consumer');
@@ -15,7 +15,7 @@ const { PACKAGE_DIR } = require('../lib/tarball-consumer');
 
 /** A copy of the package's manifest and lockfile in a temp dir, with one pinned version rewritten. */
 function lockfileCopyPinning(name, version) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-audit-lock-'));
+  const dir = temporaryDirectory('uxdsl-audit-lock-');
   fs.copyFileSync(path.join(PACKAGE_DIR, 'package.json'), path.join(dir, 'package.json'));
   const lock = JSON.parse(fs.readFileSync(path.join(PACKAGE_DIR, 'package-lock.json'), 'utf8'));
   const entry = lock.packages[`node_modules/${name}`];
