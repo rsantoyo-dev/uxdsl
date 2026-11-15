@@ -138,7 +138,10 @@ WARNING in UXD_THEME_MARKER: 2 modules emit the theme (src/styles/b.uxdsl, src/s
   process whose persistent cache restores every `.uxdsl` module, so that the
   loader never runs. Turbopack does not run the loader's hooks either.
 
-There is no switch to silence the warning.
+There is no switch to silence the warning. A project whose theme reaches the
+page another way (`generateThemeCss` rendered on the server, `applyTheme` in
+the browser, or a stylesheet another build writes) still gets the "no module"
+warning on every build: the count sees only this compilation's modules.
 
 ## Options
 

@@ -150,7 +150,10 @@ build when the theme is defined nowhere or more than once:
   counted until the server restarts. Run `vite build` to check for a missing
   or repeated marker.
 
-There is no switch to silence the warning.
+There is no switch to silence the warning. A project whose theme reaches the
+page another way (`generateThemeCss` rendered on the server, `applyTheme` in
+the browser, or a stylesheet another build writes) still gets the "no module"
+warning from every `vite build`: the count sees only this build's modules.
 
 ## Options
 

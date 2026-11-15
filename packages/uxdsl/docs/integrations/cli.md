@@ -396,7 +396,7 @@ own report, and prints one `UXD_THEME_MARKER` warning (the build still
 succeeds) when the theme is defined nowhere or more than once:
 
 ```text
-[uxdsl] Warning: UXD_THEME_MARKER: no entry reaches `@uxdsl theme;`, so nothing this build writes defines the --uxdsl__ tokens its CSS references. Write `@uxdsl theme;` once, at the top level of the global stylesheet that defines them. For an entry generate-entry wrote, run uxdsl generate-entry again.
+[uxdsl] Warning: UXD_THEME_MARKER: no entry reaches `@uxdsl theme;`, so nothing this build writes defines the --uxdsl__ tokens its CSS references. Write `@uxdsl theme;` once, at the top level of the global stylesheet that defines them. For an entry generate-entry wrote, run uxdsl generate-entry with that entry's options, --out included, but not --no-theme: the entry then loads `@uxdsl theme;` from uxdsl-theme.uxdsl.
 [uxdsl] Warning: UXD_THEME_MARKER: 2 entries emit the theme (builds[0], builds[1]): each reaches `@uxdsl theme;`, itself or through a file it loads. Keep the marker in the one global stylesheet that defines the tokens, not in a partial other stylesheets load. A component entry written by generate-entry leaves it out with --no-theme.
 ```
 
@@ -414,6 +414,10 @@ rebuild reading the others from the session, and the warning prints when that
 state changes, not on every rebuild: removing the marker warns once, a
 rebuild in the same state says nothing more, and fixing then breaking it
 again warns again. There is no switch to silence it.
+A project whose theme reaches the page another way (`generateThemeCss`
+rendered on the server, `applyTheme` in the browser, or a stylesheet another
+build writes) still gets the "no entry" warning on every build: the count sees
+only this build's entries.
 `[uxdsl] Theme config detected` is printed, after compiling, for an entry that
 emitted the theme.
 

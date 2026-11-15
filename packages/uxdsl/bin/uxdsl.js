@@ -862,7 +862,7 @@ function themeEmissionMessage(states) {
   if (!warning) return null;
   const hint = warning.kind === 'many'
     ? ' A component entry written by generate-entry leaves it out with --no-theme.'
-    : ' For an entry generate-entry wrote, run uxdsl generate-entry again.';
+    : ' For an entry generate-entry wrote, run uxdsl generate-entry with that entry\'s options, --out included, but not --no-theme: the entry then loads `@uxdsl theme;` from uxdsl-theme.uxdsl.';
   return `[uxdsl] Warning: ${warning.text}${hint}`;
 }
 

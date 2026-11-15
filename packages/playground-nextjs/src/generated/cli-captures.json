@@ -68,7 +68,7 @@
       ],
       "exit": 0,
       "stdout": "[uxdsl] built dist/card.css (463 bytes)\n",
-      "stderr": "[uxdsl] Warning: UXD_THEME_MARKER: no entry reaches `@uxdsl theme;`, so nothing this build writes defines the --uxdsl__ tokens its CSS references. Write `@uxdsl theme;` once, at the top level of the global stylesheet that defines them. For an entry generate-entry wrote, run uxdsl generate-entry again.\n",
+      "stderr": "[uxdsl] Warning: UXD_THEME_MARKER: no entry reaches `@uxdsl theme;`, so nothing this build writes defines the --uxdsl__ tokens its CSS references. Write `@uxdsl theme;` once, at the top level of the global stylesheet that defines them. For an entry generate-entry wrote, run uxdsl generate-entry with that entry's options, --out included, but not --no-theme: the entry then loads `@uxdsl theme;` from uxdsl-theme.uxdsl.\n",
       "facts": {
         "bytes": 463,
         "rootBlocks": 0
@@ -105,7 +105,7 @@
       ],
       "exit": 0,
       "stdout": "[uxdsl] built dist/card-mapped.css (507 bytes) + card-mapped.css.map (382 bytes)\n",
-      "stderr": "[uxdsl] Warning: UXD_THEME_MARKER: no entry reaches `@uxdsl theme;`, so nothing this build writes defines the --uxdsl__ tokens its CSS references. Write `@uxdsl theme;` once, at the top level of the global stylesheet that defines them. For an entry generate-entry wrote, run uxdsl generate-entry again.\n",
+      "stderr": "[uxdsl] Warning: UXD_THEME_MARKER: no entry reaches `@uxdsl theme;`, so nothing this build writes defines the --uxdsl__ tokens its CSS references. Write `@uxdsl theme;` once, at the top level of the global stylesheet that defines them. For an entry generate-entry wrote, run uxdsl generate-entry with that entry's options, --out included, but not --no-theme: the entry then loads `@uxdsl theme;` from uxdsl-theme.uxdsl.\n",
       "files": {
         "dist/card-mapped.css": ".card {\n  padding: var(--uxdsl__surface__contained-padding);\n  border-radius: var(--uxdsl__surface__contained-radius);\n  background: var(--uxdsl__surface__contained-bg);\n  color: var(--uxdsl__surface__contained-color);\n  border: var(--uxdsl__surface__contained-border);\n  box-shadow: var(--uxdsl__surface__contained-shadow);\n  display: flex;\n  flex-direction: column;\n  gap: var(--uxdsl__density__4);\n}@media (min-width: 768px) {.card {\n  flex-direction: row;\n}\n}\n/*# sourceMappingURL=card-mapped.css.map */"
       },

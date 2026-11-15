@@ -1322,7 +1322,7 @@ test('MIG-B6-24: a single entry with --out ending in .module.css fails; leaving 
 // emitting it while the CSS reads its tokens, or more than one emitting it, is
 // one UXD_THEME_MARKER warning per build.
 
-const NONE_WARNING = '[uxdsl] Warning: UXD_THEME_MARKER: no entry reaches `@uxdsl theme;`, so nothing this build writes defines the --uxdsl__ tokens its CSS references. Write `@uxdsl theme;` once, at the top level of the global stylesheet that defines them. For an entry generate-entry wrote, run uxdsl generate-entry again.';
+const NONE_WARNING = '[uxdsl] Warning: UXD_THEME_MARKER: no entry reaches `@uxdsl theme;`, so nothing this build writes defines the --uxdsl__ tokens its CSS references. Write `@uxdsl theme;` once, at the top level of the global stylesheet that defines them. For an entry generate-entry wrote, run uxdsl generate-entry with that entry\'s options, --out included, but not --no-theme: the entry then loads `@uxdsl theme;` from uxdsl-theme.uxdsl.';
 const manyWarning = (labels) => `[uxdsl] Warning: UXD_THEME_MARKER: ${labels.length} entries emit the theme (${labels.join(', ')}): each reaches \`@uxdsl theme;\`, itself or through a file it loads. Keep the marker in the one global stylesheet that defines the tokens, not in a partial other stylesheets load. A component entry written by generate-entry leaves it out with --no-theme.`;
 const themeWarnings = (messages) => messages.filter((message) => /UXD_THEME_MARKER/.test(message));
 
@@ -1337,7 +1337,7 @@ test('MIG-B9-20: a build with no marker warns once; with two emitters warns once
   const single = mkTmpDir();
   write(single, 'src/card.uxdsl', '.card { padding: density(4); }\n');
   assert.deepEqual(await buildWarnings(single, { entry: './src/card.uxdsl', out: './out/card.css' }), [NONE_WARNING]);
-  assert.equal(NONE_WARNING, `[uxdsl] Warning: ${themeEmissionWarning([{ label: 'out/card.css', themeEmitted: false, referencesTokens: true, canCarryTheme: true }], 'entry').text} For an entry generate-entry wrote, run uxdsl generate-entry again.`, 'the CLI prints the shared helper\'s text plus its own hint');
+  assert.equal(NONE_WARNING, `[uxdsl] Warning: ${themeEmissionWarning([{ label: 'out/card.css', themeEmitted: false, referencesTokens: true, canCarryTheme: true }], 'entry').text} For an entry generate-entry wrote, run uxdsl generate-entry with that entry's options, --out included, but not --no-theme: the entry then loads \`@uxdsl theme;\` from uxdsl-theme.uxdsl.`, 'the CLI prints the shared helper\'s text plus its own hint');
 
   // A builds project with no marker.
   const builds = mkTmpDir();
@@ -1383,6 +1383,32 @@ test('MIG-B9-20: a build with no marker warns once; with two emitters warns once
   const spawned = spawnSync(process.execPath, [CLI_BIN, 'build', '--entry', 'src/card.uxdsl', '--out', 'out/card.css'], { cwd: single, encoding: 'utf8' });
   assert.equal(spawned.status, 0, spawned.stderr);
   assert.equal(spawned.stderr.split('\n').filter((line) => /UXD_THEME_MARKER/.test(line)).length, 1, spawned.stderr);
+});
+
+test("MIG-B9-21: the 'none' hint names a remedy that clears the warning for a --no-theme entry, and a bare re-run does not", () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', "module.exports = { entry: './src/uxdsl-entry.uxdsl', outFile: './out/uxdsl.css' };");
+  write(dir, 'src/card.uxdsl', '.card { padding: space(2); color: palette(primary.main); }\n');
+  const cliIn = (...args) => spawnSync(process.execPath, [CLI_BIN, ...args], { cwd: dir, encoding: 'utf8' });
+  const markerLines = () => {
+    const built = cliIn('build');
+    assert.equal(built.status, 0, built.stderr);
+    return built.stderr.split('\n').filter((line) => /UXD_THEME_MARKER/.test(line));
+  };
+
+  assert.equal(cliIn('generate-entry', '--no-theme').status, 0);
+  assert.deepEqual(markerLines(), [NONE_WARNING], 'an entry written with --no-theme gets the hint');
+
+  // Negative control: a bare re-run replays the --no-theme the entry records,
+  // so it writes no theme file and the warning stays.
+  assert.equal(cliIn('generate-entry').status, 0);
+  assert.equal(fs.existsSync(path.join(dir, 'src', 'uxdsl-theme.uxdsl')), false);
+  assert.deepEqual(markerLines(), [NONE_WARNING], 'a bare generate-entry does not clear the warning');
+
+  // The hint's remedy: the entry's options, --out included, without --no-theme.
+  assert.equal(cliIn('generate-entry', '--src', './src', '--out', './src/uxdsl-entry.uxdsl').status, 0);
+  assert.equal(fs.readFileSync(path.join(dir, 'src', 'uxdsl-theme.uxdsl'), 'utf8').trimEnd().split('\n').pop(), '@uxdsl theme;');
+  assert.deepEqual(markerLines(), [], 'the hint\'s remedy clears the warning');
 });
 
 test("MIG-B9-20: '[uxdsl] Theme config detected' is printed only for an entry that emitted the theme", () => {

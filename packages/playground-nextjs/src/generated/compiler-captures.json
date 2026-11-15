@@ -381,7 +381,7 @@
         "dist/example.css"
       ],
       "exit": 0,
-      "stderr": "[uxdsl] Warning: src/example.uxdsl:1:9: UXD_SASS_WARNING: [import] Sass @import rules are deprecated and will be removed in Dart Sass 3.0.0.\n[uxdsl] Warning: UXD_THEME_MARKER: no entry reaches `@uxdsl theme;`, so nothing this build writes defines the --uxdsl__ tokens its CSS references. Write `@uxdsl theme;` once, at the top level of the global stylesheet that defines them. For an entry generate-entry wrote, run uxdsl generate-entry again.\n"
+      "stderr": "[uxdsl] Warning: src/example.uxdsl:1:9: UXD_SASS_WARNING: [import] Sass @import rules are deprecated and will be removed in Dart Sass 3.0.0.\n[uxdsl] Warning: UXD_THEME_MARKER: no entry reaches `@uxdsl theme;`, so nothing this build writes defines the --uxdsl__ tokens its CSS references. Write `@uxdsl theme;` once, at the top level of the global stylesheet that defines them. For an entry generate-entry wrote, run uxdsl generate-entry with that entry's options, --out included, but not --no-theme: the entry then loads `@uxdsl theme;` from uxdsl-theme.uxdsl.\n"
     },
     {
       "code": "UXD_THEME_MARKER",
@@ -397,7 +397,7 @@
         "dist/example.css"
       ],
       "exit": 0,
-      "stderr": "[uxdsl] Warning: UXD_THEME_MARKER: no entry reaches `@uxdsl theme;`, so nothing this build writes defines the --uxdsl__ tokens its CSS references. Write `@uxdsl theme;` once, at the top level of the global stylesheet that defines them. For an entry generate-entry wrote, run uxdsl generate-entry again.\n"
+      "stderr": "[uxdsl] Warning: UXD_THEME_MARKER: no entry reaches `@uxdsl theme;`, so nothing this build writes defines the --uxdsl__ tokens its CSS references. Write `@uxdsl theme;` once, at the top level of the global stylesheet that defines them. For an entry generate-entry wrote, run uxdsl generate-entry with that entry's options, --out included, but not --no-theme: the entry then loads `@uxdsl theme;` from uxdsl-theme.uxdsl.\n"
     }
   ]
 }

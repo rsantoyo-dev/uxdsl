@@ -66,6 +66,18 @@ them. See `docs/releases/0.5.0-beta.9.md`.
   `discoverTheme` and `theme` to `compile()` and register its
   `dependencies`, which now carry the theme file, instead of discovering the
   theme themselves. What they compile and watch is unchanged.
+- **The CLI's "no entry" hint names a remedy that works for every generated
+  entry.** The `UXD_THEME_MARKER` "no entry" warning of `uxdsl build` ended
+  with `For an entry generate-entry wrote, run uxdsl generate-entry again.`;
+  it now ends with
+  `For an entry generate-entry wrote, run uxdsl generate-entry with that entry's options, --out included, but not --no-theme: the entry then loads `@uxdsl theme;` from uxdsl-theme.uxdsl.`
+  A bare `uxdsl generate-entry` replays the `--no-theme` an entry records,
+  and for an entry an earlier release wrote at another path it writes a new
+  entry at the default one, so the old hint left the warning in place in
+  both cases. The warning's coded text, shared with Vite and webpack, and the
+  "more than one" hint are unchanged. The CLI, Vite and webpack pages now say
+  that a theme delivered another way (`generateThemeCss` on the server,
+  `applyTheme`, another build) still gets the "no entry"/"no module" warning.
 
 #### Added
 

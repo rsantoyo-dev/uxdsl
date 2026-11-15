@@ -433,7 +433,10 @@ not from its own options or a `:root` search. The CLI does: a build in which
 no entry reaches the marker while its CSS references `--uxdsl__` tokens, or in
 which more than one entry emits the theme, prints one `UXD_THEME_MARKER`
 warning (in `build --watch`, counted over the last result of every entry, and
-printed again only when that state changes). A stylesheet whose output is a
+printed again only when that state changes). For an entry `generate-entry`
+wrote, the "no entry" warning's remedy is `generate-entry` with that entry's
+options, `--out` included, but not `--no-theme`; a bare re-run replays a
+recorded `--no-theme`. A stylesheet whose output is a
 `*.module.css` cannot carry the theme, so the marker there is an error.
 
 The bundler adapters count the same way, over a whole build: in a Vite or
