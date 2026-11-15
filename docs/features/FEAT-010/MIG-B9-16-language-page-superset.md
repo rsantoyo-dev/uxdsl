@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 2 |
 | Decision gate | DEC-01 (decided, owner, 2026-10-09). Registered by the owner's decision of 2026-11-08 on MIG-B9-15's flag 3 (FEAT-010 §2; MIG-B9-15 §15) |
-| Status | Ready |
+| Status | In review (PR #93) |
 | Size | S |
 | Depends on | MIG-B9-15 (merged, PR #72, `4ecdc51`). Under §7 (`packages/playground-nextjs/**`) it also waits for MIG-B9-22 (merged, PR #76, `08d00e0`) and MIG-B9-20 (merged, PR #88, `cc10de6`; its page edit is `4a39826`). MIG-B9-21 (merged, PR #92, `cf98cb8`), on the same §7 row, edited no file this story edits |
 | Blocks | MIG-B9-26 (its C3 edits the three-cases sentence this page will carry), 30, 33, 34, 35, 36 and 19 (MIG-B9-39's place, by decision 28 of 2026-11-13), the later rows of §7's `packages/playground-nextjs/**` row (wave 4's MIG-B9-40 to 43 follow on the same row); MIG-B9-91 (every story of waves 0 to 3). MIG-B9-62 keeps the page in `0.5.0-beta.10` |
@@ -664,7 +664,58 @@ The body:
 
 ## 14. Closure record
 
-To be filled in the delivering PR.
+Delivered in PR #93, from `feat/b9-16-language-page-superset` into `feat/beta9`. It is an S story, so it got the light flow (FEAT-010 §2, D1 of 2026-11-04): one scout, one implementer, one review with mutation checks, and the deliverer. Where the delivered contract differs from §5, §15's blocks rule. Only the owner merges.
+
+**Base and commits.** The base is `feat/beta9` at `cf98cb8` (MIG-B9-21's merge, PR #92). `origin/feat/beta9` had not moved when the PR was opened, so no merge was needed.
+
+| Commit | Content |
+| --- | --- |
+| `9c354ac` | §15 "Stale corrections of 2026-11-15" (header, §4 baseline lines corrected in place, the other stale lines listed) and the scout's three flags answered as recommended |
+| `895e420` | The page (C1–C7), the three tests T2–T4 in `scripts/doc-examples.test.js` §5, the regenerated capability matrix (`build` row) |
+| `821ad5e` | Review fixes R1–R3 (below) |
+| this commit | This record, §15 "Delivery of 2026-11-15", status, README §5 row |
+
+**Environment.** MacBookPro18,3, macOS 27.0 (Darwin 27.0.0), Node 20.19.0, npm 11.21.1, Dart Sass 1.107.0, PostCSS 8.5.31, Chrome at the macOS default path. `TMPDIR` pointed into the session scratchpad for every run. Two other story workflows (MIG-B9-25 and MIG-B9-39) were sharing the machine, with a load average of about 28.
+
+**Failing first.**
+- T3, on the base page with the tests appended: 22 tests, 2 pass, 1 fail. T3 reported 16 problems: the 10 retired strings, `UXD_SCSS_UNSUPPORTED` and `UXD_NESTING_INVALID` not in the catalog, and the missing `UXD_SASS`, `UXD_SASS_CONTEXT`, compile.md link and qualified sentence.
+- T2 and T4 pass by design, because each one shows that a checker can fail.
+- The review fix's negative control ("the language page checker needs an anchor …") failed first on the checker that accepted a bare path. T3 then failed on the page (`lacks the link to compile.md's "Sass inside compile()" section`) until both anchors were changed.
+
+**Criterion to evidence.**
+
+| AC | Command | Exit | Output |
+| --- | --- | --- | --- |
+| AC1 | `node --test scripts/doc-examples.test.js` | 0 | 23 tests, 23 pass. There are 4 MIG-B9-16 tests: T2, T3, T4, and the review's negative control. AC1's text says 3 (§15, Delivery) |
+| AC2 | `npm run verify:doc-examples` | 0 | `70 examples and 24 theme excerpts checked across 101 documentation files. All documentation examples hold.` The literal floor is 64 and the floor derived in §15 (flag 1) is 69; the base has 65. The page, through §4's `verifySurfaces`, gives `52:css 68:css 79:css 106:css 114:scss 119:css 152:scss 172:scss 184:css 189:scss \| 0 problems`: 10 examples, 4 through `compile()`, 6 through the plugin. On the base it had 5 examples, 1 through `compile()` |
+| AC3 | `npm run generate:capabilities && node --test scripts/capability-matrix.test.js`; `git diff --exit-code BASE -- packages/playground-nextjs/capability-evidence.json` | 0 / 0 | 7/7. The matrix diff is the one expected line: the `build` row now cites `diagnostics`, `introduction` and `language/page.tsx` |
+| AC4 | `node packages/playground-nextjs/scripts/capture-capabilities.js --check` | 0 | `Captured CLI and compiler output is up to date.` |
+| AC5 | the playground build (every commit's pre-commit hook, and the implementer's direct run) | 0 | `[uxdsl] unchanged src/app/uxdsl.css (compiled output identical to the file on disk; not rewritten)`; git status clean afterwards |
+| AC6 | `npm run verify:playground-browser` | 0 | `Walking 19 routes × 2 schemes × 10 widths`, `light /docs/language`, `dark /docs/language`, `PASS: no console errors, no UXDSL warnings, no unresolved var(), visible keyboard focus`. Controls caught: undefined-var, console-error, no-focus, contrast-mismatch, overflow, paradigm-mismatch. Run on `821ad5e` (249 s) |
+| AC7 | `npm test` | 0 | every suite `# fail 0`; 319 s on `821ad5e` |
+| AC8 | `git diff --exit-code BASE -- packages/uxdsl AGENTS.md README.md …/uxdsl.css …/generated …/lib …/components`; `git diff --name-only BASE` | 0 | page.tsx, `scripts/doc-examples.test.js`, the matrix, this file, and `docs/features/FEAT-010/README.md` (its row, in this commit) |
+| AC9 | §9's `grep -c` | 1 | prints `0` |
+| gate | `npm run verify:1.0 -- --skip-playground-walk` | 1, then 0 | Run 1: `70/71 automated checks passed. FAIL: UX-10` (`reference validation stays near-linear — doubling cost x3.27`). Run 2, alone after the walk: `71/71 automated checks passed.` (`x2.48 per doubling`). UX-10 is a timing check and no package code changed. Both runs are recorded |
+
+Dogfooding counts unchanged: hexColorsInTsx 10, inlineStyleObjects 20, handWrittenMediaQueries 2. `node scripts/generate-agent-guide.js --check`: no drift.
+
+**Before and after (the inventory's passages).**
+- The subtitle, "A .uxdsl file is CSS, …", becomes "A .uxdsl file is SCSS, plus token functions, breakpoint functions and four directives." (C6)
+- The heading "It is CSS" becomes "It is SCSS" and keeps `id="css"`. (C6)
+- Lines 26–28 now describe two paths. Through `compile()` the output is Dart Sass's: nesting is flattened, a nested `@media` moves out, and `calc(1px + 2px)` becomes `3px`. Through `uxdsl/postcss` alone, everything passes unchanged. The case-insensitivity and reference sentences stay. (C2)
+- Lines 79–82 split into two paragraphs. At the root a directive is `UXD_DIRECTIVE_CONTEXT` on both paths. Under `@media`/`@supports` inside its rule it compiles through `compile()` and is `UXD_DIRECTIVE_CONTEXT` with the plugin alone. A scss example (flat, contained from `md`, whose width the prose renders from `DEFAULT_BREAKPOINTS.md`) and a css example documenting both `UXD_DIRECTIVE_CONTEXT` cases were added. (C7)
+- Lines 110–135, "The SCSS-style subset" with its table and both retired codes, become "Sass, then UXDSL" (`id="scss"`). It carries C1.1 to C1.5: a feature example, a `UXD_SASS` example, a `UXD_SASS_CONTEXT` example, the kept `@each` example, and two links to compile.md's `#sass-inside-compile`.
+- The errors table and the token-function, responsive and `@uxdsl theme;` sections are unchanged.
+
+**Review findings.** The review ran 20 mutations plus 2 combined ones, and confirmed the build and the Chrome walk on a clone. All three findings were real and fixed in `821ad5e`:
+- **R1 (blocking).** The link check accepted the path from a constant that no anchor used (M6 passed with both anchors removed). Both anchors now write C1.5's form, `href={`${GITHUB_URL}/blob/main/…/compile.md#sass-inside-compile`}`, and the checker requires that anchor.
+- **R2.** The feature example's claim, `info-main` on `&__title`, was also produced by `.alert--info` (M14 and M21 passed). The claim moved to `@include pad($inline: density(3));  /* var(--uxdsl__density__3) */`. Changing the claim to `density__4`, changing the argument to `density(4)` or dropping the keyword argument each now fail the harness. M21 no longer applies, because the title line carries no claim.
+- **R3.** The new negative control asserts that text with only `UXD_SASS_CONTEXT` and `UXD_SASS_WARNING` lacks `UXD_SASS`. M20 (`\b` dropped) now fails it.
+
+**Not run, or not a pass.**
+- The owner's reading of the Vercel preview of `/docs/language` in both schemes.
+- `next build`'s ESLint step: it cannot load `next/typescript`. This predates the story, and ESLint checks nothing on the page (§15, Delivery).
+- External validation was not part of this story.
 
 ## 15. Findings and follow-ups
 
@@ -873,3 +924,14 @@ The scout raised three flags on 2026-11-15. Under the owner's standing instructi
 - **Flag 1, AC2's total floor.** AC2 and C3 say "at least 64 examples (62 on `f855765`)". The base now has 65, so the floor no longer proves the page added anything. Options: (a) keep AC2's text (met trivially) and record that the intended floor, measured on `cf98cb8`, is 65 plus the page's net gain, with the page's own count by route (at least 8 examples, at least 3 through `compile()`, 0 problems, under decision 1) as the binding evidence; (b) ask the owner to amend AC2's number before implementing. **Answer: (a).** AC2's text is not rewritten; with the base's `@each` example kept (flag 3), the derived floor is 69.
 - **Flag 2, T3's reach.** §8's T3 asserts the subtitle for C6 and nothing for C7's prose or C1.2's sentence, so the old heading, the old directive sentence and a missing qualified sentence could survive with the tests green. Options: (a) T3's checker also reports `<h2 id="css">It is CSS</h2>` and `or inside <code>@media</code> under the rule, it is` when present, and the phrase `every SCSS file is a valid UXDSL file` when missing, and T4 embeds base lines 24 and 79–80 and proves each is reported; (b) keep T3 as §8 lists it plus the decision-1 subtitle check. **Answer: (a).** It tightens tests already in the contract and gives C6, C7 and C1.2 their negative controls. The checker does not assert `uxdsl-probe-`, which MIG-B9-26 will change (F4).
 - **Flag 3, the base's `@each` example.** C3 says it "may stay". Options: (a) keep it as a second `compile()` example, the only one that interpolates a Sass variable into a directive argument; (b) drop it, since the new feature example also shows `@each` over a map. **Answer: (a).**
+
+### Delivery of 2026-11-15
+
+New facts and follow-ups from the delivery of PR #93 (§14 has the evidence).
+
+- **AC1's count is 4, not 3.** Review R1 needed a negative control that T4 could not hold without changing its exact problem list: a constant with no anchor, and a text with only `UXD_SASS_CONTEXT`/`UXD_SASS_WARNING`. So it is a fourth MIG-B9-16 test. AC1's text ("reports 3 passing tests") is kept as written. Its intent, that every test passes and that each test's negative control is encoded, holds with 4. No follow-up.
+- **C1.5's link is now written inline on both anchors.** The implementer had put the URL in a constant. The review showed the constant let the link check pass with no link on the page (R1), so both anchors now use C1.5's exact form and the checker requires it. No follow-up.
+- **The playground's ESLint step checks nothing.** `next build` prints `Failed to load config "next/typescript" to extend from`, referenced from `packages/playground-nextjs/.eslintrc.json`, on every build (implementer, review and deliverer logs). The build continues, so an unused binding or a lint rule on any playground page goes unreported. This predates the story and is not caused by it. Proposed: **MIG-B9-43** ("Nothing hand-written, nothing hardcoded, enforced"), which enforces rules on the playground's sources. The alternative is a small story of its own on §7's `packages/playground-nextjs/**` row.
+- **`verify:1.0`'s UX-10 is load-sensitive.** On a machine shared by three workflows (load average about 28), UX-10 failed once at `doubling cost x3.27` and passed alone at `x2.48`. Proposed: **MIG-B9-91** (the gate and the release record) decides whether UX-10 measures on a quieter basis (more repetitions, the minimum of several runs) or records its run conditions.
+- **`DemoColors.uxdsl:104`'s 11 color-interpolation warnings** still print in every playground build. This is already MIG-B9-14's follow-up (MIG-B9-43, or MIG-B9-40), so nothing new is proposed.
+- **F1 to F4 stand as recorded.** F1 (AGENTS.md's directive sentence) is MIG-B9-51's by decision 2. F2 (`compile()` from stdin) is MIG-B9-26's by decision 30. F3 (the `calc()` simplification) is proposed for MIG-B9-52. F4 is MIG-B9-26, which changes this page's three-cases sentence after this story; the checker does not assert `uxdsl-probe-`, so MIG-B9-26 can change it without failing T3.
