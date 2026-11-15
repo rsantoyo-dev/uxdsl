@@ -24,12 +24,24 @@ loader.
   `@forward`ed or `@import`ed partial, a `.scss` file — and the discovered
   theme file are registered via `this.addDependency()` after each compile
   that succeeds, so webpack's cache and watch mode see an edit to any of
-  them. Two exceptions. A file under the `node_modules` directory webpack
-  itself is installed in: webpack's default `snapshot.managedPaths` treats it
-  as changed only when its package's version changes. And a compile that
-  fails registers only the module's own file, so fixing a partial that broke
-  it, or re-creating a partial it could not find, rebuilds once that `.uxdsl`
-  file is saved.
+  them. A file under the `node_modules` directory webpack itself is
+  installed in is the exception: webpack's default `snapshot.managedPaths`
+  treats it as changed only when its package's version changes.
+- **Recovery after a failed compile**: a compile that fails still registers,
+  before it reports the error, every file the module's last successful
+  compile in the same compiler registered, the file the error names, and the
+  discovered theme file with the local modules it requires. So under
+  `webpack --watch` the save that fixes the failure rebuilds the module: a
+  broken partial fixed, a deleted partial created again, the theme file fixed,
+  a first build that failed included. A partial that never existed, which the
+  module `@use`s before it is created, is noticed when the module itself is
+  saved. A theme file whose own `require()` throws part-way registers only
+  the theme file.
+- **Located errors**: webpack prints a failed compile's message with its
+  paths relative to `rootContext`
+  (`styles/parts/_card.uxdsl:1:16: UXD_SASS: Expected expression.`), then
+  the frame, each line indented two spaces (Dart Sass's for a Sass error,
+  PostCSS's for a UXDSL error), and no stack.
 - **Project theme discovery**: reads `uxdsl.theme.json` /
   `uxdsl.theme.{js,cjs}` from `rootContext` automatically, the same
   way the `uxdsl` CLI does.

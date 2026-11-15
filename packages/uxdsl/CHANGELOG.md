@@ -22,6 +22,50 @@ the entries of FEAT-009's beta.7 stories (marked "FEAT-009, MIG-B7-…"), which
 reached npm first in `0.5.0-beta.8` under the former names; MIG-B9-52 moves
 them. See `docs/releases/0.5.0-beta.9.md`.
 
+### Every host's watch recovers after a failed compile, and the adapters' errors are located (MIG-B9-39)
+
+A compile that fails, and is then fixed, rebuilds on the save that fixes it,
+a first build that failed included. Meanwhile mini-css-extract-plugin's
+extracted CSS and `vite build --watch`'s output stay the last good ones,
+while a style-loader bundle carries the error until the fix:
+
+- **`uxdsl/webpack` under `webpack --watch`**, with mini-css-extract-plugin
+  and with style-loader. A failed compile still registers, before it reports
+  the error, every file the module's last successful compile in the same
+  compiler registered, the file the error names, and the discovered theme
+  file's `require()` tree. It used to register only the module's own file,
+  so fixing a broken partial, re-creating a deleted one or fixing the theme
+  file rebuilt nothing until the module was saved. The record is kept per
+  compiler and per module.
+- **`uxdsl/vite` under `vite build --watch`.** A failed load adds the
+  module's own file, the files of its last successful load, the file the
+  error names and the theme file's tree with `addWatchFile` before it
+  rethrows, so an edit to any of them starts a rebuild. It used to add none,
+  and after a first build that failed not even saving the module rebuilt.
+- **`uxdsl/vite` in the dev server.** New `hotUpdate` (Vite 6 and later)
+  and `handleHotUpdate` (Vite 4 and 5) hooks add the failed module to the
+  update for an edit to one of those files. Fixing the partial a failing load
+  was the first to load used to send nothing; it now sends the module's
+  `update`. A module whose first load failed, which Vite never sends an
+  update for, now reloads the page.
+
+A partial that never existed and is created later is still noticed when the
+module is saved.
+
+The errors are located. The error `uxdsl/vite`'s load throws keeps its
+message and now carries `loc` (`{ file, line, column }`) and `frame`
+(Dart Sass's for `UXD_SASS`, PostCSS's without color for a UXDSL error), in
+the dev server's error payload and in `vite build --watch`'s `ERROR` event;
+a theme error, which names no file, has neither. webpack now prints
+`compile()`'s message with the paths under `rootContext` made relative,
+then that frame, each line indented two spaces, where it printed the absolute
+path and the loader's stack. No new `UXD_*` code; `compile()` and the error
+it throws are unchanged.
+
+#### Visual changes
+
+None: compiled output and the theme CSS are byte-identical on every host.
+
 ### One theme resolution per compilation, a failed compile keeps its warnings, and what repeated is deleted (MIG-B9-21)
 
 #### Removed

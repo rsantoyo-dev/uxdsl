@@ -5,7 +5,9 @@
 // `vite build` and `vite.createServer()` calls — not a mocked plugin context.
 // It checks real CSS extraction, no absolute build-machine paths in the
 // production output, `?inline` returning the raw string, module-graph
-// invalidation when an `@import`-ed partial changes, and the project's own
+// invalidation when an `@import`-ed partial changes, the dev server's update
+// for a module once the partial a failed load was the first to load is fixed,
+// and the project's own
 // theme file being discovered and applied: the global stylesheet writes
 // `@uxdsl theme;`, so the extracted CSS defines the project's own token, and
 // a build with exactly that one marker prints no UXD_THEME_MARKER.
@@ -37,6 +39,14 @@ function consumerFiles(style) {
       configFile: 'vite.config.js',
       mapConfigFile: 'vite.map.config.js',
       hmrFile: 'check-hmr.js',
+      recoveryFile: 'check-recovery.js',
+      recoveryHead:
+        "const fs = require('fs');\n" +
+        "const path = require('path');\n" +
+        "const { createServer } = require('vite');\n" +
+        "const uxdsl = require('uxdsl/vite');\n" +
+        '(async () => {\n',
+      recoveryTail: '})().catch((err) => { console.error(err.message); process.exitCode = 1; });\n',
       config: (outDir, sourcemap) =>
         "const { defineConfig } = require('vite');\n" +
         "const uxdsl = require('uxdsl/vite');\n" +
@@ -50,6 +60,14 @@ function consumerFiles(style) {
     configFile: 'vite.config.mjs',
     mapConfigFile: 'vite.map.config.mjs',
     hmrFile: 'check-hmr.mjs',
+    recoveryFile: 'check-recovery.mjs',
+    recoveryHead:
+      "import fs from 'node:fs';\n" +
+      "import path from 'node:path';\n" +
+      "import { createServer } from 'vite';\n" +
+      "import uxdsl from 'uxdsl/vite';\n" +
+      'try {\n',
+    recoveryTail: '} catch (err) { console.error(err.message); process.exitCode = 1; }\n',
     config: (outDir, sourcemap) =>
       "import { defineConfig } from 'vite';\n" +
       "import uxdsl from 'uxdsl/vite';\n" +
@@ -197,6 +215,64 @@ async function scenario({ range, style }) {
   );
   run('node', [files.hmrFile]);
   ok('createServer registers the imported partial as a module-graph dependency (HMR-capable)');
+
+  // --- dev server: a fix after a failed load sends the module's update ---
+  // The module starts @using a partial whose first load fails, so no
+  // successful load ever added it. Fixing that partial sends the module's
+  // update over HMR, and the module then loads with the fixed CSS; an edit to
+  // a .uxdsl file the module never loaded sends nothing. (Saving the module
+  // itself sends its update on Vite 7 and a full reload on Vite 5, as before.)
+  // A real listening server in a child process, as above, with its messages
+  // to the clients recorded where Vite sends them.
+  write(
+    files.recoveryFile,
+    files.recoveryHead +
+    "  const root = path.join(process.cwd(), 'recovery');\n" +
+    "  const put = (file, text) => { fs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true }); fs.writeFileSync(path.join(root, file), text); };\n" +
+    "  const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));\n" +
+    "  const MODULE_URL = '/styles/main.uxdsl?uxdsl&lang.css';\n" +
+    "  const MAIN = \"@use './parts/card';\\n.main { color: blue; }\\n\";\n" +
+    "  put('index.html', '<!doctype html><html><body><script type=\"module\" src=\"/main.js\"></script></body></html>\\n');\n" +
+    "  put('main.js', \"import './styles/main.uxdsl';\\n\");\n" +
+    "  put('styles/main.uxdsl', MAIN);\n" +
+    "  put('styles/parts/_card.uxdsl', '.card { color: red; }\\n');\n" +
+    "  put('styles/parts/_newpart.uxdsl', '.newpart { color: ; }\\n');\n" +
+    "  put('styles/other.uxdsl', '.other { color: gray; }\\n');\n" +
+    "  const server = await createServer({ root, configFile: false, logLevel: 'silent', appType: 'spa', plugins: [uxdsl({ discoverTheme: false })], server: { port: 40000 + Math.floor(Math.random() * 9000), strictPort: false, watch: { usePolling: true, interval: 50 } } });\n" +
+    "  const messages = [];\n" +
+    "  const send = server.ws.send.bind(server.ws);\n" +
+    "  server.ws.send = (payload, ...rest) => { if (payload && typeof payload === 'object' && payload.type !== 'error') messages.push(payload); return send(payload, ...rest); };\n" +
+    "  const updatesTheModule = (message) => message.type === 'update' && message.updates.some((update) => update.path === MODULE_URL);\n" +
+    "  const waitFor = async (step, predicate) => {\n" +
+    "    for (const start = Date.now(); Date.now() - start < 10000; await delay(50)) if (messages.some(predicate)) return;\n" +
+    "    throw new Error(step + ': not sent within 10 s; sent: ' + JSON.stringify(messages));\n" +
+    "  };\n" +
+    "  await server.listen();\n" +
+    "  try {\n" +
+    "    const base = server.resolvedUrls.local[0].replace(/\\/$/, '');\n" +
+    "    const fetchModule = async () => { const response = await fetch(base + MODULE_URL + '&t=' + Date.now()); return { status: response.status, body: await response.text() }; };\n" +
+    "    const js = await (await fetch(base + '/main.js')).text();\n" +
+    "    if (!js.includes(MODULE_URL)) throw new Error('main.js does not import ' + MODULE_URL + ': ' + js);\n" +
+    "    if ((await fetchModule()).status !== 200) throw new Error('the first load failed');\n" +
+    "    await delay(300);\n" +
+    "    put('styles/main.uxdsl', \"@use './parts/newpart';\\n\" + MAIN);\n" +
+    "    await waitFor('the update or reload after the module starts @using the broken partial', (message) => updatesTheModule(message) || message.type === 'full-reload');\n" +
+    "    if ((await fetchModule()).status !== 500) throw new Error('the load with the broken partial did not fail');\n" +
+    "    messages.length = 0;\n" +
+    "    put('styles/other.uxdsl', '.other { color: black; }\\n');\n" +
+    "    await delay(2000);\n" +
+    "    if (messages.length) throw new Error('an edit to a file the module never loaded sent ' + JSON.stringify(messages));\n" +
+    "    put('styles/parts/_newpart.uxdsl', '.newpart { color: green; }\\n');\n" +
+    "    await waitFor('the update after the broken partial is fixed', updatesTheModule);\n" +
+    "    const fixed = await fetchModule();\n" +
+    "    if (fixed.status !== 200 || !/\\.newpart \\{\\\\n {2}color: green;/.test(fixed.body)) throw new Error('the module after the fix: ' + fixed.status + ' ' + fixed.body.slice(0, 300));\n" +
+    "  } finally {\n" +
+    "    await server.close();\n" +
+    "  }\n" +
+    files.recoveryTail
+  );
+  run('node', [files.recoveryFile]);
+  ok("the dev server sends the module's update when the partial a failed load was the first to load is fixed, and nothing for a file the module never loaded");
 
   return installedVite;
 }

@@ -6,7 +6,8 @@
 // `MiniCssExtractPlugin` — not a mocked loader context. Exercises every
 // criterion the story lists for this fixture: real CSS extraction via
 // css-loader/MiniCssExtractPlugin, watch-mode recompilation on an
-// `@import`-ed partial's edit, and options arriving via `getOptions()`.
+// `@import`-ed partial's edit, watch mode recovering once the partial that
+// broke a compile is fixed, and options arriving via `getOptions()`.
 
 const fs = require('node:fs');
 const path = require('node:path');
@@ -153,6 +154,61 @@ async function main() {
   );
   run('node', ['check-watch.js']);
   console.log('  ok  - watch mode recompiles when an @import-ed partial changes');
+
+  // --- watch mode: a compile that fails recovers when the partial is fixed ---
+  // The partial breaks the compile, an edit to a .uxdsl file the module never
+  // loaded starts no compilation, and the fix compiles with 0 errors and the
+  // fixed CSS. Files and directories are dated back, and the output directory
+  // exists, so the watcher's first look takes nothing for an edit.
+  write(
+    'check-watch-recovery.js',
+    "const path = require('path');\n" +
+    "const fs = require('fs');\n" +
+    "const webpack = require('webpack');\n" +
+    "const config = require('./webpack.config.js');\n" +
+    "const styles = path.join(__dirname, 'src', 'styles');\n" +
+    "const partial = path.join(styles, 'partial.uxdsl');\n" +
+    "const unrelated = path.join(styles, 'unrelated.uxdsl');\n" +
+    "const out = path.join(__dirname, 'dist-recovery');\n" +
+    "const past = new Date(Date.now() - 10000);\n" +
+    "fs.writeFileSync(partial, '.partial { color: green; }\\n');\n" +
+    "fs.writeFileSync(unrelated, '.unrelated { color: gray; }\\n');\n" +
+    "fs.mkdirSync(out, { recursive: true });\n" +
+    "for (const file of [partial, unrelated, out, styles, path.dirname(styles), __dirname]) fs.utimesSync(file, past, past);\n" +
+    "const compiler = webpack({ ...config, output: { ...config.output, path: out } });\n" +
+    "let changes = 0;\n" +
+    "compiler.hooks.invalid.tap('check-watch-recovery', () => { changes += 1; });\n" +
+    "let builds = 0;\n" +
+    "const failsafe = setTimeout(() => { console.error('timed out after ' + builds + ' builds'); process.exit(1); }, 30000);\n" +
+    "const finish = (code, message) => { if (message) console.error(message); clearTimeout(failsafe); watcher.close(() => process.exit(code)); };\n" +
+    "const later = (ms, fn) => setTimeout(fn, ms);\n" +
+    "const watcher = compiler.watch({ aggregateTimeout: 50 }, (err, stats) => {\n" +
+    "  builds += 1;\n" +
+    "  if (err) return finish(1, err.stack);\n" +
+    "  const errors = stats.toJson({ all: false, errors: true }).errors.map((e) => e.message).join('\\n');\n" +
+    "  if (builds === 1) {\n" +
+    "    if (errors) return finish(1, 'the first build failed:\\n' + errors);\n" +
+    "    return later(300, () => fs.writeFileSync(partial, '.partial { color: ; }\\n'));\n" +
+    "  }\n" +
+    "  if (builds === 2) {\n" +
+    "    if (!errors.includes(path.join('src', 'styles', 'partial.uxdsl') + ':1:19: UXD_SASS')) return finish(1, 'the broken partial did not fail the build at its path relative to rootContext:\\n' + errors);\n" +
+    "    return later(300, () => {\n" +
+    "      changes = 0;\n" +
+    "      fs.writeFileSync(unrelated, '.unrelated { color: black; }\\n');\n" +
+    "      later(2000, () => {\n" +
+    "        if (changes || builds !== 2) return finish(1, 'an edit to a file the module never loaded started a compilation');\n" +
+    "        fs.writeFileSync(partial, '.partial { color: purple; }\\n');\n" +
+    "      });\n" +
+    "    });\n" +
+    "  }\n" +
+    "  if (errors) return finish(1, 'the build after the fix failed:\\n' + errors);\n" +
+    "  const css = fs.readFileSync(path.join(out, 'styles.css'), 'utf8');\n" +
+    "  if (!/\\.partial\\s*\\{[^}]*color:\\s*purple/.test(css)) return finish(1, 'the recovered output does not carry the fix');\n" +
+    "  finish(0);\n" +
+    "});\n"
+  );
+  run('node', ['check-watch-recovery.js']);
+  console.log('  ok  - watch mode recovers when the partial that broke a compile is fixed, and an unrelated .uxdsl edit starts no compilation');
 
   console.log('PASS');
   console.log('All checks passed.');

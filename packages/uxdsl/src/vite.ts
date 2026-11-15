@@ -3,7 +3,7 @@ import path from 'path';
 import type { Plugin, ResolvedConfig } from 'vite';
 import { compile, referencesThemeTokens, themeEmissionWarning } from './compile';
 import type { CompileConfig, CompileWarning, ThemeEmission } from './compile';
-import { removedOptionWarnings } from './config';
+import { collectLocalRequireTree, findThemeConfigPath, removedOptionWarnings } from './config';
 
 // The bundler delivers real CSS through its own pipeline; UXDSL only
 // compiles. `resolveId` turns `./panel.uxdsl`
@@ -19,13 +19,26 @@ import { removedOptionWarnings } from './config';
 // `sass` option goes to compile(), which validates it and passes it to Dart
 // Sass. Every file Dart Sass loaded is added with `addWatchFile`, and each
 // compile() warning reaches `this.warn()` at its file (relative to Vite's
-// root), line and column. There is no `breakpoints` option: breakpoints are a
-// theme family — declared under `breakpoints` in the theme file (or the
-// `theme` option), the one place every integration reads them from. There is
-// no theme switch either: a module emits the theme when it reaches
-// `@uxdsl theme;` (the app's global .uxdsl), and a component module carries
-// only its own rules. A removed option is reported once per build, in
-// `buildStart`, and never passed on.
+// root), line and column.
+//
+// A load that fails emits the warnings it produced, then adds with
+// `addWatchFile` the module's own file, the files of its last successful load,
+// the file the error names and the discovered theme file's require() tree,
+// and rethrows the same error with `loc` (the file, line and column the error
+// names) and `frame` (Dart Sass's for UXD_SASS, PostCSS's for a UXDSL error)
+// set; its message is unchanged. An edit to any of those files starts a
+// rebuild under `vite build --watch`. The dev server's HMR hooks
+// (`hotUpdate` on Vite 6 and later, `handleHotUpdate` before) add the failed
+// module to the update for an edit to one of them: a module Vite analyzed
+// before gets its update, and one whose first load failed, which Vite never
+// sends an update for, reloads the page through the modules that import it.
+//
+// There is no `breakpoints` option: breakpoints are a theme family — declared
+// under `breakpoints` in the theme file (or the `theme` option), the one
+// place every integration reads them from. There is no theme switch either:
+// a module emits the theme when it reaches `@uxdsl theme;` (the app's global
+// .uxdsl), and a component module carries only its own rules. A removed option
+// is reported once per build, in `buildStart`, and never passed on.
 //
 // A build counts the theme over all its modules: `load` returns compile()'s
 // `themeEmitted`, and whether the CSS references a --uxdsl__ token, as the
@@ -110,6 +123,41 @@ function formatWarning(warning: CompileWarning, root: string): string {
   return `${file}:${warning.line}${warning.column != null ? `:${warning.column}` : ''}: ${warning.text}`;
 }
 
+// The discovered theme file and the local modules it requires, for a load
+// that failed: compile() lists them only in a successful result. Empty when a
+// `theme` option or `discoverTheme: false` turns discovery off, or when no
+// theme file is found.
+function themeFiles(options: UxDslPluginOptions, root: string): string[] {
+  if (options.theme !== undefined || options.discoverTheme === false) return [];
+  try {
+    const file = findThemeConfigPath(root);
+    return file ? [file, ...collectLocalRequireTree(file)] : [];
+  } catch {
+    return [];
+  }
+}
+
+const ANSI_RE = /\x1b\[[0-9;]*m/g;
+
+// The frame of a failed compile: Dart Sass's own for UXD_SASS, PostCSS's
+// (without color) for an error PostCSS raised, none otherwise.
+function errorFrame(err: { code?: unknown; sassFrame?: unknown; showSourceCode?: unknown }): string {
+  if (err.code === 'UXD_SASS' && typeof err.sassFrame === 'string' && err.sassFrame.trim()) return err.sassFrame;
+  if (typeof err.showSourceCode === 'function') return String(err.showSourceCode(false)).replace(ANSI_RE, '');
+  return '';
+}
+
+/** A file as Vite's HMR names it: absolute, with forward slashes. */
+function hmrKey(file: string): string {
+  return path.resolve(file).split(path.sep).join('/');
+}
+
+/** The part of a module node the HMR hooks read, in Vite 5's graph and in an environment's. */
+interface HmrNode {
+  isSelfAccepting?: boolean;
+  importers: Set<HmrNode>;
+}
+
 export default function uxdsl(userOptions: UxDslPluginOptions = {}): Plugin {
   let projectRoot = process.cwd();
   // Follows Vite's own resolved sourcemap settings
@@ -121,6 +169,28 @@ export default function uxdsl(userOptions: UxDslPluginOptions = {}): Plugin {
   // set of emitting modules it last warned about.
   const servedEmitting = new Map<string, boolean>();
   let servedWarning = '';
+  // Each module's id and the files its last successful load added; and, in
+  // the dev server, each file (as `hmrKey` writes it) and the ids of the
+  // modules whose load failed and whose fix that file's edit may be.
+  const lastGoodFiles = new Map<string, string[]>();
+  const failedBy = new Map<string, Set<string>>();
+
+  // The modules an edit to `file` adds to Vite's update: each failed module
+  // Vite analyzed, and the importers of one it never analyzed (Vite reloads
+  // the page for those). Undefined when the edit concerns no failed module.
+  function failedModules<Node extends HmrNode>(file: string, current: Node[], byId: (id: string) => Node | undefined): Node[] | undefined {
+    const ids = failedBy.get(hmrKey(file));
+    if (!ids || ids.size === 0) return undefined;
+    const added: Node[] = [];
+    for (const id of ids) {
+      const node = byId(id);
+      if (!node) continue;
+      if (node.isSelfAccepting === undefined) added.push(...(node.importers as Set<Node>));
+      else added.push(node);
+    }
+    const fresh = added.filter((node, index) => !current.includes(node) && added.indexOf(node) === index);
+    return fresh.length ? [...current, ...fresh] : undefined;
+  }
 
   return {
     name: 'uxdsl',
@@ -183,12 +253,33 @@ export default function uxdsl(userOptions: UxDslPluginOptions = {}): Plugin {
         to: absPath,
         sass: userOptions.sass,
       }).catch((error: unknown) => {
-        // The warnings compile() produced before it failed come first.
+        // The warnings compile() produced before it failed come first. Then
+        // the files whose edit can fix it, and the location; Rollup rewrites
+        // the error's message, code and plugin after it is rethrown.
         for (const warning of (error as { warnings?: CompileWarning[] } | null)?.warnings ?? []) this.warn(formatWarning(warning, projectRoot));
+        const failure = (error && typeof error === 'object' ? error : {}) as { file?: unknown; line?: unknown; column?: unknown; code?: unknown; sassFrame?: unknown; showSourceCode?: unknown; loc?: unknown; frame?: unknown };
+        const errorFile = typeof failure.file === 'string' && path.isAbsolute(failure.file) ? failure.file : undefined;
+        const files = new Set([absPath, ...(lastGoodFiles.get(id) ?? []), ...(errorFile ? [errorFile] : []), ...themeFiles(userOptions, userOptions.configRoot ?? projectRoot)]);
+        for (const file of files) {
+          this.addWatchFile(file);
+          if (command !== 'serve') continue;
+          const key = hmrKey(file);
+          if (!failedBy.has(key)) failedBy.set(key, new Set());
+          failedBy.get(key)!.add(id);
+        }
+        if (errorFile) {
+          failure.loc = { file: errorFile, line: failure.line, column: failure.column };
+          failure.frame = errorFrame(failure);
+        }
         throw error;
       });
 
       for (const dep of dependencies) this.addWatchFile(dep);
+      lastGoodFiles.set(id, dependencies);
+      for (const [key, ids] of failedBy) {
+        ids.delete(id);
+        if (ids.size === 0) failedBy.delete(key);
+      }
       for (const warning of warnings) this.warn(formatWarning(warning, projectRoot));
 
       if (command === 'serve') {
@@ -210,6 +301,15 @@ export default function uxdsl(userOptions: UxDslPluginOptions = {}): Plugin {
       // never as the map of a JavaScript module wrapping it.
       const meta: ThemeMeta = { themeEmitted, referencesTokens: referencesThemeTokens(css) };
       return { code: css, map: map ? JSON.parse(map) : null, meta: { uxdsl: meta } };
+    },
+    // Vite 6 and later, per environment.
+    hotUpdate(context) {
+      const graph = this.environment.moduleGraph;
+      return failedModules(context.file, context.modules, (id) => graph.getModuleById(id));
+    },
+    // Vite 4 and 5; Vite 6 and later call `hotUpdate` instead when a plugin has both.
+    handleHotUpdate(context) {
+      return failedModules(context.file, context.modules, (id) => context.server.moduleGraph.getModuleById(id));
     },
     // Once per `vite build` (and per rebuild in `--watch`), over every .uxdsl
     // module of the build. A module whose meta is missing makes the count
