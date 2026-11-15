@@ -516,7 +516,10 @@ outside a string and a `url()`, is read as a `//` comment:
   could not parse, are `UXD_FUNCTION_UNKNOWN: … did you mean …?`, and
   `xd(primary.main)` is `UXD_BREAKPOINT_UNKNOWN`. In a declaration Sass never
   evaluates (a mixin nothing includes, an `@if false` branch, a placeholder
-  nothing extends) the dotted call fails the same way, once Sass has compiled.
+  nothing extends) the dotted call fails the same way, once the rest of the
+  build has compiled with no error. Inside a Sass function that evaluates its
+  argument (`rgb()`, `darken()`), it fails as that function's `UXD_SASS`, as
+  the canonical token does there.
   A dotted near-miss elsewhere — in a selector, an at-rule's prelude, a variable, a mixin's
   argument or a `@return`, after a `@function` of that name in the same file,
   or in a `.scss`, `.sass` or `.css` file — stays Dart Sass's

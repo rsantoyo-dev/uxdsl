@@ -153,6 +153,35 @@ test('MIG-B9-26: a dotted near-miss in a declaration Sass never evaluates (an un
   assert.equal(anonymous.reason, PALETE);
   assert.deepEqual([anonymous.file, anonymous.line, anonymous.column], [undefined, 2, 3]);
   assert.match(anonymous.message, /^uxdsl: <css input>:2:3: UXD_FUNCTION_UNKNOWN: /);
+  // A breakpoint's near-miss nested in calc() is read as the plugin reads a nested call: a function it suggests, not a breakpoint.
+  const nestedSource = '@mixin m {\n  width: calc(xd(primary.main) + 1px);\n}\n';
+  const nested = await failure(compileSource(nestedSource, from));
+  const nestedEvaluated = await failure(throughPlugin('.a {\n  width: calc(xd(primary.main) + 1px);\n}\n', from));
+  assert.equal(nested.reason, nestedEvaluated.reason, 'a nested breakpoint near-miss: the plugin\'s code and message');
+  assert.equal(nested.reason, 'UXD_FUNCTION_UNKNOWN: xd() is not a function CSS or UXDSL knows; did you mean xs()?');
+  assert.deepEqual([nested.file, nested.line, nested.column], [from, 2, 3]);
+  // One in a .uxdsl partial the entry loads is reported in the partial, with the partial's frame.
+  const partialDir = project(t, { 'src/_mod.uxdsl': '// mod\n@mixin m {\n  color: palete(primary.main);\n}\n' });
+  const partialFrom = path.join(partialDir, 'src', 'main.uxdsl');
+  const partial = await failure(compileSource("@use 'mod';\n.b { color: red; }\n", partialFrom));
+  assert.ok(partial, 'a near-miss in a @use\'d partial: compile() fails');
+  assert.equal(partial.reason, PALETE);
+  assert.deepEqual([partial.file, partial.line, partial.column], [path.join(partialDir, 'src', '_mod.uxdsl'), 3, 3]);
+  assert.match(partial.showSourceCode(false), /^> 3 \|   color: palete\(primary\.main\);$/m, 'the frame shows the partial\'s line');
+  // With two, the first in the source is reported.
+  const two = await failure(compileSource('@mixin m {\n  color: palete(primary.main);\n}\n@mixin n {\n  color: pallete(primary.main);\n}\n', from));
+  assert.equal(two.reason, PALETE);
+  assert.deepEqual([two.line, two.column], [2, 3]);
+  // A warning the plugin gave before the failure (an unknown theme family) stays on the error.
+  const themed = await failure(compileSource('@mixin m {\n  color: palete(primary.main);\n}\n', from, { theme: { widgets: { a: 'b' } } }));
+  assert.equal(themed.reason, PALETE);
+  assert.ok(themed.warnings.some((warning) => /^Unknown theme family "widgets"/.test(warning.text)), JSON.stringify(themed.warnings));
+  // Inside a Sass function that evaluates its argument, the near-miss fails as that function's error, as the canonical token does.
+  for (const name of ['palete', 'palette']) {
+    const inRgb = await failure(compileSource(`.a {\n  color: rgb(${name}(primary.main));\n}\n`, from));
+    assert.equal(inRgb.code, 'UXD_SASS', `rgb(${name}(…))`);
+    assert.equal(inRgb.sassMessage, `$channels: Expected red channel to be a number, was ${name}(primary.main).`);
+  }
 
   const cli = project(t, { 'uxdsl.config.cjs': CONFIG, 'src/main.uxdsl': '@mixin m {\n  color: palete(primary.main);\n}\n.a {\n  color: red;\n}\n' });
   const built = build(cli);
