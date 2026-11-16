@@ -799,3 +799,177 @@ the worktree's `node_modules`, `tsc`).
 playground and documentation changes of decisions Q16, Q17/Q19 and the
 chain caveat in AGENTS.md (whose test, T9, is in place), and the CHANGELOG
 subsection's last lines (no package visual change).
+
+### Implementation, playground, metadata and documentation half (I2, 2026-11-16)
+
+On the branch after I1's `38cdf88`, with Node 20.19.0 and npm 11.21.1,
+`TMPDIR` in the run's scratch directory (left empty after every run). Each
+commit was preceded by `npm --prefix packages/uxdsl run build`, `npm test`
+(root, under `scripts/tmpdir-guard.js`), `npm run verify:doc-examples`,
+`node scripts/generate-language-artifacts.js --check`,
+`node scripts/generate-agent-guide.js --check`, `node fixtures/parity/run.js`
+(never `--update`; PASS, 10 cases),
+`node packages/playground-nextjs/scripts/capture-capabilities.js --check` and
+`node --test fixtures/release-1.0/verdicts.test.js`, all exit 0; the
+pre-commit hook (`verify:docs` and the playground's `next build`) passed each
+time.
+
+| Commit | What | `npm test` |
+| --- | --- | --- |
+| `4faa22b` | The playground: SideNav's `@media (--lg)` (comment rewritten), the `/docs/breakpoints` chips demo and "write / get" example, `/docs/language`, `/docs/surfaces` and `/docs/introduction` wording, the dogfooding baseline 2 → 1 | 1697 pass, 0 fail |
+| `c7f39e8` | `LANGUAGE_COMPLETIONS.customMedia`, the grammar's `breakpointMedia` and injections, the `custom-media` capability kind; `uxdsl-vscode`'s README | 1701 pass, 0 fail |
+| `0c2e5cf` | S-8 in the release gate, with its verdicts | 1703 pass, 0 fail |
+| `c5a42ac` | AGENTS.md (and the agent guide), README, `migration.md`, CHANGELOG | 1703 pass, 0 fail |
+
+Failing first, then green:
+
+- **T18** (`test/language.test.js`). Red on `38cdf88`'s build:
+  `TypeError: LANGUAGE_COMPLETIONS.customMedia is not iterable`. Green after
+  `customMedia` in `src/language.ts`, derived from `DEFAULT_BREAKPOINTS`
+  without the zero-width base.
+- **T19** (`packages/uxdsl-vscode/test/grammar.test.js`, two tests). Red: the
+  positive test failed on the committed grammar (no breakpoint scope); the
+  negative control passed before and after, as a control must. Green after
+  `npm run generate:language`. A source.css stand-in in the test emits VS
+  Code's scope names; the same lines were also tokenized against VS Code's
+  real `css.tmLanguage.json` (the design's scratch copy): `(--lg)` gets
+  `support.constant.breakpoint.uxdsl` in a top-level `@media` header and in a
+  nested `@media` (where the real CSS grammar reads `media` as a property
+  name), and `var(--lg)`, `--lg: 1px`, `@container (--lg)`, `(--lgg)` and
+  `(--xs)` get none. The design's top-level `#breakpointMedia` include was
+  left out (see deviations below).
+- **T20** (`fixtures/vscode-extension/run.js`). Red: the assertion on the
+  committed grammar threw `Cannot read properties of undefined (reading
+  'patterns')`. Green: `npm run verify:vscode-extension` PASS.
+- **T21** (`scripts/capability-matrix.test.js`). Red: the per-kind count
+  (`0 !== 4`) and the new MIG-B9-30 test failed. Green after the
+  `custom-media` kind and `npm run generate:capabilities` (124 capabilities,
+  0 gaps; `--lg` live in SideNav and `/docs/breakpoints`, the others in
+  `/docs/breakpoints`). The dogfooding ratchet failed on commit 1 until
+  `handWrittenMediaQueries` went to 1 (it measured 1 against a baseline of 2).
+- **T22** (S-8). Red: `verdicts.test.js`'s two new tests failed while
+  `run.js` exported no S-8 sources or verdicts. Two test corrections before
+  green: the "no `(--` left" check reads `@media` preludes only (the theme's
+  `var(--…)` holds `(--`), and the pass-through control replaces the rule's
+  query, not the theme's first `@media (min-width: 1024px)`. Green:
+  `verdicts.test.js` 16 pass; `npm run verify:1.0 -- --skip-playground-walk`
+  exit 0, 73/73, `S-8 ok`.
+- **The playground's compiled examples.**
+  `node packages/playground-nextjs/scripts/capture-examples.js --check` failed
+  (stale) after the new `breakpoint-blocks` example was added and passed once
+  `examples.json` was regenerated; its output shows `(min-width: 800px)` for
+  the theme's `md: 800`, both nested and in `print and (--md)`.
+
+**The playground CSS** (`npm --prefix packages/playground-nextjs run
+uxdsl:build`). `uxdsl.css`'s diff is SideNav's rewritten comment (its
+`@media (min-width: 1024px)` block is byte-identical) plus the
+`/docs/breakpoints` demo's rules (`.bp-blocks`, `.bp-chip`, and one
+`@media (min-width: 480px | 768px | 1024px | 1280px)` per chip): 71 lines
+added, 3 removed.
+
+**AC2.** `grep -rnE "@media[^{]*\(\s*min-width" packages/playground-nextjs/src --include='*.uxdsl'`
+prints exactly `packages/playground-nextjs/src/app/not-found.uxdsl:61:@media (min-width: 600px) {`;
+`grep -q "(--lg)" …/SideNav.uxdsl` exits 0.
+
+**AC3 / T23** (Chrome 157 at the macOS default path). `snapshot.js
+--no-interactions` of BASE's playground sources (checked out from `6b8e3a9`
+into the worktree for the build, then restored; `git status` clean after),
+twice, and of the branch with `--build`: 19 routes × 10 widths. BASE against
+itself: 0 property differences over 142,960 records. BASE against the branch,
+`--noise` the second BASE snapshot: 9,985 differences, all on
+`/docs/breakpoints` (5,328: the new section, and the layout that follows it),
+`/docs/language` (3,635), `/docs/surfaces` (647) and `/docs/introduction`
+(355), whose text changed, and `/docs/diagnostics` (20: the code block that
+shows I1's reworded `UXD_DIRECTIVE_CONTEXT` capture is wider). No
+difference on any other route, none in the header (`body>div:1`) or the
+SideNav column (`body>div:2>div:1`) of any route at any width, 1023 and 1024
+included. In the branch's snapshot the four chips take the contained
+primary background at exactly 480, 768, 1024 and 1280 px and not at 479,
+767, 1023 and 1279. `snapshot.js`'s interactions (the Density edit dialog)
+time out on BASE as on the branch (`TimeoutError`, the button is not
+visible), so the snapshots were taken with `--no-interactions`; the walk
+below presses through the pages itself. `npm run verify:playground-browser`
+(16:35–16:39, load 4.42): exit 0, 19 routes × 2 schemes × 10 widths, no
+console error, no UXDSL warning, no unresolved `var()`, visible keyboard
+focus, contrast page = Node; its six negative controls each reported.
+
+**Measurements, final (2026-11-16).** `node fixtures/sass-corpus/run.js
+--no-timing-budget`, alternating BASE (I1's build of `6b8e3a9`, `--uxdsl`)
+and the branch: BASE 1.31x (16:39:27, load 3.68) and 1.34x (16:39:38, load
+3.97); branch 1.40x (16:39:32, load 3.79) and 1.29x (16:39:43, load 3.89).
+Every run 276,926 bytes, `byte-identical: true`, 21 warnings. The second
+half changes no engine code: the spread is the machine's. Then, last and
+alone, `node fixtures/mig-b9-23-compile-budget/run.js --base <BASE build>`
+(16:39:56, load 3.67): exit 0, "All checks ok"; the corpus equals BASE's
+css, map, dependencies and warnings in the three `sourceMap` modes (276,926
+bytes; inline 790,834; 87 dependencies; 21 warnings); the large-directory
+check +2.9 ms (its planted control +141.9 ms).
+
+**Criteria and tests.**
+
+| Criterion | Evidence |
+| --- | --- |
+| AC1 | `node --test packages/uxdsl/test/breakpoint-blocks.test.js` exit 0 (I1's T1–T13), in every `npm test` above |
+| AC2 | the grep above |
+| AC3 | T23: the compare and the walk above |
+| AC4 | T18, T19, T20; `generate-language-artifacts.js --check` exit 0 |
+| AC5 | `npm test` exit 0 (1703 pass); `verify:1.0` 73/73 with `S-8 ok` |
+| B8 | T18, T19, T20 |
+| B10 | T2 (SideNav, I1), T21, T23, the `breakpoint-blocks` example |
+| B11 | T17 (I1); 78 documentation examples hold (75 before), the new AGENTS.md css and scss blocks and the README scss block among them |
+| Chain order | T9 (I1); documented in AGENTS.md "Breakpoints", the README and `migration.md` |
+
+**Deviations of this half from the design record.**
+
+- The grammar has no top-level `{ include: '#breakpointMedia' }`: source.css
+  owns every place an `@media` prelude is written, so the two injections
+  cover both, and a top-level pattern would only add a scope to `(--lg)`
+  written outside an `@media` (the negative control `@container (--lg)` at
+  the top level of a stylesheet would get it with the test's stand-in).
+- The nested injection's begin/end rule is named
+  `meta.at-rule.media.header.uxdsl` (the design gave no name): a nested
+  `@media`, which VS Code's CSS grammar reads as a property name, is now one
+  header scope.
+- `scripts/generate-capability-matrix.js` gained the kind's title
+  (`Breakpoint media queries`): the matrix renders only the kinds it names.
+  It was not in the plan's file list.
+- `/docs/breakpoints/page.mdx` renders the new `BreakpointBlocks` section
+  (one import and one line); it was not in the plan's file list.
+- `packages/uxdsl-vscode/README.md` gained a highlighting bullet, because
+  `verify:docs` requires a README change with a change to that package.
+- The chips use `@ds-surface(outlined primary 1)` below and
+  `@ds-surface(contained primary 1)` from each breakpoint, with
+  `@ds-typo(code)`; the page's existing `font-family: font(code)` (a
+  function UXDSL does not define, printed as written) was not copied.
+- This record is the second implementer's, under its own heading, as I1's
+  is; §14 (the closure record), the story's status and the FEAT-010 README
+  row are left to the delivery, as the role's instructions say.
+
+**Not verified here.**
+
+- Highlighting in a real VS Code with the VSIX installed (release-gate item
+  B7-12, the owner's); the tokenization tests use Oniguruma with a stand-in
+  and, outside the repository, VS Code's real CSS grammar.
+- `@ds-*` directives and breakpoint functions written inside a rule are not
+  highlighted in VS Code (the real CSS grammar's property list owns them:
+  `@ds-surface` reads as a property name, `xs(` as part of a value). This
+  predates the story; a follow-up for MIG-B9-55, which owns completion and
+  highlighting inside rules.
+- The owner's Press Craftor check of the `migration.md` entry (decision Q18).
+
+**Follow-up findings** (to file at delivery).
+
+1. `(--lg)` in an `@import` media list (`@import url("x.css") (--lg);`) is
+   left as written on both paths, a stylesheet no browser loads (owner flag
+   F4 (a)).
+2. A literal nested `@media` holding a responsive value keeps BASE's broken
+   output with `uxdsl/postcss` alone: the clone is printed at the root
+   without its selector (owner flag F1 (b); the `(--bp)` form is
+   `UXD_BREAKPOINT_CONTEXT`).
+3. With `uxdsl/postcss` alone only the file being compiled is seen, so a
+   `@custom-media` defined in another file is unknown there (documented).
+4. VS Code highlighting of `@ds-*` and `xs()` inside rules, above, for
+   MIG-B9-55.
+5. `fixtures/playground-browser/snapshot.js`'s interactions time out on
+   BASE `6b8e3a9` (the Density card's Edit button is not visible), so a
+   snapshot needs `--no-interactions` today.
