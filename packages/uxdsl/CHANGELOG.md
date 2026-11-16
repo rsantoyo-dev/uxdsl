@@ -22,6 +22,39 @@ the entries of FEAT-009's beta.7 stories (marked "FEAT-009, MIG-B7-…"), which
 reached npm first in `0.5.0-beta.8` under the former names; MIG-B9-52 moves
 them. See `docs/releases/0.5.0-beta.9.md`.
 
+### The silent cases of `@use`'s module isolation warn `UXD_MODULE_ISOLATION` (MIG-B9-17)
+
+#### Changed
+
+- **A call of another file's `@function` that Dart Sass leaves as written
+  warns.** Under a `@use` entry (the one `generate-entry` writes) each file
+  is its own Sass module, so `width: double(4px)` in a file that does not
+  `@use` the file defining `@function double` stayed `double(4px)` in the
+  CSS without a word. `compile()` now returns one `UXD_MODULE_ISOLATION`
+  warning per author position and name, where it locates any other
+  diagnostic of that declaration (`src/widget.uxdsl:1:6`), naming the
+  function, the file that defines it and the fix: `@use that file as * here,
+  or call it through its namespace (helpers.double())`, or, when the call's
+  own file defines the function after it, `define it at the top level of its
+  file, before this call`. `uxdsl build` prints it and exits 0. A CSS
+  function the compiler knows, a UXDSL function or breakpoint, a function no
+  loaded file defines (`foo(1px)`), and a call in a custom property, an
+  at-rule's prelude, a `progid:` value, a CSS `@function` body or the
+  arguments of `url()` (where Dart Sass leaves even a visible function as
+  written) warn nothing. The CSS is unchanged.
+- **The new code** is in `DIAGNOSTIC_CATALOG`, owner `core`, after
+  `UXD_FUNCTION_SHADOWED`; `compile()`'s warnings are Dart Sass's, then
+  `UXD_FUNCTION_SHADOWED`, then `UXD_MODULE_ISOLATION` (by load order, line
+  and column), then the plugin's. An `@import` entry, or the reading file's
+  own `@use … as *`, shares the members and warns nothing new;
+  `uxdsl/postcss` alone is unchanged. The warning reads Dart Sass's output
+  and costs no compile.
+
+#### Visual changes
+
+- None. Every compiled output, the Bootstrap corpus and the theme CSS are
+  byte-identical; only `compile()`'s warnings gain the new code.
+
 ### Dotted near-misses keep their suggestion through `compile()`, `@debug` is a warning, and no project name changes the Sass stage (MIG-B9-26)
 
 #### Changed

@@ -86,7 +86,8 @@ loads each `.uxdsl` file with its own
 (`generate-entry --first a,b` lists those files first), so
 each file is its own Sass module and `@use`s what it reads from another, `as *`
 or with each member written through the namespace (under a namespaced `@use`
-a function called by its bare name stays in the CSS, with no error);
+a function called by its bare name stays in the CSS, with no error but a
+`UXD_MODULE_ISOLATION` warning);
 `generate-entry` warns once when it replaces an entry that listed its files
 with `@import`. `uxdsl/vite` and `uxdsl/webpack` take the same `sass` option,
 which `compile()` validates, and report each warning as
@@ -151,7 +152,10 @@ with `UXD_FUNCTION_SHADOWED`, that it hides the token of that name. Each
 `@debug` Sass evaluates is a warning at its rule, `UXD_SASS_WARNING: DEBUG: …`,
 and a misspelled function with a dotted key (`palete(primary.main)`) in a
 declaration's value names the function meant, as it does through the PostCSS plugin, even in a mixin nothing
-includes.
+includes. Where a file loaded with `@use` does not see another file's
+`@function`, the call Dart Sass leaves in the CSS as written warns
+`UXD_MODULE_ISOLATION` at the call; `@use` that file `as *` there, or call the
+function through its namespace.
 
 1. **Rename** each `.scss` file to `.uxdsl`. Rename it rather than copy it: a
    `.scss` twin beside a `.uxdsl` file makes `@use './card'` ambiguous (Dart

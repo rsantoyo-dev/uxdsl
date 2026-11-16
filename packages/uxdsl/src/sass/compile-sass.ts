@@ -8,6 +8,7 @@ import type * as Sass from 'sass';
 import type { RawSourceMap } from 'source-map-js';
 import type { CompileWarning } from '../compile';
 import { diagnostic } from '../diagnostics';
+import { KNOWN_CSS_FUNCTIONS } from '../language';
 import { findShadowingFunctions, protect, TOKEN_FUNCTION_NAMES } from './protect';
 import type { ProtectCall, ProtectNearMiss, ProtectProblem, ProtectResult } from './protect';
 
@@ -803,6 +804,8 @@ function finish(stage: Stage, pass: Pass, shadowing: Definition[]): SassStageRes
   });
   const out: SassStageResult = { css: result.css, loadedFiles, warnings: stageWarnings(pass, shadowing), nearMisses };
   if (stage.sourceMap && result.sourceMap) out.map = translateMap(pass, result.sourceMap);
+  const isolation = out.map ? leftAsWritten(stage, pass, result.css, out.map) : [];
+  out.warnings.push(...sortedByLoadOrder(isolation, loadedFiles));
   return out;
 }
 
@@ -824,6 +827,132 @@ function stageWarnings(pass: Pass, shadowing: Definition[]): CompileWarning[] {
     .sort((a, b) => order(a.file) - order(b.file) || a.line - b.line || a.column - b.column)
     .map((definition): CompileWarning => ({ text: definition.message, file: definition.file, line: definition.line, column: definition.column }));
   return [...pass.warns.map((warn) => convertWarning(pass, warn)), ...shadow];
+}
+
+// --- module isolation ------------------------------------------------------------------
+
+/** Sass treats `_` and `-` as the same character in a name. */
+const sassSpelling = (name: string): string => name.replace(/_/g, '-');
+
+/** Located warnings sorted by the load order of their files, then line and column. */
+function sortedByLoadOrder(warnings: Array<CompileWarning & { file: string; line: number; column: number }>, loadedFiles: string[]): CompileWarning[] {
+  const order = (file: string): number => {
+    const index = loadedFiles.indexOf(file);
+    return index === -1 ? loadedFiles.length : index;
+  };
+  return warnings.slice().sort((a, b) => order(a.file) - order(b.file) || a.line - b.line || a.column - b.column);
+}
+
+/** The namespace a `@use` of `file` gets by default (its name without a leading `_` and its extensions; an index file's directory), or null when that is not a name to write in a call. */
+function namespaceOf(file: string): string | null {
+  let name = path.basename(file).replace(/^_/, '').split('.')[0];
+  if (name === 'index') name = path.basename(path.dirname(file));
+  return /^(?!\d)(?!--)[A-Za-z0-9_-]+$/.test(name) ? name : null;
+}
+
+/** The name written at a 1-based line and column of `text`. */
+function writtenAt(text: string, line: number, column: number, fallback: string): string {
+  const found = /^[A-Za-z0-9_-]+/.exec((text.split('\n')[line - 1] || '').slice(column - 1));
+  return found ? found[0] : fallback;
+}
+
+/** A call in Dart Sass's output that could be a project function's: a name and its parenthesis, not after a character that makes it a selector, a variable, a member or a pseudo-class. */
+const CALL_IN_OUTPUT = /(?<![A-Za-z0-9_.$%@&#\\:-])(-?[A-Za-z_][A-Za-z0-9_-]*)\(/g;
+/** Names a call left as written is never reported under: the CSS functions the compiler knows and UXDSL's own, lowercase. */
+const KNOWN_CALLS: ReadonlySet<string> = new Set([...(KNOWN_CSS_FUNCTIONS as readonly string[]).map((name) => name.toLowerCase()), ...TOKEN_FUNCTION_NAMES, 'tone']);
+/** Functions whose arguments Dart Sass keeps as written, where a visible function is not called either. */
+const RAW_ARGUMENTS = /^(?:url|expression|element|type|-[a-z]+-calc)$/i;
+
+interface FunctionDefinition {
+  file: string;
+  line: number;
+  column: number;
+  written: string;
+}
+
+/**
+ * One `UXD_MODULE_ISOLATION` warning per author position and name for each
+ * call Dart Sass left in its output as written while a loaded file defines a
+ * `@function` of that name (Sass's spelling), which is therefore not visible
+ * there. Only the values of declarations Dart Sass evaluates are read: not a
+ * custom property, a CSS `@function` body, a `progid:` value, the arguments
+ * of `url()`, `expression()`, `element()`, `type()` or a vendor-prefixed
+ * `calc()`, an at-rule's prelude, a selector, a comment or a string, where it
+ * leaves even a visible function as written. Each call is located where
+ * `compile()` locates a position in Dart Sass's output: the nearest mapping at
+ * or before it on the stage's map. Output PostCSS cannot parse gives none;
+ * `compile()` reports the parse error.
+ */
+function leftAsWritten(stage: Stage, pass: Pass, css: string, map: RawSourceMap): Array<CompileWarning & { file: string; line: number; column: number }> {
+  const reserved = new Set(stage.reserved.map((name) => name.toLowerCase()));
+  const called = new Set<string>();
+  for (const match of css.matchAll(CALL_IN_OUTPUT)) {
+    const name = sassSpelling(match[1]);
+    if (!KNOWN_CALLS.has(name.toLowerCase()) && !reserved.has(name.toLowerCase())) called.add(name);
+  }
+  if (called.size === 0) return [];
+  const definers = new Map<string, FunctionDefinition[]>();
+  for (const file of loadedFilesOf(pass)) {
+    const role = roleOf(file);
+    if (role === 'css') continue;
+    const served = pass.served.get(file);
+    const text = served ? served.original : stage.texts.get(file);
+    if (text === undefined || !/@function/i.test(text)) continue;
+    for (const problem of findShadowingFunctions(role === 'sass' ? blankIndentedComments(text) : text, { reserved: called, file })) {
+      if (!called.has(problem.name)) continue;
+      const definition = { file, line: problem.line, column: problem.column, written: writtenAt(text, problem.line, problem.column, problem.name) };
+      const list = definers.get(problem.name);
+      if (list) list.push(definition);
+      else definers.set(problem.name, [definition]);
+    }
+  }
+  if (definers.size === 0) return [];
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const postcss = require('postcss') as typeof import('postcss');
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const valueParser = require('postcss-value-parser') as typeof import('postcss-value-parser');
+  let root: ReturnType<typeof postcss.parse>;
+  try {
+    root = postcss.parse(css);
+  } catch {
+    return [];
+  }
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { SourceMapConsumer } = require('source-map-js') as typeof import('source-map-js');
+  const consumer = new SourceMapConsumer(map);
+  const seen = new Set<string>();
+  const out: Array<CompileWarning & { file: string; line: number; column: number }> = [];
+  root.walkDecls((decl) => {
+    if (decl.prop.startsWith('--') || /^\s*progid:/i.test(decl.value)) return;
+    for (let ancestor: import('postcss').Node | undefined = decl.parent as import('postcss').Node | undefined; ancestor; ancestor = ancestor.parent as import('postcss').Node | undefined) {
+      if (ancestor.type === 'atrule' && (ancestor as import('postcss').AtRule).name.toLowerCase() === 'function' && /^\s*--/.test((ancestor as import('postcss').AtRule).params)) return;
+    }
+    valueParser(decl.value).walk((node) => {
+      if (node.type !== 'function') return undefined;
+      if (RAW_ARGUMENTS.test(node.value)) return false;
+      const name = sassSpelling(node.value);
+      const definitions = definers.get(name);
+      if (!definitions) return undefined;
+      const at = decl.positionBy({ index: decl.prop.length + (decl.raws.between || '').length + node.sourceIndex });
+      const original = consumer.originalPositionFor({ line: at.line, column: Math.max(0, at.column - 1) });
+      if (original.source == null || original.line == null || original.column == null || roleOf(original.source) === 'css') return undefined;
+      const file = original.source;
+      const line = original.line;
+      const column = original.column + 1;
+      const key = `${file}\n${line}\n${column}\n${name}`;
+      if (seen.has(key)) return undefined;
+      seen.add(key);
+      const own = definitions.find((definition) => definition.file === file);
+      const definition = own || definitions[0];
+      const namespace = namespaceOf(definition.file);
+      const fix = own
+        ? 'define it at the top level of its file, before this call'
+        : `@use that file as * here, or call it through its namespace${namespace ? ` (${namespace}.${definition.written}())` : ''}`;
+      out.push({ text: `UXD_MODULE_ISOLATION: @function ${definition.written} (${definition.file}:${definition.line}) is not visible here, so Dart Sass leaves ${node.value}() in the CSS as written; ${fix}`, file, line, column });
+      return undefined;
+    });
+  });
+  return out;
 }
 
 // --- the author's SCSS wins ----------------------------------------------------------
