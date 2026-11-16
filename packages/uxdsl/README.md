@@ -157,7 +157,9 @@ includes. Where a file loaded with `@use` does not see another file's
 `UXD_MODULE_ISOLATION` at the call; `@use` that file `as *` there, or call the
 function through its namespace. So does, at its definition, a function named
 like a UXDSL function that no call of the build reaches, while a file that
-does not see it calls its bare name and gets the token.
+does not see it calls its bare name and gets the token, and, at the
+declaration, a module's `!default` that applies although an earlier file of
+settings set the variable (configure the module with `@use … with (…)`).
 
 1. **Rename** each `.scss` file to `.uxdsl`. Rename it rather than copy it: a
    `.scss` twin beside a `.uxdsl` file makes `@use './card'` ambiguous (Dart

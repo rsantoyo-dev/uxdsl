@@ -2261,6 +2261,7 @@ const ISOLATION_CASES = [
     name: 'a !default an earlier file sets',
     files: { 'src/_a-config.uxdsl': '$tone: red;\n', 'src/b-button.uxdsl': '$tone: blue !default;\n.btn { color: $tone; }\n' },
     silent: /\.btn \{\n {2}color: blue;\n\}/,
+    warned: '[uxdsl] Warning: src/b-button.uxdsl:1:1: UXD_MODULE_ISOLATION: $tone: … !default applies its default here, because the $tone that src/_a-config.uxdsl:1 sets is not visible in this module; @use that file as * here, or configure this module with @use … with ($tone: …)',
     reader: 'src/b-button.uxdsl',
     use: "@use './a-config' as *;\n",
     shared: /\.btn \{\n {2}color: red;\n\}/,
@@ -2278,7 +2279,7 @@ const ISOLATION_CASES = [
   },
 ];
 
-test('MIG-B9-17: under a generated @use entry each file is its own module: a variable, mixin or placeholder from another file fails as UXD_SASS, another file\'s @function left as written and a project @function named like a UXDSL function that no call reaches each warn UXD_MODULE_ISOLATION once, located, a !default changes without an error, and the file\'s own @use restores each', () => {
+test('MIG-B9-17: under a generated @use entry each file is its own module: a variable, mixin or placeholder from another file fails as UXD_SASS, another file\'s @function left as written, a project @function named like a UXDSL function that no call reaches and a !default an earlier file sets each warn UXD_MODULE_ISOLATION once, located, the file\'s own @use restores each, and a module configured with `with (...)` warns nothing', () => {
   for (const c of ISOLATION_CASES) {
     // One project per case, so that one loud failure cannot hide another case.
     const dir = entryProject(c.files);
@@ -2316,6 +2317,7 @@ test('MIG-B9-17: under a generated @use entry each file is its own module: a var
   assert.equal(runCli(configured, 'generate-entry', '--src', 'src', '--first', 'brand').status, 0);
   const ordered = runCli(configured, 'build');
   assert.equal(ordered.status, 0, ordered.stderr);
+  assert.equal(ordered.stderr, '', 'a configured !default warns nothing');
   const css = fs.readFileSync(path.join(configured, 'out', 'app.css'), 'utf8');
   assert.match(css, /\.v \{\n {2}color: blue;\n\}/);
   assert.match(css, /\.brand \{\n {2}color: blue;\n\}/);

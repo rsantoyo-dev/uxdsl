@@ -57,6 +57,19 @@ them. See `docs/releases/0.5.0-beta.9.md`.
   bare `space(2)` meant as the token, warns nothing. Nor does a definition in
   an indented `.sass` file or a `pkg:` package, or a build in which a loaded
   file defines `function-exists` or `get-function`. The CSS is unchanged.
+- **A `!default` an earlier file sets warns.** Under a `@use` entry,
+  `$tone: red;` in a settings file `_a-config.uxdsl` does not reach
+  `$tone: blue !default;` in `b-button.uxdsl`, which applies its default.
+  When a `.uxdsl` file loaded as a module applies a top-level `!default`
+  after a file evaluated earlier, one that emits no CSS of its own, assigned
+  the variable at its top level, `compile()` now returns one
+  `UXD_MODULE_ISOLATION` warning at the declaration
+  (`src/b-button.uxdsl:1:1`), naming the variable, the last such file and the
+  fix: `@use that file as * here, or configure this module with @use … with
+  ($tone: …)`. A module configured with `@use … with (…)` or
+  `@forward … with (…)` never warns, nor does one whose earlier file emits
+  CSS (a loud comment counts) or sets the variable after the module's default
+  applied. The CSS is unchanged.
 - **The new code** is in `DIAGNOSTIC_CATALOG`, owner `core`, after
   `UXD_FUNCTION_SHADOWED`; `compile()`'s warnings are Dart Sass's, then
   `UXD_FUNCTION_SHADOWED`, then `UXD_MODULE_ISOLATION` (by load order, line
@@ -64,7 +77,10 @@ them. See `docs/releases/0.5.0-beta.9.md`.
   own `@use … as *`, shares the members and warns nothing new;
   `uxdsl/postcss` alone is unchanged. The first warning reads Dart Sass's
   output, and the second rides on the compile the stage already runs for a
-  function named like a UXDSL function: neither costs a compile.
+  function named like a UXDSL function: neither costs a compile. A build with
+  a `!default` candidate (a module's `!default` and an earlier file of
+  settings that assigns the same name) compiles once more; every other build
+  as often as before.
 
 #### Visual changes
 

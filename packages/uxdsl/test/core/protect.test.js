@@ -16,7 +16,7 @@ const sass = require('sass');
 const core = require('../../dist/entries/index.js');
 const exported = require('../../dist/plugin');
 const plugin = exported.default || exported;
-const { protect, findShadowingFunctions, restoreDirectiveSpacing, TOKEN_FUNCTION_NAMES } = require('../../dist/sass/protect.js');
+const { protect, findShadowingFunctions, findTopLevelVariables, restoreDirectiveSpacing, TOKEN_FUNCTION_NAMES } = require('../../dist/sass/protect.js');
 const { THEME, CASES } = require('./protect.cases.js');
 const { CASES: MATRIX } = require('./sass-matrix.cases.js');
 
@@ -503,6 +503,32 @@ test('MIG-B9-12: protect\'s bodies option locates each shadowing declaration\'s 
   const source = '@function space($k) { @return $k; }\n@function double($n) { @return $n * 2; }';
   assert.deepEqual(protect(source, { reserved: RESERVED }).problems.map((p) => Object.keys(p)), [['code', 'message', 'line', 'column', 'name']]);
   assert.deepEqual(protect(source, { reserved: RESERVED, bodies: true }).problems.map((p) => [p.name, p.end]), [['space', source.indexOf('}') + 1]]);
+});
+
+test('MIG-B9-17: findTopLevelVariables lists the $name: statements at the top level of a file, with comments, strings, interpolations and url() skipped (negative control: a declaration in a block, a comment or an argument is not listed)', () => {
+  const source = [
+    '/* c */ $x: 1 !default;',
+    '$y: #{a} !default; $a_b: 1;',
+    '@if true { $z: 1 !default; }',
+    '$s: "a;b}" + \'{\' !default;',
+    '.r { $in: 1; }',
+    '// $c: 1;',
+    '$m: (a: 1, b: 2);',
+    '$u: url(data:x;y) !default;',
+    '@include m($k: 1);',
+    '$last: 2 // trailing !default',
+  ].join('\n');
+  const found = findTopLevelVariables(source);
+  assert.deepEqual(found.map((v) => [v.name, v.written, v.line, v.column, v.isDefault]), [
+    ['x', 'x', 1, 9, true],
+    ['y', 'y', 2, 1, true],
+    ['a-b', 'a_b', 2, 20, false],
+    ['s', 's', 4, 1, true],
+    ['m', 'm', 7, 1, false],
+    ['u', 'u', 8, 1, true],
+    ['last', 'last', 10, 1, false],
+  ]);
+  for (const v of found) assert.equal(source.slice(v.start, v.start + v.written.length + 1), `$${v.written}`);
 });
 
 // --- R9: the restore ----------------------------------------------------------------------
