@@ -28,7 +28,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const { temporaryDirectory } = require('../helpers/temporary-directory');
 const path = require('node:path');
-const { spawn, spawnSync, execFileSync } = require('node:child_process');
+const { spawn, spawnSync } = require('node:child_process');
+const { execNpmSync } = require('../helpers/npm');
 
 const CLI_BIN = path.resolve(__dirname, '..', '..', 'bin', 'uxdsl.js');
 const POSTCSS_UXDSL_DIR = path.resolve(__dirname, '..', '..');
@@ -75,7 +76,7 @@ function mkProject() {
 }
 
 function installPostcssUxdsl(dir) {
-  execFileSync('npm', ['install', '--no-audit', '--no-fund', '--no-save', POSTCSS_UXDSL_DIR], { cwd: dir, stdio: 'pipe' });
+  execNpmSync(['install', '--no-audit', '--no-fund', '--no-save', POSTCSS_UXDSL_DIR], { cwd: dir, stdio: 'pipe' });
 }
 
 // Generous timeouts: this spawns a real npm-installed CLI process and
@@ -1022,7 +1023,9 @@ const readOr = (file, fallback = '') => (fs.existsSync(file) ? fs.readFileSync(f
 const useLinesOf = (file) => readOr(file).split('\n').filter((line) => line.startsWith('@use '));
 /** The first @use of an entry generate-entry wrote without --no-theme: its theme file. */
 const THEME_USE_LINE = "@use './uxdsl-theme.uxdsl' as uxdsl-theme;";
-const lineList = (text) => text.split('\n').filter(Boolean);
+// The CLI prints paths with the platform's separator; the expected lines are
+// written with '/', so a line's separators are read as '/' (the identity on POSIX).
+const lineList = (text) => text.split(/\r?\n/).filter(Boolean).map((line) => line.split(path.sep).join('/'));
 const buildLines = (text, out) => lineList(text).filter((line) => new RegExp(`^\\[uxdsl\\] (built|unchanged) ${out.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`).test(line));
 
 test('MIG-B9-22: adding, removing and renaming a .uxdsl file under --src regenerates a generated entry before the build and the CSS follows, with one build per add or unlink', async (t) => {

@@ -1682,7 +1682,8 @@ changes only what it names:
    the spelling it is written in; a directory is listed only to spell a
    symlink's own name, so a build slows down with the number of entries in a
    directory above the project only where that directory holds a symlink on a
-   loaded file's path.
+   loaded file's path. The package's own suites run on Windows in CI as well
+   as on Linux.
    Sass's import rules apply: `@import "x.css"`, and an `@import` with a media
    query, `layer()`, `supports()` or `url()`, stays a plain CSS `@import` (`@use`
    or `meta.load-css()` inlines a file), a file `@import`ed twice is included

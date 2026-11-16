@@ -18,6 +18,7 @@ const { temporaryDirectory } = require('../helpers/temporary-directory');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const { spawnSync } = require('node:child_process');
+const { posixOutput } = require('../helpers/separators');
 
 const CLI_BIN = path.join(__dirname, '..', '..', 'bin', 'uxdsl.js');
 const UXDSL_DIR = path.resolve(__dirname, '..', '..');
@@ -66,7 +67,8 @@ function mkProject(branch) {
 }
 
 function run(args, cwd) {
-  const r = spawnSync(process.execPath, [CLI_BIN, ...args], { cwd, encoding: 'utf8' });
+  // The output reads each path separator as '/' (the identity on POSIX).
+  const r = posixOutput(spawnSync(process.execPath, [CLI_BIN, ...args], { cwd, encoding: 'utf8' }));
   return { status: r.status, stdout: r.stdout, stderr: r.stderr };
 }
 

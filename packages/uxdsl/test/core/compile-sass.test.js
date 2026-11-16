@@ -53,9 +53,11 @@ function write(dir, files) {
   }
 }
 
+// Its real path as fs.realpathSync.native spells it, as Dart Sass does: on
+// Windows an 8.3 short component of os.tmpdir() in its long form.
 /** Writes `files` ({ relativePath: text | Buffer | null for a directory }) into a fresh real directory. */
 function project(files) {
-  const dir = fs.realpathSync(temporaryDirectory('uxdsl-sass-stage-'));
+  const dir = fs.realpathSync.native(temporaryDirectory('uxdsl-sass-stage-'));
   write(dir, files);
   return dir;
 }

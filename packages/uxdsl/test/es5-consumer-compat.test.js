@@ -40,8 +40,10 @@ function compileWithPlaygroundLikeTarget() {
 
 test('ds-runtime.ts (and everything it re-exports, including contrast.ts) compiles under the playground\'s real ES5 target', () => {
   const diagnostics = compileWithPlaygroundLikeTarget();
+  // TypeScript names a file with '/' on every platform; path.normalize gives it
+  // the platform's separator, which the filter is written with.
   const relevant = diagnostics.filter((d) => {
-    const file = d.file?.fileName || '';
+    const file = path.normalize(d.file?.fileName || '');
     return file.includes(`${path.sep}uxdsl${path.sep}src${path.sep}`);
   });
   const messages = relevant.map((d) => {
@@ -59,7 +61,7 @@ test('sanity check: this test actually detects the real bug it pins (a bare for-
   const file = path.join(dir, 'bad.ts');
   fs.writeFileSync(file, 'const m = new Map<string, number>();\nfor (const [k, v] of m) { console.log(k, v); }\n');
   const program = ts.createProgram([file], { target: ts.ScriptTarget.ES5, module: ts.ModuleKind.CommonJS, noEmit: true });
-  const diagnostics = ts.getPreEmitDiagnostics(program).filter((d) => d.file?.fileName === file);
+  const diagnostics = ts.getPreEmitDiagnostics(program).filter((d) => d.file && path.normalize(d.file.fileName) === file);
   assert.ok(diagnostics.length > 0, 'a bare for-of over a Map under ES5 must produce a real diagnostic — otherwise the test above proves nothing');
   assert.match(ts.flattenDiagnosticMessageText(diagnostics[0].messageText, '\n'), /downlevelIteration|iterated/);
 });

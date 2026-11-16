@@ -24,8 +24,11 @@ const TOKENS = '.a { padding: density(4); color: palette(primary.main); }\n';
 const NONE = themeEmissionWarning([{ label: 'a.uxdsl', themeEmitted: false, referencesTokens: true, canCarryTheme: true }], 'module').text;
 const many = (labels) => themeEmissionWarning(labels.map((label) => ({ label, themeEmitted: true, referencesTokens: true, canCarryTheme: true })), 'module').text;
 
+// fs.realpathSync.native spells a component of os.tmpdir() written as an 8.3
+// short name (C:\Users\RUNNER~1 on Windows) in its long form, as Vite, webpack
+// and Dart Sass name the files they load; elsewhere it is fs.realpathSync.
 function project(t, files) {
-  const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-vite-theme-')));
+  const dir = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-vite-theme-')));
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
   for (const [file, text] of Object.entries(files)) {
     fs.mkdirSync(path.dirname(path.join(dir, file)), { recursive: true });
