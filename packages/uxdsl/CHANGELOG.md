@@ -34,8 +34,14 @@ them. See `docs/releases/0.5.0-beta.9.md`.
   inside `scripts/tmpdir-guard.js`, so a run that leaves anything in its
   temporary directory fails, and then runs each test file alone in a fresh
   temporary directory, failing on a file that exits non-zero or leaves an
-  entry. The tests start npm, compare paths and read the CLI's output the
-  same way on every platform; nothing under `src` or `bin` changed.
+  entry. One file is a named exclusion from that job's pass/fail:
+  `test/cli/watch-mode.test.js` runs in both places, with its whole output,
+  the line `excluded from the Windows gate: …`, its exit and what it leaves
+  printed, because on Windows one save can reach `build --watch` as two
+  change events, and so two builds, which its tests count; MIG-B9-06 is to
+  build once for one save and return the file to the gate. The tests start
+  npm, compare paths and read the CLI's output the same way on every
+  platform; nothing under `src` or `bin` changed.
 - **What Windows shows, recorded.** On Windows the Sass stage keeps a path
   component written as an 8.3 short name (`C:\Users\RUNNER~1`) as written in
   `loadedFiles` and `compile()`'s `dependencies`, and keeps a junction's own

@@ -1689,7 +1689,11 @@ changes only what it names:
    a directory is listed only to spell a symlink's own name, so a build slows
    down with the number of entries in a directory above the project only
    where that directory holds a symlink on a loaded file's path. The
-   package's own suites run on Windows in CI as well as on Linux. On Windows
+   package's own suites run on Windows in CI as well as on Linux, where
+   `test/cli/watch-mode.test.js` runs and is reported outside the job's
+   pass/fail, because on Windows one save can reach `build --watch` as two
+   change events, and so two builds, the second finding its output
+   unchanged. On Windows
    a `../x` searched under a load path that does not exist can still be
    found, since Windows reads the `..` without the directory before it, as
    Dart Sass does there.

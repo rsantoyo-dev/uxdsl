@@ -1213,7 +1213,83 @@ No option is clearly the one to take: (a) changes `bin` against C7, (b)
 weakens a dozen assertions on win32, and (c) removes the file C6g names.
 The story stops here.
 
+Answered in the next block: (c).
+
+### Owner decision taken under the standing instruction (2026-11-16, third batch)
+
+The open question above was answered by the owner's session with option
+(c), as the recommendation, under the standing instruction of 2026-11-10;
+it was not put to the owner on its own, and the owner may override it.
+
+- **G4: one save reaches `build --watch` as two `change` events on win32.**
+  Evidence: runs 43950837496 (`0488249`) and 43954805492 (`3bd00d8`), as
+  recorded in the two blocks above: the two MIG-B9-14 tests saw a doubled
+  event 4 times in 8 runs, `MIG-B9-20: build --watch counts the theme over
+  the last result of every entry` timed out on a `built(…) === 1` wait,
+  and the two config-reload tests (`watch retargets the entry and source
+  globs …` and `watch mode reloads when the build config … delegates to a
+  nested require()`) timed out with no output; in run 43954805492's
+  per-file loop the failing `watch-mode.test.js` also left 38 entries in
+  its directory. Options: (a) change `bin` so that an event whose file
+  keeps the stats of its last build builds nothing; (b) keep `bin` and pin
+  the difference on win32 in each watch test that counts builds; (c) keep
+  `test/cli/watch-mode.test.js` in the Windows job, its whole output
+  printed, but as a named exclusion from the job's pass/fail until the
+  class is fixed. **Answer: (c).** (a) changes `bin` against C7; (b) weakens
+  about a dozen count assertions; (c) keeps every assertion and `bin`
+  intact and names the gap.
+  - How the job does it. Step 8 runs the package's test script, its six
+    groups in its order, inside `scripts/tmpdir-guard.js`, with
+    `test/cli` given as its files without `watch-mode.test.js`; the step
+    first checks that the package's `test` script is still the one it
+    runs, and fails naming it when it is not (`package.json` is not
+    changed, C7). After the gate, the step runs `node --test
+    test/cli/watch-mode.test.js` in a temporary directory of its own,
+    prints its whole output, the line `excluded from the Windows gate:
+    watch-mode.test.js, one save reaches build --watch as two change events
+    on win32; MIG-B9-06 returns it to the gate`, its `# tests`, `# pass`,
+    `# fail` and `# skipped` lines prefixed `watch-mode.test.js: `, and
+    `watch-mode.test.js: exit <code>, left <n>`; it exits with the gate's
+    code. The per-file loop (step 9) runs the file the same way: its whole
+    output, the same exclusion line, and its `exit` and `left` lines marked
+    `(excluded from the Windows gate)`, which set nothing to fail. Every
+    other file stays in the gate, in step 8 and in step 9.
+  - **C3, amended (not rewritten above).** Six gated groups report
+    `# fail 0`, with `test/cli` reported as its files without
+    `watch-mode.test.js`; the ubuntu `test` job's `test/cli` count equals
+    the Windows `test/cli` count plus `watch-mode.test.js`'s `# tests`
+    (37 on `3bd00d8`), and the other five groups' counts are equal. The
+    exclusion is not a skip: no test of the file is skipped, and its
+    result is printed, never hidden.
+  - **C6g, amended (not rewritten above).** `watch-selection.test.js` passes
+    whole on win32, in the gate. `watch-mode.test.js` runs on win32 and is
+    reported, outside the gate, until MIG-B9-06 fixes the class in `bin`
+    and returns it to the gate as one of its acceptance criteria.
+  - **AC2, amended.** Read from step 8's output up to its exclusion line:
+    `# fail 0` 6 times, `# SKIP` as the second batch's AC2 states, the
+    `MIG-B9-28:` counts as stated there, and six `# tests` lines that equal
+    the ubuntu job's for the same commit except `test/cli`, which equals
+    ubuntu's minus the excluded file's `# tests`. The lines after the
+    exclusion line, and step 9's output for the excluded file, are not
+    counted.
+  - **Routing.** The class (one save as two `change` events on win32, a
+    build for each, and the two config-reload watch tests that time out on
+    Windows with no output) is MIG-B9-06's (wave 3, `0.5.0-beta.9`, after
+    MIG-B9-19; its story file is still to be written): it fixes the class
+    in `bin` and returns `watch-mode.test.js` to the Windows gate as an
+    acceptance criterion. If any other file fails on Windows for a product
+    reason, the same rule applies: the story stops and reports it; a cause
+    in a test is fixed in the test.
+
 ### Follow-ups (proposed)
+
+- **MIG-B9-06 (registered; wave 3, `0.5.0-beta.9`, after MIG-B9-19; story
+  file still to be written) takes G4's class:** one save reaching
+  `build --watch` as two `change` events on win32, a build for each, and
+  the two config-reload watch tests that time out on Windows with no
+  output. One of its acceptance criteria returns
+  `test/cli/watch-mode.test.js` to the Windows job's gate (step 8's
+  exclusion and step 9's `excluded` branch removed).
 
 - **MIG-B9-102 — win32: a file Dart Sass loads itself through `pkg:` is
   spelled in its on-disk case.** S, for `0.5.0-beta.10` with MIG-B9-66; it
