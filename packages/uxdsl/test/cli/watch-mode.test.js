@@ -30,6 +30,10 @@ const { temporaryDirectory } = require('../helpers/temporary-directory');
 const path = require('node:path');
 const { spawn, spawnSync } = require('node:child_process');
 const { execNpmSync } = require('../helpers/npm');
+// The CLI prints paths with the platform's separator; every test reads the
+// output it collects with each separator as '/', so the lines it expects,
+// written with '/', hold on every platform (the identity on POSIX).
+const { posixSeparators } = require('../helpers/separators');
 
 const CLI_BIN = path.resolve(__dirname, '..', '..', 'bin', 'uxdsl.js');
 const POSTCSS_UXDSL_DIR = path.resolve(__dirname, '..', '..');
@@ -51,8 +55,8 @@ test('watch retargets the entry and source globs without restarting the CLI, and
   const child = spawn(process.execPath, [CLI_BIN, 'build', '--watch'], { cwd: dir, stdio: 'pipe' });
   t.after(() => child.kill());
   let logs = '';
-  child.stdout.on('data', data => { logs += data; });
-  child.stderr.on('data', data => { logs += data; });
+  child.stdout.on('data', data => { logs += posixSeparators(String(data)); });
+  child.stderr.on('data', data => { logs += posixSeparators(String(data)); });
   const css = () => fs.existsSync(path.join(dir, 'out.css')) ? fs.readFileSync(path.join(dir, 'out.css'), 'utf8') : '';
   await waitFor(() => css().includes('#123456') && css().includes('.old'));
   await delay(WATCHER_SETTLE_MS);
@@ -223,7 +227,7 @@ test('watch mode does not treat its own output file as a source change (no self-
   let buildCount = 0;
   let output = '';
   child.stdout.on('data', (chunk) => {
-    output += chunk.toString();
+    output += posixSeparators(chunk.toString());
     buildCount = (output.match(/\[uxdsl\] built /g) || []).length;
   });
 
@@ -259,8 +263,8 @@ test('watch mode with a "builds" config rebuilds every entry from one watcher, e
   const child = spawn(process.execPath, [CLI_BIN, 'build', '--watch'], { cwd: dir, stdio: 'pipe' });
   t.after(() => child.kill());
   let output = '';
-  child.stdout.on('data', (chunk) => { output += chunk.toString(); });
-  child.stderr.on('data', (chunk) => { output += chunk.toString(); });
+  child.stdout.on('data', (chunk) => { output += posixSeparators(chunk.toString()); });
+  child.stderr.on('data', (chunk) => { output += posixSeparators(chunk.toString()); });
 
   const themeCssPath = path.join(dir, 'src', 'theme.css');
   const panelCssPath = path.join(dir, 'src', 'panel.css');
@@ -292,7 +296,7 @@ test('changing outFile via a config reload does not resurrect the self-triggered
   const child = spawn(process.execPath, [CLI_BIN, 'build', '--watch'], { cwd: dir, stdio: 'pipe' });
   t.after(() => child.kill());
   let output = '';
-  child.stdout.on('data', (chunk) => { output += chunk.toString(); });
+  child.stdout.on('data', (chunk) => { output += posixSeparators(chunk.toString()); });
   const buildCountFor = (name) => (output.match(new RegExp(`\\[uxdsl\\] built ${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'g')) || []).length;
 
   const originalCss = path.join(dir, 'src', 'uxdsl.css');
@@ -328,8 +332,8 @@ test('MIG-B6-23: an initial compile error does not end the process; correcting t
   let exited = false;
   child.on('exit', () => { exited = true; });
   let output = '';
-  child.stdout.on('data', (chunk) => { output += chunk.toString(); });
-  child.stderr.on('data', (chunk) => { output += chunk.toString(); });
+  child.stdout.on('data', (chunk) => { output += posixSeparators(chunk.toString()); });
+  child.stderr.on('data', (chunk) => { output += posixSeparators(chunk.toString()); });
 
   await waitFor(() => /UXD_PALETTE_REFERENCE|error/i.test(output));
   await delay(WATCHER_SETTLE_MS);
@@ -356,8 +360,8 @@ test('MIG-B6-23: a config broken at startup (syntax error) recovers once fixed, 
   let exited = false;
   child.on('exit', () => { exited = true; });
   let output = '';
-  child.stdout.on('data', (chunk) => { output += chunk.toString(); });
-  child.stderr.on('data', (chunk) => { output += chunk.toString(); });
+  child.stdout.on('data', (chunk) => { output += posixSeparators(chunk.toString()); });
+  child.stderr.on('data', (chunk) => { output += posixSeparators(chunk.toString()); });
 
   await waitFor(() => /SyntaxError|Unexpected|error/i.test(output));
   await delay(WATCHER_SETTLE_MS);
@@ -382,7 +386,7 @@ test('MIG-B6-23: a rebuild triggered by an unrelated watched file produces byte-
   const child = spawn(process.execPath, [CLI_BIN, 'build', '--watch'], { cwd: dir, stdio: 'pipe' });
   t.after(() => child.kill());
   let output = '';
-  child.stdout.on('data', (chunk) => { output += chunk.toString(); });
+  child.stdout.on('data', (chunk) => { output += posixSeparators(chunk.toString()); });
 
   const cssPath = path.join(dir, 'src', 'uxdsl.css');
   await waitFor(() => fs.existsSync(cssPath));
@@ -419,7 +423,7 @@ test('MIG-B6-23: with two entries A and B, editing a partial only B imports does
   const child = spawn(process.execPath, [CLI_BIN, 'build', '--watch'], { cwd: dir, stdio: 'pipe' });
   t.after(() => child.kill());
   let output = '';
-  child.stdout.on('data', (chunk) => { output += chunk.toString(); });
+  child.stdout.on('data', (chunk) => { output += posixSeparators(chunk.toString()); });
 
   const aCssPath = path.join(dir, 'src', 'a.css');
   const bCssPath = path.join(dir, 'src', 'b.css');
@@ -449,6 +453,9 @@ test('MIG-B6-23: an output file is never observed empty or truncated while a reb
 
   const child = spawn(process.execPath, [CLI_BIN, 'build', '--watch'], { cwd: dir, stdio: 'pipe' });
   t.after(() => child.kill());
+  let output = '';
+  child.stdout.on('data', (chunk) => { output += posixSeparators(chunk.toString()); });
+  child.stderr.on('data', (chunk) => { output += posixSeparators(chunk.toString()); });
   const cssPath = path.join(dir, 'src', 'uxdsl.css');
   await waitFor(() => fs.existsSync(cssPath));
   await delay(WATCHER_SETTLE_MS);
@@ -477,12 +484,20 @@ test('MIG-B6-23: an output file is never observed empty or truncated while a reb
   })();
 
   const colors = ['blue', 'green', 'purple', 'orange', 'red'];
-  for (const color of colors) {
-    fs.writeFileSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl'), `.a { color: ${color}; }`);
-    await waitFor(() => fs.readFileSync(cssPath, 'utf8').includes(`color: ${color}`));
+  try {
+    for (const color of colors) {
+      fs.writeFileSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl'), `.a { color: ${color}; }`);
+      await waitFor(() => fs.readFileSync(cssPath, 'utf8').includes(`color: ${color}`));
+    }
+  } catch (error) {
+    error.message += `\n${output}`;
+    throw error;
+  } finally {
+    // The reader stops whether or not every rebuild landed, so a failure
+    // ends the test instead of leaving the loop running.
+    polling = false;
+    await pollLoop;
   }
-  polling = false;
-  await pollLoop;
   assert.equal(sawBadRead, null, sawBadRead || '');
 });
 
@@ -501,8 +516,8 @@ test('MIG-B6-23: creating a previously-missing partial recovers the build (unkno
   let exited = false;
   child.on('exit', () => { exited = true; });
   let output = '';
-  child.stdout.on('data', (chunk) => { output += chunk.toString(); });
-  child.stderr.on('data', (chunk) => { output += chunk.toString(); });
+  child.stdout.on('data', (chunk) => { output += posixSeparators(chunk.toString()); });
+  child.stderr.on('data', (chunk) => { output += posixSeparators(chunk.toString()); });
 
   // The first build of a watch session fails like any later one, as
   // `[uxdsl] build failed: … UXD_SASS: Can't find stylesheet to import.`.
@@ -532,7 +547,7 @@ test('MIG-B9-14: in watch mode every failed build, the first one included, print
   let exited = false;
   child.on('exit', () => { exited = true; });
   let stderr = '';
-  child.stderr.on('data', (chunk) => { stderr += chunk.toString(); });
+  child.stderr.on('data', (chunk) => { stderr += posixSeparators(chunk.toString()); });
   child.stdout.on('data', () => {});
 
   await waitFor(() => /root stylesheet/.test(stderr));
@@ -594,8 +609,8 @@ test("MIG-B9-14: editing a @use'd partial rebuilds only the entries that load it
   const child = spawn(process.execPath, [CLI_BIN, 'build', '--watch'], { cwd: dir, stdio: 'pipe' });
   t.after(() => child.kill());
   let output = '';
-  child.stdout.on('data', (chunk) => { output += chunk.toString(); });
-  child.stderr.on('data', (chunk) => { output += chunk.toString(); });
+  child.stdout.on('data', (chunk) => { output += posixSeparators(chunk.toString()); });
+  child.stderr.on('data', (chunk) => { output += posixSeparators(chunk.toString()); });
   const bCss = () => fs.readFileSync(path.join(dir, 'out', 'b.css'), 'utf8');
   const builtB = /\[uxdsl\] built out[\\/]b\.css/;
   await waitFor(() => /watching for changes/.test(output) && fs.existsSync(path.join(dir, 'out', 'b.css')));
@@ -680,8 +695,8 @@ test('MIG-B9-14: an entry that starts loading an existing file beside the file j
   const child = spawn(process.execPath, [CLI_BIN, 'build', '--watch'], { cwd: dir, stdio: 'pipe' });
   t.after(() => child.kill());
   let output = '';
-  child.stdout.on('data', (chunk) => { output += chunk.toString(); });
-  child.stderr.on('data', (chunk) => { output += chunk.toString(); });
+  child.stdout.on('data', (chunk) => { output += posixSeparators(chunk.toString()); });
+  child.stderr.on('data', (chunk) => { output += posixSeparators(chunk.toString()); });
   const bCss = () => fs.readFileSync(path.join(dir, 'out', 'b.css'), 'utf8');
   const buildsOfB = (text) => (text.match(/\[uxdsl\] (built|unchanged) out[\\/]b\.css/g) || []).length;
   await waitFor(() => /watching for changes/.test(output) && fs.existsSync(path.join(dir, 'out', 'b.css')));
@@ -730,8 +745,8 @@ test('MIG-B9-14: an entry whose first build failed, saved so that it loads an ex
   const child = spawn(process.execPath, [CLI_BIN, 'build', '--watch'], { cwd: dir, stdio: 'pipe' });
   t.after(() => child.kill());
   let output = '';
-  child.stdout.on('data', (chunk) => { output += chunk.toString(); });
-  child.stderr.on('data', (chunk) => { output += chunk.toString(); });
+  child.stdout.on('data', (chunk) => { output += posixSeparators(chunk.toString()); });
+  child.stderr.on('data', (chunk) => { output += posixSeparators(chunk.toString()); });
   const cssPath = path.join(dir, 'out', 'b.css');
   const bCss = () => (fs.existsSync(cssPath) ? fs.readFileSync(cssPath, 'utf8') : '');
   const buildsOfB = (text) => (text.match(/\[uxdsl\] (built|unchanged) out[\\/]b\.css/g) || []).length;
@@ -781,8 +796,8 @@ test('MIG-B9-14: a file an entry starts loading after start is followed once tha
   const child = spawn(process.execPath, [CLI_BIN, 'build', '--watch'], { cwd: dir, stdio: 'pipe' });
   t.after(() => child.kill());
   let output = '';
-  child.stdout.on('data', (chunk) => { output += chunk.toString(); });
-  child.stderr.on('data', (chunk) => { output += chunk.toString(); });
+  child.stdout.on('data', (chunk) => { output += posixSeparators(chunk.toString()); });
+  child.stderr.on('data', (chunk) => { output += posixSeparators(chunk.toString()); });
   const aCss = () => fs.readFileSync(path.join(dir, 'out', 'a.css'), 'utf8');
   await waitFor(() => /watching for changes/.test(output) && fs.existsSync(path.join(dir, 'out', 'a.css')));
   await delay(WATCHER_SETTLE_MS);
@@ -826,8 +841,8 @@ test('MIG-B9-14: an entry a config edit moves outside the watch patterns is foll
   const child = spawn(process.execPath, [CLI_BIN, 'build', '--watch'], { cwd: dir, stdio: 'pipe' });
   t.after(() => child.kill());
   let output = '';
-  child.stdout.on('data', (chunk) => { output += chunk.toString(); });
-  child.stderr.on('data', (chunk) => { output += chunk.toString(); });
+  child.stdout.on('data', (chunk) => { output += posixSeparators(chunk.toString()); });
+  child.stderr.on('data', (chunk) => { output += posixSeparators(chunk.toString()); });
   const cCssPath = path.join(dir, 'out', 'c.css');
   const cCss = () => (fs.existsSync(cCssPath) ? fs.readFileSync(cCssPath, 'utf8') : '');
   await waitFor(() => /watching for changes/.test(output) && fs.existsSync(path.join(dir, 'out', 'a.css')));
@@ -859,8 +874,8 @@ test('MIG-B9-14: an entry the watch patterns do not match is still followed: a f
   const child = spawn(process.execPath, [CLI_BIN, 'build', '--watch'], { cwd: dir, stdio: 'pipe' });
   t.after(() => child.kill());
   let output = '';
-  child.stdout.on('data', (chunk) => { output += chunk.toString(); });
-  child.stderr.on('data', (chunk) => { output += chunk.toString(); });
+  child.stdout.on('data', (chunk) => { output += posixSeparators(chunk.toString()); });
+  child.stderr.on('data', (chunk) => { output += posixSeparators(chunk.toString()); });
   await waitFor(() => /watching for changes/.test(output) && /build failed:/.test(output));
   await delay(WATCHER_SETTLE_MS);
 
@@ -899,8 +914,8 @@ test('MIG-B9-14: a deleted directory of followed files outside the watch pattern
   const child = spawn(process.execPath, [CLI_BIN, 'build', '--watch'], { cwd: dir, stdio: 'pipe' });
   t.after(() => child.kill());
   let output = '';
-  child.stdout.on('data', (chunk) => { output += chunk.toString(); });
-  child.stderr.on('data', (chunk) => { output += chunk.toString(); });
+  child.stdout.on('data', (chunk) => { output += posixSeparators(chunk.toString()); });
+  child.stderr.on('data', (chunk) => { output += posixSeparators(chunk.toString()); });
   const css = (name) => {
     const file = path.join(dir, 'out', `${name}.css`);
     return fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
@@ -956,8 +971,8 @@ test('MIG-B9-14: an entry outside the watch patterns whose directory is deleted 
   const child = spawn(process.execPath, [CLI_BIN, 'build', '--watch'], { cwd: dir, stdio: 'pipe' });
   t.after(() => child.kill());
   let output = '';
-  child.stdout.on('data', (chunk) => { output += chunk.toString(); });
-  child.stderr.on('data', (chunk) => { output += chunk.toString(); });
+  child.stdout.on('data', (chunk) => { output += posixSeparators(chunk.toString()); });
+  child.stderr.on('data', (chunk) => { output += posixSeparators(chunk.toString()); });
   const cssPath = path.join(dir, 'out', 'a.css');
   const css = () => (fs.existsSync(cssPath) ? fs.readFileSync(cssPath, 'utf8') : '');
   await waitFor(() => /watching for changes/.test(output) && css());
@@ -1014,8 +1029,8 @@ function watchSession(t, dir) {
   const session = { output: '', exited: false };
   child.on('exit', () => { session.exited = true; });
   t.after(() => child.kill());
-  child.stdout.on('data', (chunk) => { session.output += chunk.toString(); });
-  child.stderr.on('data', (chunk) => { session.output += chunk.toString(); });
+  child.stdout.on('data', (chunk) => { session.output += posixSeparators(chunk.toString()); });
+  child.stderr.on('data', (chunk) => { session.output += posixSeparators(chunk.toString()); });
   return session;
 }
 
@@ -1023,9 +1038,7 @@ const readOr = (file, fallback = '') => (fs.existsSync(file) ? fs.readFileSync(f
 const useLinesOf = (file) => readOr(file).split('\n').filter((line) => line.startsWith('@use '));
 /** The first @use of an entry generate-entry wrote without --no-theme: its theme file. */
 const THEME_USE_LINE = "@use './uxdsl-theme.uxdsl' as uxdsl-theme;";
-// The CLI prints paths with the platform's separator; the expected lines are
-// written with '/', so a line's separators are read as '/' (the identity on POSIX).
-const lineList = (text) => text.split(/\r?\n/).filter(Boolean).map((line) => line.split(path.sep).join('/'));
+const lineList = (text) => text.split(/\r?\n/).filter(Boolean);
 const buildLines = (text, out) => lineList(text).filter((line) => new RegExp(`^\\[uxdsl\\] (built|unchanged) ${out.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`).test(line));
 
 test('MIG-B9-22: adding, removing and renaming a .uxdsl file under --src regenerates a generated entry before the build and the CSS follows, with one build per add or unlink', async (t) => {

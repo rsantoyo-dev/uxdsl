@@ -1025,3 +1025,108 @@ amendments rule):
 - **Shares.** Each file outside the Shares that the Windows job shows
   failing for a harness reason joins them, listed with the run id that
   showed it (F4).
+
+### Owner decisions taken under the standing instruction (2026-11-16, second batch)
+
+The Windows job raised two flags that decision 19 of 2026-11-10 stops on.
+Each was put to the owner's session, which answered it with its recommended
+option under the standing instruction of 2026-11-10; the owner may override
+either.
+
+- **G1: a file Dart Sass loads itself through `pkg:` is spelled in lower
+  case on win32.** Evidence: on `windows-latest`,
+  `compile-sass.test.js`'s `MIG-B9-12: with sourceMap, Dart Sass runs with
+  sourceMap and sourceMapIncludeSources, so a file it loads itself through
+  pkg: keeps its own text in sourcesContent` fails in runs 43933237360
+  (`5a0ff25`) and 43942955727 (`640bed8`): the stage map's sources hold
+  `c:\users\runneradmin\appdata\local\temp\…\node_modules\kit\index.scss`
+  where the file is `C:\Users\runneradmin\AppData\Local\Temp\…\node_modules\kit\index.scss`.
+  Dart Sass names a file it loads itself in its canonical form, which its
+  filesystem importer lowercases on Windows, and `compile-sass.ts` carries
+  that spelling on. Options: (a) fix it in `src` here; (b) record it as a
+  win32 difference: on win32 the test that fails finds the file whatever
+  its case, a new test pins Dart Sass's spelling with a title that names
+  the difference and the follow-up, every other platform keeps the
+  original assertions, and the package README sentence on spelling is
+  narrowed so it is true. **Answer: (b)**, `src` untouched. The new test is
+  `MIG-B9-28: on win32 a file Dart Sass loads itself through pkg: is named in
+  Dart Sass's lowercased form in the stage map's sources, loadedFiles and
+  compile()'s dependencies, not in its on-disk case (a win32 difference,
+  MIG-B9-102)` in `sass-stage-win32.test.js`; `loadedFiles` and
+  `dependencies` are pinned as the Windows job shows them. The fix is the
+  proposed follow-up below.
+- **G2: T7's ACL cannot be set up on the hosted runner.** Evidence: run
+  43942955727 denies `(RD)` to `runnervmm7ud1\runneradmin` and to Everyone
+  (`icacls` lists `Everyone:(DENY)(RD)` and `runnervmm7ud1\runneradmin:(DENY)(RD)`
+  first), yet `fs.readdirSync` of the directory returns `["_part.uxdsl"]`:
+  the runner's elevated administrator lists it through the deny, so the
+  case C6c describes does not exist there. Options: (a) on win32, T7 skips
+  with the exact reason when the directory can still be listed, printing the
+  `readdirSync` result and the `icacls` listing as diagnostics, so C6c
+  stays unobserved on win32 and the README and CHANGELOG keep decision 2's
+  sentence as written for that case; (b) set the case up under another,
+  unelevated account; (c) pin outcome B (the on-disk case) unobserved.
+  **Answer: (a)**. T7 takes §8's title again
+  (`… keeps its written case, as decision 2 of 2026-11-09 states`), asserts
+  the written case where the deny holds, and the file's header no longer
+  states outcome B. On `windows-latest` T7 is the one `MIG-B9-28:` test
+  with `# SKIP`.
+
+What changes in the acceptance criteria (the C-n and AC text above stays as
+written; these rule):
+
+- **AC2.** `ok N - MIG-B9-28:` counts 8 (T5–T8, G1's test, the two controls
+  of T3 and T4, T11), exactly one of them with `# SKIP` (T7, G2); `# SKIP`
+  counts 6 (C3's five and T7).
+- **AC3.** `# skipped 8`.
+- **AC4.** The unit group is BASE + 3, `test/core` BASE + 5.
+
+### Found while implementing (2026-11-16)
+
+- **C5's `error.file` item does not hold as written.** `path.isAbsolute`
+  reads `/project/src/app.uxdsl` as absolute on win32 too, and PostCSS
+  resolves `from` only when it is not absolute, so `error.file` is the POSIX
+  literal on Windows and `no-silent-output.test.js`,
+  `canonical-grammar.test.js` and `removed-language-surface.test.js:34`
+  pass unchanged (run 43923540755). T4's control in `win32-harness.test.js`
+  encodes what Windows shows instead: `MIG-B9-28: on win32 PostCSS keeps a
+  POSIX absolute from as written, where path.resolve gives it a drive
+  letter, so an error.file assertion keeps its POSIX literal (negative
+  control)`.
+- **A load path's `..` on Windows.** Windows resolves `nope/deeper/../../x`
+  and `missing/../real` without the directories before each `..`, so a
+  load path that does not exist can still find a file there, for Dart Sass
+  and the stage alike (the twins agree). Three expectations of
+  `compile-sass.test.js` that said "Can't find stylesheet" now state what
+  win32 finds (runs 43933237360, 43942955727); `docs/integrations/compile.md`
+  and the package README name the difference.
+- **Sass's ambiguity message and Vite's module graph.** The stage's
+  "It's not clear which file to import" names files with the platform's
+  separator, as Dart Sass's does; Vite keys its module graph by
+  `vite.normalizePath`, so a test that looked a module up by
+  `path.join` invalidated nothing on Windows (run 43942955727,
+  `vite/theme-emission.test.js`), which the test now refuses.
+- **The watch tests' output.** `watch-mode.test.js` reads every line it
+  collects with `\` as `/`; its atomic-replace test stops its reader when a
+  rebuild does not land, so a failure ends the file instead of keeping it
+  running until the per-file limit (run 43942955727, exit 124 after
+  20 minutes).
+
+Shares, widened under F4 (each file and the run that first showed it on
+`windows-latest`): run 43923540755 (`717ecdc`, attempt 2):
+`test/es5-consumer-compat.test.js`, `test/temporary-directory.test.js`,
+`test/core/sass-stage-diagnostics.test.js`, `test/cli/error-location.test.js`,
+`test/vite/index.test.js`, `test/vite/theme-emission.test.js`,
+`test/vite/watch-recovery.test.js`, `test/webpack/theme-emission.test.js`,
+and the new `test/helpers/separators.js`; run 43933237360 (`5a0ff25`):
+`packages/uxdsl/docs/integrations/compile.md` (with 43942955727's
+load-path case). README §7's row `test/vite/index.test.js,
+test/webpack/loader.test.js` gets 28 before 06 (`test/vite/index.test.js`
+is edited; `test/webpack/loader.test.js` is not).
+
+### Follow-ups (proposed)
+
+- **MIG-B9-102 — win32: a file Dart Sass loads itself through `pkg:` is
+  spelled in its on-disk case.** S, for `0.5.0-beta.10` with MIG-B9-66; it
+  does not block MIG-B9-91. G1 above is its evidence; its regression is the
+  G1 test, which then asserts the on-disk case.

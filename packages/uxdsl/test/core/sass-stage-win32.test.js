@@ -7,14 +7,17 @@
 //   fs.realpathSync.native spells it long;
 // - fs.lstatSync reports a junction as a symbolic link, so a junction keeps
 //   its own name and only the directory that holds it is listed;
-// - in a directory whose ACL denies listing, fs.accessSync(R_OK) still
-//   succeeds (Node does not read ACLs there), so a name written in another
-//   case takes its on-disk case, where macOS keeps the written one;
+// - in a directory whose ACL denies listing, a name written in another case
+//   keeps that spelling, as on macOS; where the process can list the
+//   directory through the deny (an elevated administrator can), the case
+//   cannot be set up and that test is skipped with the listing it got;
 // - the stage names its files with a drive letter, and the final map keeps
-//   every author mapping when `to` is in another directory.
+//   every author mapping when `to` is in another directory;
+// - a file Dart Sass loads itself through pkg: is named in Dart Sass's
+//   lowercased form, not its on-disk case (a win32 difference).
 // Off win32 each test is skipped with its reason; on win32 each fails, never
-// skips, when its precondition cannot be set up. Each test removes what it
-// creates, the ACL it adds first.
+// skips, when its precondition cannot be set up, except the ACL case above.
+// Each test removes what it creates, the ACL it adds first.
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -122,7 +125,10 @@ test('MIG-B9-28: on win32 lstat reports a junction as a symbolic link, so the Sa
   assert.deepEqual([...new Set(listed)], [dir], 'only the directory that holds the junction is listed');
 });
 
-test('MIG-B9-28: on win32 a name written in another case in a directory whose ACL denies listing takes its on-disk case, unlike macOS\'s written case (decision 2 of 2026-11-09 narrowed to macOS)', { skip: ONLY_WIN32 }, async (t) => {
+/** Why the ACL case is skipped where the process lists the directory whatever its ACL denies. */
+const LISTED_THROUGH_DENY = 'this process lists the directory although its ACL denies listing (an elevated administrator bypasses the deny), so a directory that cannot be listed cannot be set up here';
+
+test('MIG-B9-28: on win32 a name written in another case in a directory whose ACL denies listing keeps its written case, as decision 2 of 2026-11-09 states', { skip: ONLY_WIN32 }, async (t) => {
   const dir = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-stage-acl-')));
   write(dir, { 'entry.uxdsl': '@use "locked/PART";\n', 'locked/_part.uxdsl': '.p { a: b; }\n' });
   const locked = path.join(dir, 'locked');
@@ -148,20 +154,15 @@ test('MIG-B9-28: on win32 a name written in another case in a directory whose AC
     listing = error;
   }
   if (listing?.code !== 'EPERM') {
-    const privileges = spawnSync('whoami', ['/priv'], { encoding: 'utf8' }).stdout;
-    assert.fail(`the ACL does not deny listing the directory, so the case cannot be set up: readdirSync gave ${listing instanceof Error ? listing.code : JSON.stringify(listing)}\n${icacls()}\n${privileges}`);
+    const got = listing instanceof Error ? listing.code : JSON.stringify(listing);
+    for (const line of `readdirSync gave ${got}\n${icacls()}`.split(/\r?\n/).filter((text) => text.trim())) t.diagnostic(line.trimEnd());
+    t.skip(LISTED_THROUGH_DENY);
+    return;
   }
   assert.equal(fs.realpathSync.native(path.join(locked, '_PART.uxdsl')), path.join(locked, '_part.uxdsl'), 'the real path still names the file as stored');
-  let accessible = true;
-  try {
-    fs.accessSync(locked, fs.constants.R_OK);
-  } catch {
-    accessible = false;
-  }
-  assert.equal(accessible, true, 'fs.accessSync(R_OK) succeeds on a directory whose ACL denies listing: Node does not read the ACL');
-  const onDisk = under(dir, ['entry.uxdsl', 'locked/_part.uxdsl']);
-  assert.deepEqual(stage(path.join(dir, 'entry.uxdsl')).loadedFiles, onDisk, 'the on-disk case, read from the real path');
-  assert.deepEqual(await dependencies(path.join(dir, 'entry.uxdsl')), onDisk);
+  const written = under(dir, ['entry.uxdsl', 'locked/_PART.uxdsl']);
+  assert.deepEqual(stage(path.join(dir, 'entry.uxdsl')).loadedFiles, written, 'the name as written, as on macOS; a name in its on-disk case here is a win32 difference for the owner');
+  assert.deepEqual(await dependencies(path.join(dir, 'entry.uxdsl')), written);
 });
 
 test('MIG-B9-28: on win32 the final map keeps every author mapping when to is in another directory, the Sass stage naming its files with a drive letter (MIG-B9-13\'s LM-3, observed)', { skip: ONLY_WIN32 }, async (t) => {
@@ -202,4 +203,21 @@ test('MIG-B9-28: on win32 the final map keeps every author mapping when to is in
   assert.ok(chained > 0, 'written from /, the stage map\'s sources keep their mappings');
   assert.equal(authored.length, chained, `compile()'s final map keeps every author mapping:\n${authored.join('\n')}`);
   assert.equal(await kept(map), 0, 'negative control: handed as the stage wrote it, PostCSS joins each source onto a directory and no author mapping is kept');
+});
+
+test('MIG-B9-28: on win32 a file Dart Sass loads itself through pkg: is named in Dart Sass\'s lowercased form in the stage map\'s sources, loadedFiles and compile()\'s dependencies, not in its on-disk case (a win32 difference, MIG-B9-102)', { skip: ONLY_WIN32 }, async (t) => {
+  const dir = fs.realpathSync.native(scratch(t, 'uxdsl-stage-pkg-'));
+  write(dir, {
+    'entry.uxdsl': '@use "pkg:kit";\n.a { p: space(2); }\n',
+    'node_modules/kit/package.json': JSON.stringify({ name: 'kit', exports: { '.': { sass: './index.scss' } } }),
+    'node_modules/kit/index.scss': '.kit { a: b; }\n',
+  });
+  const entry = path.join(dir, 'entry.uxdsl');
+  const onDisk = path.join(dir, 'node_modules', 'kit', 'index.scss');
+  assert.notEqual(onDisk.toLowerCase(), onDisk, `${onDisk} has an upper-case letter, so its lowercased form differs`);
+  const lowered = onDisk.toLowerCase();
+  const { map, loadedFiles } = stage(entry, true);
+  assert.deepEqual(map.sources.slice().sort(), [entry, lowered].sort(), 'the stage map names the entry as written and the pkg: file as Dart Sass does');
+  assert.deepEqual(loadedFiles, [entry, lowered]);
+  assert.deepEqual(await dependencies(entry), [entry, lowered]);
 });

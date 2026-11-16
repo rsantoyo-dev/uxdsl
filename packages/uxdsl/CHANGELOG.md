@@ -22,6 +22,38 @@ the entries of FEAT-009's beta.7 stories (marked "FEAT-009, MIG-B7-…"), which
 reached npm first in `0.5.0-beta.8` under the former names; MIG-B9-52 moves
 them. See `docs/releases/0.5.0-beta.9.md`.
 
+### CI on Windows (MIG-B9-28)
+
+#### Changed
+
+- **The package's own suites run on Windows.** CI has a third job, `npm test
+  (uxdsl, Windows)`, on `windows-latest`, beside the unchanged `npm test` and
+  `verify:1.0` jobs. It checks the tree out with LF line endings (a step
+  prints `files checked out with CRLF: <n>` and fails when `n` is not 0),
+  runs npm 11 with bash as npm's script shell, runs the package's six groups
+  inside `scripts/tmpdir-guard.js`, so a run that leaves anything in its
+  temporary directory fails, and then runs each test file alone in a fresh
+  temporary directory, failing on a file that exits non-zero or leaves an
+  entry. The tests start npm, compare paths and read the CLI's output the
+  same way on every platform; nothing under `src` or `bin` changed.
+- **What Windows shows, recorded.** On Windows the Sass stage keeps a path
+  component written as an 8.3 short name (`C:\Users\RUNNER~1`) as written in
+  `loadedFiles` and `compile()`'s `dependencies`, and keeps a junction's own
+  name. A file Dart Sass loads itself through `pkg:` is named as Dart Sass
+  names it there, in lower case, in the stage's source map, `loadedFiles`
+  and `dependencies`, where macOS names it in its on-disk case; MIG-B9-102
+  is to spell it in its on-disk case. Windows reads a load path's `..`
+  without the directory before it, so a `../x` is found through a load path
+  that does not exist, and `missing/../real` is `real`, for Dart Sass and
+  the stage alike. A name in a directory whose ACL denies listing is not
+  observed on the hosted runner, whose administrator lists the directory
+  through the deny: the README's statement for that case (the name keeps
+  the spelling it is written in) stands as written, unobserved on Windows.
+
+#### Visual changes
+
+- None. No product file changed.
+
 ### The plugin's fixed per-build costs (MIG-B9-24)
 
 #### Changed

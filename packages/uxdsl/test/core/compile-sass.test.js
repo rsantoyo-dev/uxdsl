@@ -392,7 +392,8 @@ test('MIG-B9-12: pkg: resolves a package\'s scss and css; a bare package path re
   // A .uxdsl and a .scss for one bare URL in one node_modules directory are ambiguous.
   const both = project({ 'entry.uxdsl': '@use "kit/base";\n', 'node_modules/kit/_base.uxdsl': '.a{b:c}\n', 'node_modules/kit/base.scss': '.b{b:c}\n' });
   const ambiguity = stageError(() => inDir(both, () => stage({ entry: path.join(both, 'entry.uxdsl') })));
-  assert.equal(ambiguity.sassMessage, "It's not clear which file to import. Found:\n  node_modules/kit/base.scss\n  node_modules/kit/_base.uxdsl");
+  // The message names each file with the platform's separator, as Dart Sass's does.
+  assert.equal(posixSeparators(ambiguity.sassMessage), "It's not clear which file to import. Found:\n  node_modules/kit/base.scss\n  node_modules/kit/_base.uxdsl");
   assert.equal(`${ambiguity.line}:${ambiguity.column}`, '1:1');
 });
 
@@ -496,13 +497,23 @@ test('MIG-B9-12: a URL that begins with .. is searched under each load path as D
   // filesystem walks that ".." too, so through a directory that does not exist nothing is found.
   const through = { 'entry.uxdsl': '@use "tokens";\n', 'real/_tokens.uxdsl': '.t { a: b; }\n' };
   const written = { stageOptions: { loadPaths: ['missing/../real'] }, dartOptions: { loadPaths: ['missing/../real'] } };
+  // Windows reads that ".." without the directory before it, so there, for
+  // Dart Sass and the stage alike, missing/../real is real.
+  const reachedThrough = (run) => {
+    if (process.platform === 'win32') {
+      assert.ok(!run.actual.error, run.actual.error && run.actual.error.message);
+      assert.equal(flat(run.actual.css), '.t { a: b; }');
+    } else {
+      assert.equal(run.actual.error.sassMessage, "Can't find stylesheet to import.");
+    }
+  };
   const unreachable = twin(through, written);
   assertSameAsTwin(unreachable, 'a load path written through a directory that does not exist');
-  assert.equal(unreachable.actual.error.sassMessage, "Can't find stylesheet to import.");
+  reachedThrough(unreachable);
   withSassPath('missing/../real', () => {
     const fromEnv = twin(through);
     assertSameAsTwin(fromEnv, 'a SASS_PATH entry written through a directory that does not exist');
-    assert.equal(fromEnv.actual.error.sassMessage, "Can't find stylesheet to import.");
+    reachedThrough(fromEnv);
   });
   const reachable = twin({ ...through, missing: null }, written);
   assertSameAsTwin(reachable, 'the same load path, the directory existing');
@@ -1237,9 +1248,13 @@ test('MIG-B9-12: with sourceMap, Dart Sass runs with sourceMap and sourceMapIncl
   assert.deepEqual(mapOptionsOf(() => {
     result = stage({ entry }, { sourceMap: true });
   }), [{ sourceMap: true, sourceMapIncludeSources: true }]);
-  const kit = path.join(dir, 'node_modules/kit/index.scss');
+  const onDisk = path.join(dir, 'node_modules/kit/index.scss');
+  // On win32 Dart Sass names a file it loads itself through pkg: in its
+  // lowercased form, which sass-stage-win32.test.js pins; this test finds the
+  // file's source whatever its case there, and by its on-disk name elsewhere.
+  const kit = process.platform === 'win32' ? result.map.sources.find((source) => source.toLowerCase() === onDisk.toLowerCase()) : onDisk;
   assert.deepEqual(result.map.sources.slice().sort(), [entry, kit].sort());
-  assert.equal(result.map.sourcesContent[result.map.sources.indexOf(kit)], fs.readFileSync(kit, 'utf8'));
+  assert.equal(result.map.sourcesContent[result.map.sources.indexOf(kit)], fs.readFileSync(onDisk, 'utf8'));
   assert.equal(result.map.sourcesContent[result.map.sources.indexOf(entry)], fs.readFileSync(entry, 'utf8'));
 });
 
