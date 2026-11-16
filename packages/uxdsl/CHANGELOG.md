@@ -22,6 +22,47 @@ the entries of FEAT-009's beta.7 stories (marked "FEAT-009, MIG-B7-…"), which
 reached npm first in `0.5.0-beta.8` under the former names; MIG-B9-52 moves
 them. See `docs/releases/0.5.0-beta.9.md`.
 
+### uxdsl/postcss in a PostCSS chain (MIG-B9-27)
+
+#### Changed
+
+- **Sass another plugin resolves compiles in one PostCSS run, in either
+  plugin order.** `uxdsl/postcss` still checks the stylesheet for Sass in its
+  `Once` listener, before its own steps, but a construct none of those steps
+  reads or changes is now held until the plugin's `OnceExit`, which PostCSS
+  runs after every plugin's `Once` and visitors, and fails only if it is
+  still there. postcss-nested 7.0.2's `&_title`, postcss-simple-vars 7.0.1's
+  `$gap` and `tailwindcss/nesting` (tailwindcss 3.4.19) therefore compile in
+  one run, listed before or after `uxdsl/postcss`, to what the two passes
+  (that plugin in a PostCSS pass of its own, then `uxdsl/postcss`) give,
+  where they failed as `UXD_SASS_CONTEXT`; `tailwindcss/nesting` listed
+  first, which flattens the stylesheet in its own `Once`, already compiled.
+  `fixtures/mig-b9-27-postcss-chain` runs the real plugins.
+- **What still fails.** A construct the steps read — a token's `$variable`
+  argument (`space($n)`), a `$variable` holding a token or a responsive value
+  (`$pad: space(2)`, `$pad: xs(1rem) md(2rem)`) — fails as
+  `UXD_SASS_CONTEXT` in a chain, in either order, as before; so does any
+  construct in a root of a PostCSS Document (postcss-html and similar
+  syntaxes), whose roots are checked before the other plugins run. A
+  construct the other plugin leaves fails as `UXD_SASS_CONTEXT` when the run
+  ends; an error that plugin gives itself (postcss-simple-vars' undefined
+  variable) is reported as it gives it.
+- **The plugin alone and `compile()` are unchanged.** For a stylesheet
+  holding Sass, the plugin alone reports the same first construct, at the same
+  position, even when the stylesheet holds another mistake, and none of the
+  warnings, `references.onWarning` calls or `uxdsl-theme` message of its later
+  steps; `compile()`, the CLI and the adapters return what they returned.
+  Every PostCSS run that includes the plugin walks the stylesheet once more
+  for the `OnceExit` listener (about 5 ms on a 332 KB stylesheet).
+- MIG-B9-13's PostCSS-chain item under "Breaking", below, now names only what
+  still fails.
+
+#### Visual changes
+
+- None. Every output of the plugin alone and of `compile()`, the Bootstrap
+  corpus and the theme CSS are byte-identical; a PostCSS chain that failed
+  now compiles.
+
 ### The silent cases of `@use`'s module isolation warn `UXD_MODULE_ISOLATION` (MIG-B9-17)
 
 #### Changed
@@ -944,13 +985,16 @@ What to check in a project when upgrading is in the migration guide,
   value, and a `//` comment after a `;`, on a line of its own inside a block
   or after the last rule, before the plugin runs, as its located
   `Unknown word` error.
-- That includes a PostCSS chain, in either plugin order: `uxdsl/postcss`
-  checks the stylesheet in its `Once` listener, which PostCSS runs for every
-  plugin before any plugin's visitors, so syntax another plugin resolves in a
-  visitor reaches it first — postcss-nested's `&_title`, postcss-simple-vars'
-  `$gap` — and fails as `UXD_SASS_CONTEXT`. Both chains compiled before. Run
-  such a plugin in a PostCSS pass of its own before `uxdsl/postcss`, or move
-  the file to `.uxdsl` and compile it with `compile()`.
+- That includes a PostCSS chain, in either plugin order, for a Sass construct
+  `uxdsl/postcss`'s own steps read: a token's `$variable` argument
+  (`space($n)`), or a `$variable` holding a token or a responsive value
+  (`$pad: space(2)`, `$pad: xs(1rem) md(2rem)`), left for postcss-simple-vars,
+  fails as `UXD_SASS_CONTEXT`, as does any Sass construct in a root of a
+  PostCSS Document. Run such a plugin in a PostCSS pass of its own before
+  `uxdsl/postcss`, or move the file to `.uxdsl` and compile it with
+  `compile()`. What another plugin resolves without the steps reading it —
+  postcss-nested's `&_title`, postcss-simple-vars' `$gap` — compiles in either
+  order (MIG-B9-27).
 - Through `compile()`, a `$variable` or a namespaced call Dart Sass keeps as
   written — in a custom property, in the prelude of a plain-CSS at-rule such
   as `@container`, `@layer` or `@keyframes`, in a supports condition Sass does

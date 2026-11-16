@@ -616,10 +616,14 @@ adapter, or remove the Sass. Native nesting passes:
   function such as `darken(red, 10%)` (to a browser, an unknown function that
   drops the declaration), `url($img)` on a property that is not custom,
   `#{…}` inside a string, and a `$` glued to a word (`--y: a$v`).
-- In a PostCSS chain the plugin checks the stylesheet before any plugin's
-  visitors run, so postcss-nested's `&_title` and postcss-simple-vars' `$gap`
-  fail as `UXD_SASS_CONTEXT` in whichever order the plugins are listed; the
-  [package README](../../README.md) gives the workaround.
+- In a PostCSS chain, a Sass construct the plugin's own steps leave alone is
+  checked again at the end of the run, so a plugin that resolves it in its
+  visitors or in its own `Once` — postcss-nested's `&_title`,
+  `tailwindcss/nesting`'s, postcss-simple-vars' `$gap` — may be listed before
+  or after `uxdsl/postcss`. A construct the steps read (`space($n)`, a
+  `$variable` holding a token or a responsive value), and any construct in a
+  root of a PostCSS Document, still fails as `UXD_SASS_CONTEXT` in either
+  order; the [package README](../../README.md) gives the workaround.
 - `compile()` accepts `@ds-surface (contained)`, with a space before the
   parenthesis, because restore removes it; the plugin alone refuses it
   (`UXD_SURFACE_ARGUMENT`). Write no space.

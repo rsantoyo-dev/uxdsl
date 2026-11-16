@@ -5,7 +5,12 @@
 //               build, compile() or an adapter, where Dart Sass runs first.
 //               Behind compile(), the same check catches a $variable Dart
 //               Sass kept as written (a custom property, a plain-CSS
-//               at-rule's prelude), whose fix is #{$variable}.
+//               at-rule's prelude), whose fix is #{$variable}. In a PostCSS
+//               chain, a construct UXDSL's own steps leave alone is held
+//               until OnceExit and fails only if it is still there, so a
+//               plugin that resolves it (a nesting plugin's `&_title`, a
+//               variables plugin's `$gap`) may be listed before or after
+//               this one.
 //   Values      the token functions space(), density(), color(), palette(),
 //               radius(), border(), shadow(); responsive functions named after
 //               the theme's breakpoints (xs() md() …), `!important` preserved
@@ -29,10 +34,13 @@
 //               actually wrote.
 //
 // One compilation is one `Compilation` object, built by `validateOptions` and
-// handed through `rejectSassSyntax`, `emitTheme`, `expandDirectives`,
-// `expandResponsive`, `rejectLeftoverDirectives`, `checkReferences` and
-// `reportThemeEmission`, in that order. Nothing is stored on the PostCSS root or
-// on the plugin instance.
+// handed through the Sass check (`holdSassSyntax`), `emitTheme`,
+// `expandDirectives`, `expandResponsive`, `rejectLeftoverDirectives`,
+// `checkReferences` and `reportThemeEmission`, in that order, all in the
+// plugin's `Once`. A Sass construct none of the steps read or changed is held,
+// with what the steps report, in a map `prepare()` creates for each PostCSS
+// run, and checked again in `OnceExit` (`releaseSassSyntax`). Nothing is
+// stored on the PostCSS root or on the plugin instance.
 
 import type { AtRule, ChildNode, Declaration, Node as PostcssNode, Result, Root, Rule } from 'postcss';
 import postcss from 'postcss';
@@ -93,6 +101,8 @@ interface Compilation {
   dslSources: Set<Declaration['source']>;
   /** Custom properties the host guarantees or another entry declares, read lazily. */
   externalNames?: Set<string>;
+  /** While a Sass construct is held for OnceExit, what the steps report (`report`), in order; null reports at once. */
+  held: Array<() => void> | null;
 }
 
 // --- validateOptions ---------------------------------------------------------
@@ -152,7 +162,14 @@ function validateOptions(root: Root, result: Result, opts: UxdslOptions): Compil
     palette, colors,
     tokenContext: { palette, colors, breakpoints: bps },
     generated: new WeakSet<ChildNode>(),
+    held: null,
   };
+}
+
+/** Reports now, or, while a Sass construct is held, when OnceExit finds it gone: a compilation that fails reports nothing its steps found. */
+function report(c: Compilation, emit: () => void) {
+  if (c.held) c.held.push(emit);
+  else emit();
 }
 
 // --- rejectSassSyntax --------------------------------------------------------
@@ -450,20 +467,65 @@ function rejectSassInSelector(rule: Rule) {
   if (nested) throw locateError(diagnostic(sassContext(`the nested property ${nested}:`), nested), rule);
 }
 
+/** Throws UXD_SASS_CONTEXT for the first Sass construct `node` itself holds (its descendants aside). */
+function rejectSassIn(node: ChildNode) {
+  if (node.type === 'decl') rejectSassInDeclaration(node);
+  else if (node.type === 'atrule') rejectSassInAtRule(node);
+  else if (node.type === 'rule' && /[&%#/:]/.test(node.selector)) rejectSassInSelector(node);
+}
+
 /**
  * Sass that reaches this plugin is never CSS a browser can use: compile() runs
  * Dart Sass first, so here it is either a stylesheet the plugin compiles alone
  * or text Dart Sass kept as written. The first construct found fails as
  * UXD_SASS_CONTEXT at its own line and column. Runs before the theme is
- * emitted, so every node is the author's.
+ * emitted, so every node is the author's. A root of a PostCSS Document is
+ * checked this way, before its steps run, so a construct in an earlier root
+ * fails before a later root's steps run or warn.
  */
 function rejectSassSyntax(c: Compilation) {
-  c.root.walk((node) => {
-    if (node.type === 'decl') rejectSassInDeclaration(node);
-    else if (node.type === 'atrule') rejectSassInAtRule(node);
-    else if (node.type === 'rule' && /[&%#/:]/.test(node.selector)) rejectSassInSelector(node);
-  });
+  c.root.walk(rejectSassIn);
 }
+
+/** A Sass construct the check found: its node, the node's own text then, and the error the check built for it. */
+interface SassConstruct {
+  node: ChildNode;
+  text: string;
+  error: unknown;
+}
+
+/** What another plugin rewrites when it resolves a construct in a node: a declaration's property and value, a rule's selector, an at-rule's name and prelude. */
+function ownText(node: ChildNode): string {
+  if (node.type === 'decl') return `${node.prop}:${node.value}${node.important ? '!important' : ''}`;
+  if (node.type === 'rule') return node.selector;
+  if (node.type === 'atrule') return `@${node.name} ${node.params}`;
+  return '';
+}
+
+const isSassContext = (error: unknown) => /^UXD_SASS_CONTEXT:/.test(String((error as any)?.reason ?? (error as any)?.message ?? ''));
+
+/**
+ * The Sass check as a list: every node `rejectSassIn` rejects, in the order
+ * `rejectSassSyntax` walks them, each with the error it throws, built now, so
+ * the first one is the plugin alone's error whatever runs afterwards.
+ * `skipGenerated` leaves out the theme's nodes, which hold no author text.
+ */
+function findSassConstructs(c: Compilation, skipGenerated: boolean): SassConstruct[] {
+  const found: SassConstruct[] = [];
+  c.root.walk((node) => {
+    if (skipGenerated && c.generated.has(node)) return;
+    try {
+      rejectSassIn(node);
+    } catch (error) {
+      if (!isSassContext(error)) throw found.length ? found[0].error : error;
+      found.push({ node, text: ownText(node), error });
+    }
+  });
+  return found;
+}
+
+/** A held construct is still there: its node is in `root`, with the text it was found with. */
+const stillThere = (construct: SassConstruct, root: Root) => construct.node.root() === root && ownText(construct.node) === construct.text;
 
 // --- emitTheme ---------------------------------------------------------------
 
@@ -929,7 +991,7 @@ function checkReferences(c: Compilation) {
   if (!c.themeEmitted && c.references.mode !== 'off') css.push(renderThemeCss(c.theme, c.bps));
   enforceReferences(c.root, consumers, {
     ...c.references, css,
-    onWarning: (issue) => { c.result.warn(issue.message, { node: (issue as any).node, plugin: PLUGIN }); c.references.onWarning?.(issue); },
+    onWarning: (issue) => report(c, () => { c.result.warn(issue.message, { node: (issue as any).node, plugin: PLUGIN }); c.references.onWarning?.(issue); }),
   });
 }
 
@@ -941,23 +1003,96 @@ function checkReferences(c: Compilation) {
  * `themeEmitted`, and a build host counts its stylesheets from it.
  */
 function reportThemeEmission(c: Compilation) {
-  c.result.messages.push({ type: 'uxdsl-theme', plugin: PLUGIN, emitted: c.themeEmitted });
+  report(c, () => c.result.messages.push({ type: 'uxdsl-theme', plugin: PLUGIN, emitted: c.themeEmitted }));
 }
 
 // --- the plugin --------------------------------------------------------------
 
+/**
+ * The Sass check in `Once`, over the author's stylesheet: the constructs to
+ * hold for `OnceExit`, none when the stylesheet has no Sass. A root of a
+ * PostCSS Document throws for its first construct here, before its steps run,
+ * so a construct in an earlier root fails before a later root's steps run or
+ * warn. Holding a construct also holds what the steps report (`report`).
+ */
+function holdSassSyntax(c: Compilation): SassConstruct[] {
+  if (c.root.parent?.type === 'document') {
+    rejectSassSyntax(c);
+    return [];
+  }
+  const constructs = findSassConstructs(c, false);
+  if (constructs.length > 0) c.held = [];
+  return constructs;
+}
+
+/**
+ * UXDSL's own steps, in order. While Sass constructs are held, a step that
+ * throws, or one that changes or removes a node holding a construct (a token's
+ * `$variable` argument, a `$variable` holding a token or a responsive value),
+ * gives the first construct's error instead, as the plugin alone gives it.
+ */
+function runSteps(c: Compilation, constructs: SassConstruct[]) {
+  try {
+    emitTheme(c);
+    expandDirectives(c);
+    expandResponsive(c);
+    rejectLeftoverDirectives(c);
+    checkReferences(c);
+    reportThemeEmission(c);
+  } catch (error) {
+    throw constructs.length > 0 ? constructs[0].error : error;
+  }
+  if (!constructs.every((construct) => stillThere(construct, c.root))) throw constructs[0].error;
+}
+
+/**
+ * The held constructs in `OnceExit`, which PostCSS runs after every plugin's
+ * `Once` and visitors: the first construct still there fails, then any Sass
+ * construct now in the stylesheet that the theme did not generate; when none
+ * is left, the held reports are given. A root another plugin replaced cannot
+ * be looked in, so its first construct fails, as the plugin alone fails.
+ */
+function releaseSassSyntax(root: Root, pending: Map<Root, { compilation: Compilation; constructs: SassConstruct[] }>) {
+  const entry = pending.get(root);
+  if (!entry) {
+    const [replaced] = pending.values();
+    pending.clear();
+    if (replaced) throw replaced.constructs[0].error;
+    return;
+  }
+  pending.delete(root);
+  const left = entry.constructs.find((construct) => stillThere(construct, root));
+  if (left) throw left.error;
+  const added = findSassConstructs(entry.compilation, true);
+  if (added.length > 0) throw added[0].error;
+  const reports = entry.compilation.held ?? [];
+  entry.compilation.held = null;
+  for (const emit of reports) emit();
+}
+
+/**
+ * The Sass check runs over the author's stylesheet in `Once`, before the
+ * steps. A construct the steps leave alone waits, in a map this PostCSS run's
+ * `prepare()` creates, for `OnceExit`, so a plugin that resolves it in a
+ * visitor or in its own `Once` may be listed before or after this one; the
+ * plugin alone fails on its first construct, with none of the steps' reports.
+ */
 function uxdslPlugin(opts: UxdslOptions = {}) {
   return {
     postcssPlugin: PLUGIN,
-    Once(root: Root, { result }: { result: Result }) {
-      const compilation = validateOptions(root, result, opts);
-      rejectSassSyntax(compilation);
-      emitTheme(compilation);
-      expandDirectives(compilation);
-      expandResponsive(compilation);
-      rejectLeftoverDirectives(compilation);
-      checkReferences(compilation);
-      reportThemeEmission(compilation);
+    prepare() {
+      const pending = new Map<Root, { compilation: Compilation; constructs: SassConstruct[] }>();
+      return {
+        Once(root: Root, { result }: { result: Result }) {
+          const compilation = validateOptions(root, result, opts);
+          const constructs = holdSassSyntax(compilation);
+          runSteps(compilation, constructs);
+          if (constructs.length > 0) pending.set(root, { compilation, constructs });
+        },
+        OnceExit(root: Root) {
+          releaseSassSyntax(root, pending);
+        },
+      };
     },
   };
 }
