@@ -69,6 +69,18 @@ them. See `docs/releases/0.5.0-beta.9.md`.
   between a block and `<bp>()` on the same property is pinned by a test:
   through `compile()` the one written later wins; with the plugin alone
   `<bp>()`'s `@media` follows the rule and wins.
+- **`LANGUAGE_COMPLETIONS.customMedia`** (`uxdsl/language`): the default
+  breakpoints an `@media` prelude can name, derived from
+  `DEFAULT_BREAKPOINTS` without the zero-width base,
+  `['--sm', '--md', '--lg', '--xl']`. `.functions` and `.directives` are
+  unchanged, and so are the entries' export lists.
+- **Highlighting of `(--<breakpoint>)` in `uxdsl-vscode`.** The generated
+  grammar gains a `breakpointMedia` entry (scope
+  `support.constant.breakpoint.uxdsl`, any case) and `injections` into VS
+  Code's CSS `@media` header and rule body, so `(--lg)` is highlighted in a
+  top-level `@media` and in one nested in a rule; `var(--lg)`, `--lg: 1px`,
+  `@container (--lg)`, `(--xs)` and a name that is not a default breakpoint
+  are not.
 
 #### Changed
 

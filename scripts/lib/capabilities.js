@@ -192,6 +192,11 @@ function deriveCapabilities() {
   for (const fn of L.functions) {
     add(BREAKPOINTS.has(fn) ? 'breakpoint-function' : 'function', fn, 'live', matching(sources.uxdsl, new RegExp(`\\b${fn}\\(`)), docsMention(new RegExp(`\\b${fn}\\(`)));
   }
+  // A breakpoint an @media prelude names, `@media (--lg)`: live where a .uxdsl source writes one.
+  for (const name of L.customMedia) {
+    const block = new RegExp(`@media[^{;]*\\(\\s*${escapeRe(name)}\\s*\\)`, 'i');
+    add('custom-media', name, 'live', matching(sources.uxdsl, block), docsMention(block));
+  }
   for (const family of [...rt.KNOWN_THEME_FAMILIES].sort()) {
     const spec = FAMILY_CONSUMERS[family];
     if (!spec) { rows.push({ id: `family:${family}`, kind: 'family', name: family, required: 'live', level: 'none', met: false, files: [], note: 'NO CONSUMER RULE — add one to FAMILY_CONSUMERS' }); continue; }

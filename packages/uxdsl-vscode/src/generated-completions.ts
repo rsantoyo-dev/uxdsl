@@ -117,5 +117,11 @@ export const completions = {
     "md",
     "lg",
     "xl"
+  ],
+  "customMedia": [
+    "--sm",
+    "--md",
+    "--lg",
+    "--xl"
   ]
 } as const;

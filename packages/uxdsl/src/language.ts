@@ -96,6 +96,9 @@ export const LANGUAGE_COMPLETIONS = {
   },
   directives: ['ds-surface', 'ds-typo', 'ds-button', 'ds-input'],
   functions: ['palette', 'color', 'radius', 'border', 'density', 'shadow', 'space', ...Object.keys(DEFAULT_BREAKPOINTS)],
+  // The breakpoints an @media prelude can name as (--name): every one with a query, so the
+  // zero-width base is left out (its values apply at every width).
+  customMedia: Object.entries(DEFAULT_BREAKPOINTS).filter(([, width]) => width > 0).map(([name]) => `--${name}`),
 } as const;
 
 // The exact tone predicate control-engine.ts's own

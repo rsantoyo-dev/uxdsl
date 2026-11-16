@@ -12,7 +12,7 @@ const { ROOT, deriveCapabilities, dogfoodingCounts, manualEvidence } = require('
 
 const OUT = 'docs/architecture/playground-capability-matrix.md';
 const KIND_TITLES = {
-  directive: 'Directives', function: 'Value functions', 'breakpoint-function': 'Breakpoint functions', family: 'Theme families',
+  directive: 'Directives', function: 'Value functions', 'breakpoint-function': 'Breakpoint functions', 'custom-media': 'Breakpoint media queries', family: 'Theme families',
   role: 'Roles', state: 'Interaction states', runtime: 'Runtime API (named in the package docs)', 'cli-command': 'CLI commands',
   'cli-flag': 'CLI flags', 'package-export': 'Package exports', diagnostics: 'Diagnostics',
 };

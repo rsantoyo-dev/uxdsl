@@ -469,6 +469,12 @@ whose message shows the form to write.
 .panel { @media (--md) { @ds-surface(contained); } }  /* UXD_DIRECTIVE_CONTEXT: with uxdsl/postcss alone, put the rule inside the block */
 ```
 
+In the editor, `uxdsl-vscode` highlights `(--sm)`, `(--md)`, `(--lg)` and
+`(--xl)` in an `@media` prelude, at the top level and nested in a rule; the
+names come from `LANGUAGE_COMPLETIONS.customMedia` (`uxdsl/language`), the
+default breakpoints that have a query, so the base and a project's own
+breakpoint names are not highlighted.
+
 <p align="center">
   <a href="https://uxdsl.vercel.app/docs/home">
     <strong>Explore the Full Docs &rarr;</strong>

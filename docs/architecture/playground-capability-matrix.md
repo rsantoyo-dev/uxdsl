@@ -6,13 +6,14 @@ What UXDSL can do, **derived** from its own sources (language metadata, theme-fa
 
 Levels: **live** — executed on the page (compiled `.uxdsl`, a call to the runtime API, output of the real tool); **documented** — example code or prose only; **none** — not mentioned. The detection reads source text, not rendered pages, so it is a **lower bound** on what the playground shows. A capability is a **gap** when its level is below the one it requires (`live` for nearly everything; `documented` for deprecated syntax and CLI-only options). `capability-evidence.json` in the playground records the evidence text cannot find and the gaps accepted for now.
 
-**120 capabilities · 120 shown at the level they require · 0 gaps.**
+**124 capabilities · 124 shown at the level they require · 0 gaps.**
 
 | Kind | Capabilities | live | documented | none | gaps |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | Directives | 4 | 4 | 0 | 0 | 0 |
 | Value functions | 7 | 7 | 0 | 0 | 0 |
 | Breakpoint functions | 5 | 5 | 0 | 0 | 0 |
+| Breakpoint media queries | 4 | 4 | 0 | 0 | 0 |
 | Theme families | 14 | 14 | 0 | 0 | 0 |
 | Roles | 9 | 9 | 0 | 0 | 0 |
 | Interaction states | 12 | 12 | 0 | 0 | 0 |
@@ -71,6 +72,15 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | `sm` | live | live | `src/components/AppHeader.uxdsl`, `src/components/PageToolbar.uxdsl` |
 | `xl` | live | live | `src/app/page.uxdsl`, `src/components/CapabilityDocs.uxdsl`, `src/components/SurfaceGrid.uxdsl` |
 | `xs` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/layout.uxdsl`, `src/app/page.uxdsl` |
+
+## Breakpoint media queries
+
+| Capability | Requires | Level | Evidence |
+| --- | --- | --- | --- |
+| `--lg` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/components/SideNav.uxdsl` |
+| `--md` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl` |
+| `--sm` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl` |
+| `--xl` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl` |
 
 ## Theme families
 

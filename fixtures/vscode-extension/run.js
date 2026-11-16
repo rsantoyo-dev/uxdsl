@@ -72,6 +72,11 @@ function main() {
   assert.equal(grammar.scopeName, 'source.uxdsl');
   assert.ok(grammar.repository.directives.patterns[0].match.includes('ds-surface'));
   console.log('  ok  - the packaged grammar is valid JSON and matches the expected scope/directives');
+  assert.ok(grammar.repository.breakpointMedia.patterns[0].match.includes('lg'), 'the packaged grammar must carry the (--<breakpoint>) media pattern');
+  for (const scope of ['L:meta.at-rule.media.header.css', 'L:meta.property-list.css -meta.property-value.css -comment -string']) {
+    assert.ok(grammar.injections && grammar.injections[scope], `the packaged grammar must inject the breakpoint media pattern into ${scope}`);
+  }
+  console.log('  ok  - the packaged grammar carries breakpointMedia and injects it into the @media header and the property list');
 
   console.log('PASS');
   console.log('All checks passed.');
