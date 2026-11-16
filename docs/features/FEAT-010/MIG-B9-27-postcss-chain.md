@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 2 |
 | Decision gate | DEC-05 (decided 2026-10-23). Registered by decision D7 of 2026-11-04, on MIG-B9-13 §15, flag 8 (F3) |
-| Status | Ready |
+| Status | In review (PR #100) |
 | Size | S |
 | Depends on | MIG-B9-21 (D7: "after MIG-B9-21, since it edits `plugin.ts`"). Under README §7 also: MIG-B9-20, an earlier row of the `plugin.ts` and `migration.md` rows, which also removes the `includeTheme` option that `test/no-silent-output.test.js` passes 12 times; MIG-B9-25 (`test/no-silent-output.test.js`); MIG-B9-26 (`compile.md`, `migration.md`); MIG-B9-17 (`migration.md`, where both stories rewrite an item: decisions 6 and 31 of 2026-11-10) |
 | Blocks | MIG-B9-24, 30, 31 and 35 (later rows of README §7's `plugin.ts` row); MIG-B9-28 (`test/no-silent-output.test.js`); in `0.5.0-beta.10`, MIG-B9-52 (`migration.md`, which it restructures), and MIG-B9-60 there only if its re-baselined file rewrites a passage (decision 31 of 2026-11-10 makes `migration.md` append-only, so MIG-B9-30 to 36 no longer wait for this story on it); MIG-B9-91 (every story of waves 0 to 3) |
@@ -715,7 +715,137 @@ PR title: `FEAT-010: MIG-B9-27 - uxdsl/postcss in a PostCSS chain`. The body:
 
 ## 14. Closure record
 
-To be filled in the delivering PR.
+- **Outcome:** A. C1 to C5 hold with §5's change (C6).
+- **PR:** #100 (`feat/b9-27-postcss-chain` into `feat/beta9`), opened
+  2026-11-16. Only the owner merges.
+- **Base and implementation:** BASE `f254b24` (`git merge-base HEAD
+  origin/feat/beta9`; `origin/feat/beta9` had not moved when the PR was
+  opened, so no merge was needed). Commits:
+  - `8ab6a75`: the stale lines on BASE, recorded before implementation (§15).
+  - `d049f2f`: the change, T1 to T7 and the documentation. This is the last
+    change to `plugin.ts`.
+  - `b11fa4f`: the review's R1 to R3. These are documentation and one test;
+    `plugin.ts` is unchanged.
+  - This closure commit.
+
+  `git diff d049f2f HEAD -- packages/uxdsl/src` is empty.
+- **Environment:** macOS, `MacBookPro18,3`, Node v20.19.0, npm 11.21.1,
+  PostCSS 8.5.31, Dart Sass 1.107.0. Every command ran with `TMPDIR` set to
+  the role's own directory under the session's scratch directory, which was
+  left empty. The exceptions are named below.
+- **The change** (`plugin.ts`):
+  - The factory has a `prepare()` that creates, for each PostCSS run, a
+    `Map` from root to held constructs.
+  - `Once` = `validateOptions` → `holdSassSyntax` → `runSteps`.
+  - `holdSassSyntax` collects the Sass constructs with the errors the plugin
+    alone throws, in BASE's walk order. A root of a PostCSS Document throws
+    the first construct there, as on BASE (flag 1).
+  - `runSteps` runs the six steps. While a construct is held, a step's throw,
+    or a step that changes or removes a held construct's node, gives the
+    first construct's error.
+  - `report()` holds the steps' `result.warn`, `onWarning` and `uxdsl-theme`
+    reports while a construct is held.
+  - `OnceExit` = `releaseSassSyntax`. It throws the first held construct
+    still there. If none is left, it re-walks for a construct that was not
+    there before (skipping what the theme generated) and throws that.
+    Otherwise it releases the held reports.
+  - A replaced root throws its first held construct.
+  - No UXD code is added, and no reason changes. The header and the Sass
+    check's comments state the contract, with no story id.
+- **Criterion to test:**
+  - C1 → T4 (P1 to P10 with their full ranges and twins; the Document case),
+    T5 (no warning or `onWarning` call while a construct is held; its
+    negative control; the Document and `compile()` variants), and the
+    replaced-root test. The package suites (T8) also cover it.
+  - C2 → T5's `compile()` variant, the package suites, parity, the oracle
+    diff, `verify:1.0` (DE-9), `verify:playground-browser` and `uxdsl:build`.
+  - C3 → AC5's three corpus runs.
+  - C4 → T1 (the evidence inputs), T3, T7, and the added-construct test
+    (R3).
+  - C5 → T1, T2, T6 and T7.
+  - `compiler-structure.test.js` pins the new shape (flag 3).
+- **Failing first** (implementer, against a dist built from BASE's
+  `plugin.ts`):
+  - T1 fails: `&_title` 2:3, other first.
+  - T2 fails: `$gap` 1:1.
+  - T6 fails: `&_title` 2:3.
+  - T3, T4, T5 and the replaced-root test pass on BASE, by design.
+- **Mutations:**
+  - The implementer's four AC1 mutations:
+    - BASE's factory fails T1, T2 and T6.
+    - Prototype N fails T3, T4, T5 and the replaced-root test.
+    - Without buffering, T5 fails.
+    - Without the Document branch, the T4 and T5 Document cases fail.
+  - The reviewer's 13 mutations all fail a test, except `noleft` (R3).
+  - The deliverer applied `noleft` to `dist/plugin.js`: the R3 test fails
+    (7 tests, 6 pass), then `dist` was restored (`cmp` ok).
+- **Commands:**
+
+  | Command | Who, when | Exit | Quote |
+  | --- | --- | --- | --- |
+  | `node --test packages/uxdsl/test/postcss-chain.test.js packages/uxdsl/test/no-silent-output.test.js` | deliverer, `b11fa4f` | 0 | `# tests 35`, `# pass 35` (7 + 28) |
+  | `node fixtures/mig-b9-27-postcss-chain/run.js` | implementer, `d049f2f` | 0 | `PASS: every registered chain compiles, and every other run gives the two passes' CSS or the plugin alone's error` (32 lines; `$n`, `$pad` ×2: `1:1 UXD_SASS_CONTEXT` in both orders) |
+  | `node fixtures/mig-b9-27-postcss-chain/run.js --uxdsl <BASE build>` | implementer | 1 | §4's errors; `FAIL: 5 run(s)`; `tailwindcss/nesting` ok only listed first |
+  | `node fixtures/parity/run.js`; `git diff --exit-code f254b24 -- fixtures/parity/expected` | implementer; deliverer (oracle diff) and inside `npm test` | 0; 0 | `PASS`: 10 parity cases |
+  | `npm test`, run 1 | deliverer, `b11fa4f`, 11:5x EST, load 8.61 7.95 7.47 | 1 | `not ok 1 - MIG-B6-25: reference validation grows near-linearly (500 -> 1000 blocks)`: x4.09 (66.4 → 271.8 ms) against a 2.5 budget. It times `inspectReferences` alone, not the plugin's listeners: a timing under load. The guard kept one directory, which was removed. |
+  | `npm test`, run 2 (the one re-run) | deliverer, 11:58:47–12:04:34 EST, load 7.81 → 5.53 | 0 | `growth x2.07 (budget 2.5)`; TMPDIR 0 entries before and after |
+  | `npm run verify:1.0 -- --skip-playground-walk` | deliverer, 12:04–12:07 EST | 0 | `ok DE-9`; `72/72 automated checks passed.` It left 5 directories in TMPDIR (follow-up 1), which were removed. |
+  | `npm run verify:playground-browser` (real Chrome) | deliverer, 12:07:38–12:12:48 EST, load 9.06 | 0 | `pages loaded: 380; focusable elements checked: 2234`; `PASS: no console errors, no UXDSL warnings, no unresolved var(), visible keyboard focus, contrast page = Node.`; every negative control caught |
+  | `npm --prefix packages/playground-nextjs run uxdsl:build` | implementer; deliverer, `b11fa4f` | 0 | `[uxdsl] unchanged src/app/uxdsl.css` |
+  | `npm run verify:doc-examples` | deliverer, `b11fa4f` | 0 | `71 examples and 24 theme excerpts checked across 101 documentation files.` |
+  | `node scripts/generate-agent-guide.js --check` | deliverer | 0 | no drift (`AGENTS.md` unchanged) |
+  | `node --test scripts/no-history-comments.test.js` | deliverer | 0 | 4 of 4 |
+
+- **AC5, the corpus**: the first three invocations after `d049f2f`, in a
+  row, none discarded, run by the implementer:
+
+  | Run | Start (EST, 2026-11-16) | `vm.loadavg` | TMPDIR before/after | Output |
+  | --- | --- | --- | --- | --- |
+  | 1 | 11:39:52 | 9.02 8.47 8.23 | 0 / 0 | 276926 bytes, byte-identical; Dart Sass median 380 ms, `compile()` 485 ms, 1.28x (budget 1.5x); 21 warnings; exit 0 |
+  | 2 | 11:39:58 | 10.30 8.75 8.33 | 0 / 0 | 276926, byte-identical; 375 / 506 ms, 1.35x; 21 warnings; exit 0 |
+  | 3 | 11:40:05 | 9.88 8.69 8.31 | 0 / 0 | 276926, byte-identical; 374 / 515 ms, 1.38x; 21 warnings; exit 0 |
+
+  The reviewer's later confirmation run, which is not one of AC5's three:
+  11:50:20, load 4.58, 1.38x.
+- **Cost:** the plugin alone on the playground's `uxdsl.css` (332 KB),
+  references off, 21 interleaved rounds. BASE median 48.8 ms, change
+  53.2 ms: +4.4 ms, the visitor walk that an `OnceExit` listener turns on.
+- **Evidence for flag 2**, on BASE and then the change, in both orders:
+  - postcss-simple-vars with `.a { padding: $undefined; }`: `2:12
+    UXD_SASS_CONTEXT` before, simple-vars' own `2:3 Undefined variable
+    $undefined` after.
+  - postcss-nested with `&_title` and an unrelated `$gap`: `2:3 &_title`
+    before, `5:8 UXD_SASS_CONTEXT $gap` after.
+  - Each result equals what the two passes give.
+- **R1's case, reproduced by the deliverer** with the real postcss-nested
+  7.0.2 on `.phone { &_title { padding: space(99); } }`:
+  - the two passes give `1:25 UXD_SPACE_REFERENCE`;
+  - one run, in either order, gives `2:3 UXD_SASS_CONTEXT: &_title is Sass`.
+
+  This is C4's "BASE's error for that run", now documented (decision 13
+  keeps the plugin alone's error).
+- **R2's case:** `tailwindcss/nesting` 3.4.19 on a two-root Document compiles
+  when listed first and fails at `1:10 &_title` when listed after, as on
+  BASE.
+- **Documentation:**
+  - `packages/uxdsl/README.md`: the chain sentences of the paragraph at line
+    1597.
+  - `docs/integrations/compile.md`: the chain bullet.
+  - `docs/migration.md`: item 4's chain sentences only.
+  - `CHANGELOG.md`: the `### uxdsl/postcss in a PostCSS chain (MIG-B9-27)`
+    subsection, first under the unreleased intro, with `#### Changed` and
+    `#### Visual changes` (None); MIG-B9-13's `### Breaking` chain item is
+    rewritten (decision 14).
+  - `fixtures/mig-b9-27-postcss-chain/README.md`.
+  - No `AGENTS.md`, agent guide, catalog or `package.json` change.
+- **Not run, or not a pass:**
+  - `npm test`'s first run is a failure, recorded above. Only the re-run
+    passed.
+  - The fixture (network) and AC5's corpus runs were not repeated after
+    `b11fa4f`, which changes neither `plugin.ts` nor the fixture.
+  - Only R3's mutation was re-run by the deliverer.
+  - No external validation in a real consumer project.
+  - The owner checks of §9 are the owner's.
 
 ## 15. Findings and follow-ups
 
@@ -828,3 +958,140 @@ Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-10). 
   - §3's start gate for MIG-B9-26, whose comment reads "both parts' files, if the owner splits it", also needs MIG-B9-17 merged: `! command grep -qx "To be filled in the delivering PR." docs/features/FEAT-010/MIG-B9-17-module-isolation-warnings.md` exits 0 before the story starts.
 
   The header's Depends on, Base and Blocks follow.
+
+### Stale lines corrected on BASE `f254b24` (2026-11-16, before implementation)
+
+README §1, items 4 and 5: the base moved, so §3, its five start gates and §4
+were run again, and a line that only went stale is recorded here with its old
+and new value. The contract is unchanged; §2 cites `f855765` and stays as
+written, read with these lines.
+
+1. **Header (Base) and §3's intro.** Old: "§3 and §4 were recorded on
+   `f855765`, before all of them; they are re-run when the story starts
+   (§3)". New: re-run on `f254b24` (`feat/beta9` after MIG-B9-20, 21, 25, 26
+   and 17), 2026-11-16, Node 20.19.0, npm 11.21.1, PostCSS 8.5.31: every §3
+   line and the five start gates (the MIG-B9-17 one included) exit 0, and
+   §4's three commands print the recorded output byte for byte
+   (`postcss-nested@latest` is still 9.0.1). No finding.
+2. **§2, `plugin.ts`'s header, lines 31–35.** Old: "handed through
+   `rejectSassSyntax`, `emitTheme`, `expandDirectives`, `expandResponsive`,
+   `rejectLeftoverDirectives` and `checkReferences`, in that order." New:
+   "… `rejectLeftoverDirectives`, `checkReferences` and
+   `reportThemeEmission`, in that order." (still lines 31–35; lines 3–8 are
+   unchanged). MIG-B9-20 added the step and its `uxdsl-theme` result message.
+3. **§2, `rejectSassSyntax`'s comment.** Old: "lines 470–476". New: lines
+   453–459 (the function on line 460); the text is unchanged.
+4. **§2, the factory.** Old: "lines 960–973: one `Once(root, { result })`
+   listener that calls `validateOptions`, `rejectSassSyntax`, `emitTheme`,
+   `expandDirectives`, `expandResponsive`, `rejectLeftoverDirectives` and
+   `checkReferences`, in that order." New: lines 949–963, one `Once` listener
+   (952–961) that calls `validateOptions`, `rejectSassSyntax`, `emitTheme`,
+   `expandDirectives`, `expandResponsive`, `rejectLeftoverDirectives`,
+   `checkReferences` and `reportThemeEmission`, in that order;
+   `validateOptions` also runs `findThemeMarker`, which can throw
+   `UXD_THEME_MARKER` before the Sass check. §5's list of the steps that stay
+   in `Once` reads with `reportThemeEmission` added, last.
+5. **§2 and §11, the package README.** Old: "lines 1500–1507, in the
+   paragraph that starts at line 1486". New: lines 1612–1619, in the
+   paragraph that starts at line 1597; the text is unchanged.
+6. **§2 and §11, `compile.md`.** Old: "lines 538–541, under "The PostCSS
+   plugin on its own" (line 514)". New: lines 619–622, under
+   "### The PostCSS plugin on its own" (line 595). `migration.md` is not
+   stale: item 4 is still lines 118–138, its chain sentences 128–133.
+7. **§2, §11 and Q3, the CHANGELOG.** Old: "lines 440–446, in MIG-B9-13's
+   `### Breaking` (line 409)". New: lines 947–953, in MIG-B9-13's
+   `### Breaking` (line 916) of its subsection (line 804), under
+   `## 0.5.0-beta.9 — unreleased` (line 12).
+8. **§2, `AGENTS.md`.** Old: "lines 894–896". New: lines 911–913;
+   `command grep -n -i chain AGENTS.md` still finds only "fallback chain",
+   line 577.
+9. **§10 and §11, the CHANGELOG subsection's form.** Old: "one subsection,
+   `### Visual changes`: none". New: one subsection
+   `### uxdsl/postcss in a PostCSS chain (MIG-B9-27)`, first under the
+   unreleased intro (above MIG-B9-17's), with `#### Changed` and
+   `#### Visual changes` (None), as MIG-B9-17's and MIG-B9-26's are written.
+10. **§7, the suite counts** (non-normative). Old: "The package's top-level
+    suite gave 723 tests, 720 passing … The core suite gave 342 tests, 341
+    passing and 1 skipped". New, on `f254b24`, in a copy outside the
+    repository: top-level 710 tests; an unedited copy passes 702, the 8
+    failures needing the repository around the package; core 365 tests, 364
+    passing, 1 skipped; cli, vite and webpack 337 of 337.
+
+### Owner decisions taken under the standing instruction of 2026-11-10 (2026-11-16)
+
+Three owner flags arose during the work. Under the owner's standing
+instruction of 2026-11-10 ("fusiona todo.. y preguntas como recomendadas, y
+sgeuimos"), each was answered with its recommended option, which was
+implemented. The owner may override any of them (PR #100).
+
+1. **PostCSS Document roots under C1's strict reading.** A per-root deferral
+   lets a later root's step error or `onWarning` call come before an earlier
+   root's held Sass error. The scout reproduced both: BASE gives `&__x` 1:6
+   where the deferral gives `UXD_SPACE_REFERENCE` 1:53, and 0 `onWarning`
+   calls where it gives 1.
+   - Options: (a) a Document's roots keep BASE's timing; (b) defer per
+     Document; (c) leave it, which fails C1 and gives outcome B.
+   - Answer: **(a)**. What changed:
+     - `holdSassSyntax` throws in `Once` for a root whose parent is a
+       Document.
+     - T4 and T5 have Document cases.
+     - The docs say that such a root is checked when `uxdsl/postcss`'s
+       `Once` runs.
+2. **Chain inputs outside C4's set change their error** (§14, flag 2's
+   evidence). Each new result equals the two passes'.
+   - Options: (a) accept, record the evidence and document it; (b) read C4
+     as covering every chain input, which gives outcome B.
+   - Answer: **(a)**. The inputs are not added to T7. The docs say that
+     another plugin's own error is reported as that plugin gives it.
+3. **`packages/uxdsl/test/compiler-structure.test.js` pinned the old
+   factory's source shape.** The pin required a direct `Once()` that calls
+   exactly the seven steps. C7's `prepare()`-held state cannot satisfy it.
+   - Options: (a) restructure into named top-level steps and update the pin
+     to the new shape, with the same intent; (b) outcome B.
+   - Answer: **(a)**. What changed:
+     - `Once` = `validateOptions` → `holdSassSyntax` → `runSteps`.
+     - `OnceExit` = `releaseSassSyntax`.
+     - The pin checks the map created in `prepare()`, the calls of both
+       listeners, `runSteps` sequencing the six steps in order, each step a
+       top-level function, and the `Compilation` interface. Reordering
+       `Once` fails it.
+
+### Delivery of 2026-11-16
+
+The review's findings:
+
+- **R1 (blocking):** fixed in `b11fa4f`, docs only. A code fix would break
+  T3. A chain gives the two passes' result when they compile. A stylesheet
+  that also holds another UXDSL mistake reports its first Sass construct.
+- **R2:** fixed in `b11fa4f`. The Document wording no longer says "in either
+  order".
+- **R3:** fixed with a test (the held construct's error wins over a construct
+  another plugin adds before it). It fails under `noleft`. `plugin.ts` is
+  unchanged, so AC5's runs stand.
+- **R4:** not a defect, recorded. Through `LazyResult.sync()`, the `OnceExit`
+  error also carries `postcssNode` and a root frame in its stack. The
+  compared fields are identical, and nothing in the repository reads
+  `postcssNode`.
+
+New facts:
+
+- `npm test` failed once under load on a timing test this story does not
+  touch (`MIG-B6-25`, x4.09 against 2.5) and passed on its one re-run (x2.07).
+- `origin/feat/beta9` was still `f254b24` when the PR was opened.
+
+Follow-ups, each with a proposed story id:
+
+1. **MIG-B9-100 (proposed; 92 to 99 are taken or proposed elsewhere, and the owner gives the id):** `npm run verify:1.0 -- --skip-playground-walk`
+   leaves five directories in `TMPDIR` (`uxdsl-1.0-gate-*`,
+   `uxdsl-1.0-upgrade-before-*`, two `uxdsl-vite-adapter-*`,
+   `uxdsl-webpack-adapter-*`). The implementer and the deliverer both saw
+   this. It was not checked on BASE. The gate is not under
+   `scripts/tmpdir-guard.js`, so MIG-B9-25's contract does not cover it.
+2. **MIG-B9-101 (proposed):** the timing test `MIG-B6-25: reference
+   validation grows near-linearly` failed once at load 8.6. It could join the
+   interleaved re-measure that the Sass corpus budget uses, or be fenced from
+   `npm test` under load as MIG-B9-23 did for the corpus.
+3. **MIG-B9-24 (existing, a note):** registering `OnceExit` turns on
+   PostCSS's visitor walk for every run of the plugin (+4.4 ms on 332 KB).
+   MIG-B9-24's fixed per-build costs should measure from this base.
+

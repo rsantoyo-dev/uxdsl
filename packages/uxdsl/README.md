@@ -1609,15 +1609,32 @@ compile it with `uxdsl build`, `compile()` or an adapter, where Dart Sass runs
 first, or remove the Sass. PostCSS's own parser rejects a `#{…}` in a selector,
 in a property name or bare in a value, and a `//` comment after a `;`, on a
 line of its own inside a block or after the last rule, before any plugin runs:
-those fail as its located `Unknown word` error. In a PostCSS chain the plugin
-checks the stylesheet in its `Once` listener, which PostCSS runs for every
-plugin before any plugin's visitors, so what another plugin resolves in a
-visitor reaches it first, in whichever order the plugins are listed:
-postcss-nested's `&_title` and postcss-simple-vars' `$gap` fail as
-`UXD_SASS_CONTEXT`. Run such a plugin in a PostCSS pass of its own before
+those fail as its located `Unknown word` error. In a PostCSS chain, a Sass
+construct none of the plugin's own steps read or change is held until the end
+of the run (the plugin's `OnceExit`, after every plugin's `Once` and visitors)
+and fails only if it is still there, so a plugin that resolves `&` selectors
+or `$variables` in its visitors or in its own `Once` — postcss-nested's
+`&_title`, `tailwindcss/nesting`'s, postcss-simple-vars' `$gap` — may be
+listed before or after `uxdsl/postcss`: for a stylesheet that plugin in a
+PostCSS pass of its own, then `uxdsl/postcss`, compiles, the run gives what
+those two passes give. When the stylesheet also holds another UXDSL mistake
+(an unknown token, a second `@ds-button` in a rule), the run reports the first
+Sass construct instead, as the plugin alone does; run the two passes to see
+that mistake. A construct the plugin's steps read still fails as
+`UXD_SASS_CONTEXT` in a chain, in either order: a token's `$variable` argument
+(`space($n)`), or a `$variable` holding a token or a responsive value
+(`$pad: space(2)`, `$pad: xs(1rem) md(2rem)`). In a root of a PostCSS Document
+(postcss-html and similar syntaxes), a construct still there when
+`uxdsl/postcss`'s `Once` runs fails as `UXD_SASS_CONTEXT`: those roots are
+checked there, before any plugin's visitors, so only a plugin listed first
+that resolves the construct in its own `Once` (`tailwindcss/nesting`) chains
+with it. For those, run the other plugin in a PostCSS pass of its own before
 `uxdsl/postcss`, or move the file to `.uxdsl` and compile it with
-`compile()`, where Dart Sass resolves both. CSS
-that looks similar passes: native nesting (`&:hover`, `& .x`, `&.y`, a nested
+`compile()`, where Dart Sass resolves them. A construct the other plugin
+leaves fails as `UXD_SASS_CONTEXT` when the run ends, and an error that
+plugin gives itself (postcss-simple-vars' undefined variable) is reported as
+it gives it. The plugin alone reports the first Sass construct, and no
+warning of its later steps. CSS that looks similar passes: native nesting (`&:hover`, `& .x`, `&.y`, a nested
 `a:hover`), `0%` keyframe selectors, escaped selectors such as Tailwind's
 `.\[\&_p\]\:mt-4`, `$` in a string, `url($img)` where Sass evaluates the call
 (on a property that is not custom, as an `@import`'s URL), `--price: $5`, a

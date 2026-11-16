@@ -214,18 +214,21 @@ const unwrapNested = () => ({
   },
 });
 
-test('MIG-B9-13: in a PostCSS chain, Sass-like syntax another plugin resolves in a visitor (postcss-nested\'s &_title) reaches uxdsl/postcss first, in either order, because PostCSS runs every plugin\'s Once before any visitor; that plugin in a pass of its own first compiles', async () => {
+test('MIG-B9-27: in a PostCSS chain, Sass-like syntax another plugin resolves in a visitor (postcss-nested\'s &_title) compiles with uxdsl/postcss in either order, as through two passes', async () => {
   const source = '.phone {\n  &_title {\n    padding: space(2);\n  }\n}\n';
   const uxdsl = () => plugin({ discoverTheme: false });
-  for (const plugins of [[unwrapNested(), uxdsl()], [uxdsl(), unwrapNested()]]) {
-    const error = await postcss(plugins).process(source, { from: '/project/src/app.css' }).then(() => assert.fail(`expected ${plugins.map((p) => p.postcssPlugin).join(', ')} to fail`), (caught) => caught);
-    assert.equal(error.reason, sassContext('&_title'));
-    assert.deepEqual([error.line, error.column], [2, 3]);
-  }
-  // The other plugin in a pass of its own, then uxdsl/postcss (negative control).
+  // The other plugin in a pass of its own, then uxdsl/postcss.
   const first = await postcss([unwrapNested()]).process(source, { from: '/project/src/app.css' });
-  const { css } = await postcss([uxdsl()]).process(first.css, { from: '/project/src/app.css' });
-  assert.match(css, /\.phone_title \{\s*padding: var\(--uxdsl__space__2\);\s*\}/);
+  const { css: expected } = await postcss([uxdsl()]).process(first.css, { from: '/project/src/app.css' });
+  assert.match(expected, /\.phone_title \{\s*padding: var\(--uxdsl__space__2\);\s*\}/);
+  for (const plugins of [[unwrapNested(), uxdsl()], [uxdsl(), unwrapNested()]]) {
+    const { css } = await postcss(plugins).process(source, { from: '/project/src/app.css' });
+    assert.equal(css, expected, plugins.map((p) => p.postcssPlugin).join(', '));
+  }
+  // Negative control: without the other plugin, &_title is Sass to uxdsl/postcss.
+  const error = await postcss([uxdsl()]).process(source, { from: '/project/src/app.css' }).then(() => assert.fail('expected uxdsl/postcss alone to fail'), (caught) => caught);
+  assert.equal(error.reason, sassContext('&_title'));
+  assert.deepEqual([error.line, error.column], [2, 3]);
 });
 
 test('MIG-B9-13: a $variable Sass keeps literally gets the kept message, from the plugin alone and through compile()', async () => {

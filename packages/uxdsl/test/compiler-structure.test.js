@@ -17,12 +17,25 @@ const SRC = path.resolve(__dirname, '../src');
 const index = fs.readFileSync(path.join(SRC, 'plugin.ts'), 'utf8');
 
 test('Once() is the sequence of named steps, over one Compilation object', () => {
-  const once = index.match(/Once\(root: Root, \{ result \}: \{ result: Result \}\) \{([\s\S]*?)\n    \},/);
+  // The per-run state is created in prepare(); Once() and OnceExit() only call named steps.
+  const factory = index.match(/^function uxdslPlugin\(opts: UxdslOptions = \{\}\) \{\n  return \{\n    postcssPlugin: PLUGIN,\n    prepare\(\) \{\n      const pending = new Map<[^\n]*>\(\);\n      return \{\n([\s\S]*?)\n      \};\n    \},\n  \};\n\}$/m);
+  assert.ok(factory, 'the factory creates its per-run map in prepare()');
+  const once = factory[1].match(/Once\(root: Root, \{ result \}: \{ result: Result \}\) \{([\s\S]*?)\n {8}\},/);
   assert.ok(once, 'Once() is found');
-  const calls = [...once[1].matchAll(/\b(\w+)\((compilation|root, result, opts)\)/g)].map((match) => match[1]);
-  assert.deepEqual(calls, ['validateOptions', 'rejectSassSyntax', 'emitTheme', 'expandDirectives', 'expandResponsive', 'rejectLeftoverDirectives', 'checkReferences', 'reportThemeEmission']);
-  assert.ok(once[1].trim().split('\n').length <= 8, 'Once() only sequences the steps');
-  for (const step of calls) assert.match(index, new RegExp(`^function ${step}\\(`, 'm'), `${step} is a top-level function`);
+  const onceCalls = [...once[1].matchAll(/\b(\w+)\((compilation(?:, constructs)?|root, result, opts)\)/g)].map((match) => match[1]);
+  assert.deepEqual(onceCalls, ['validateOptions', 'holdSassSyntax', 'runSteps']);
+  assert.ok(once[1].trim().split('\n').length <= 4, 'Once() only sequences the steps');
+  const onceExit = factory[1].match(/OnceExit\(root: Root\) \{([\s\S]*?)\n {8}\},/);
+  assert.ok(onceExit, 'OnceExit() is found');
+  assert.equal(onceExit[1].trim(), 'releaseSassSyntax(root, pending);');
+  const steps = index.match(/^function runSteps\(c: Compilation, constructs: SassConstruct\[\]\) \{\n  try \{\n([\s\S]*?)\n  \} catch/m);
+  assert.ok(steps, 'runSteps() is found');
+  const calls = [...steps[1].matchAll(/\b(\w+)\(c\)/g)].map((match) => match[1]);
+  assert.deepEqual(calls, ['emitTheme', 'expandDirectives', 'expandResponsive', 'rejectLeftoverDirectives', 'checkReferences', 'reportThemeEmission']);
+  assert.equal(steps[1].trim().split('\n').length, calls.length, 'runSteps() only sequences the steps');
+  for (const step of ['validateOptions', 'holdSassSyntax', 'runSteps', 'releaseSassSyntax', 'rejectSassSyntax', ...calls]) {
+    assert.match(index, new RegExp(`^function ${step}\\(`, 'm'), `${step} is a top-level function`);
+  }
   assert.match(index, /^interface Compilation \{/m);
 });
 
