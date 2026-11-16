@@ -174,7 +174,11 @@ grep -q "implementation.enforceReferences = (root, consumers, options) => {" pac
 test -f fixtures/mig-b9-23-compile-budget/run.js                                                            # the base comparison of §9's AC7
 ```
 
-All nine exit 0 on `f855765`, run while drafting on 2026-11-10.
+All nine exit 0 on `f855765`, run while drafting on 2026-11-10, and on BASE
+`dec40b1` on 2026-11-16, where both dependency-gate lines also exit 0
+(MIG-B9-20 and MIG-B9-21 merged). On `dec40b1` the cited lines are
+plugin.ts:134, 590, 871, 947, 988 and 991, theme-validate.ts:352-360 and
+theme-generator.ts:25-32.
 
 The dependency gate. Both lines exit 1 on `f855765`, by design, and exit 0
 once MIG-B9-20 and MIG-B9-21 are merged:
@@ -247,7 +251,9 @@ name.
 
 Recorded on `f855765` on 2026-11-10 at 09:10:11, 09:10:12 and 09:21:12 EST
 (three runs, the last one of the block above as extracted from this file;
-the same output, exit 0 each, `$TMPDIR` left empty):
+the same output, exit 0 each, `$TMPDIR` left empty), and re-run on BASE
+`dec40b1` on 2026-11-16 at 12:35:48 EST (load 7.94; two runs, exit 0 each,
+`$TMPDIR` left empty) with the same five lines:
 
 ```text
 a token, no marker: bytes 46, validateTheme 1, theme renders 1, engine runs 12, reference inspections 1, value parses 23001
@@ -429,7 +435,7 @@ story starts (§4); those below are `f855765`'s:
 
 - the corpus through `compile()`: 276,926 bytes, equal to Dart Sass's, in
   the three `sourceMap` modes, with BASE's external map, `dependencies` and
-  warnings (21 on `f855765`), by `fixtures/mig-b9-23-compile-budget/run.js`'s
+  warnings (21 on `f855765` and on `dec40b1`), by `fixtures/mig-b9-23-compile-budget/run.js`'s
   T4 against a build of BASE;
 - every parity oracle (`fixtures/parity/expected/**`), without `--update`;
 - the playground's `src/app/uxdsl.css`, `src/generated/examples.json`, and
@@ -441,7 +447,7 @@ story starts (§4); those below are `f855765`'s:
   results;
 - every existing test's assertion: `packages/uxdsl/test` differs from BASE
   only by the new test file;
-- `DIAGNOSTIC_CATALOG`: BASE's codes (106 on `f855765`), none added;
+- `DIAGNOSTIC_CATALOG`: BASE's codes (106 on `f855765`, 107 on `dec40b1`), none added;
 - the gate's verdicts.
 
 ## 6. Out of scope
@@ -501,7 +507,7 @@ Non-normative.
      surfaces, buttons, inputs, densities) fixes the CSS.
    - `validateTheme` validates a deep copy (`cloneThemeValue`), and the
      plugin renders `c.theme`. Both have the same content.
-   - AGENTS.md (lines 782 to 786) says that the plugin calls `validateTheme`
+   - AGENTS.md (lines 801 to 802 on `dec40b1`; 782 to 786 on `f855765`) says that the plugin calls `validateTheme`
      "on the effective theme before any engine runs". Keep that true. If the
      wording becomes inexact, update it and regenerate the agent guide;
      AGENTS.md then joins Shares (§10).
@@ -519,12 +525,12 @@ Traps:
 
 - **`test/performance/reference-performance.test.js`** captures
   `enforceReferences`'s arguments from a compilation with
-  `references: { mode: 'off' }` that emits the theme (lines 57 and 62). Its
+  `references: { mode: 'off' }` that emits the theme (lines 58 and 63 on
+  `dec40b1`; its `source()` writes `@uxdsl theme;`, as MIG-B9-20 rewrote it). Its
   consumers are the theme's declarations, so C2 never applies there. An
   implementation that also stops calling `enforceReferences` for
   `mode: 'off'` breaks its capture (`the compilation never reached reference
-  validation`). MIG-B9-20 rewrites that test's `includeTheme: true` before
-  this story starts.
+  validation`).
 - **`test/core/sass-source-maps.test.js:316` to `326`** pins the
   unparsable-theme `CssSyntaxError` at `<css input>`, with PostCSS's own
   position. Under Q4 (a) it stays as it is.
@@ -637,7 +643,7 @@ Owner checks, never marked PASS by the agent:
 | package README | yes (the guard): one sentence |
 | `verify-docs-update.js` classification | no (no file added under `src`; yes if the implementation adds one) |
 | `npm run generate:language` | no |
-| `AGENTS.md` + agent guide | no, unless the sentence at lines 782 to 786 becomes inexact (§7, item 1); then yes, and AGENTS.md joins Shares |
+| `AGENTS.md` + agent guide | no, unless the sentence at lines 801 to 802 on `dec40b1` (782 to 786 on `f855765`) becomes inexact (§7, item 1); then yes, and AGENTS.md joins Shares |
 | `DIAGNOSTIC_CATALOG` | no |
 | `npm run generate:capabilities` | no |
 | playground `uxdsl:build` + captures | run, with no change expected (`unchanged src/app/uxdsl.css`; `npm test` checks the captures) |
@@ -886,3 +892,37 @@ Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-10). 
 - **Q3, a timing criterion (decision 28): (a)**, as the contract assumed: none. C1 to C3's deterministic counts are the contract; timings are indicative and go in §14, with MIG-B9-23's runner discipline. No change.
 - **Q4, a theme value PostCSS cannot parse, though `validateTheme` accepts it (decision 29): (a)**, as the contract assumed: every error is kept as on BASE, and C2 skips only the inspection. No change.
 - **New fact 6, `compile()` from standard input (decision 30, from PR #80's notes).** The fact proposed no story. The owner put the fix in MIG-B9-26: when `process.argv[1]` is not a file path, the Sass stage gives `NodePackageImporter` the current working directory as its entry-point directory, with a test run from `node -`. Nothing changes here; §4 runs from a file.
+
+### Stale lines corrected when the story started (2026-11-16)
+
+The scout re-ran §3 and §4 on BASE `dec40b1` (the merge of PR #100). Every
+precondition, both dependency-gate lines and §4's five lines hold; only
+these lines were stale (README §1.4), and were corrected in place:
+
+- §3. Old: "All nine exit 0 on `f855765`, run while drafting on 2026-11-10."
+  New: the same, followed by "and on BASE `dec40b1` on 2026-11-16, where both
+  dependency-gate lines also exit 0 (MIG-B9-20 and MIG-B9-21 merged). On
+  `dec40b1` the cited lines are plugin.ts:134, 590, 871, 947, 988 and 991,
+  theme-validate.ts:352-360 and theme-generator.ts:25-32." Each grep still
+  matches; only the line numbers moved.
+- §4. Old: "Recorded on `f855765` on 2026-11-10 at 09:10:11, 09:10:12 and
+  09:21:12 EST (three runs, …)". New: the same, followed by "and re-run on
+  BASE `dec40b1` on 2026-11-16 at 12:35:48 EST (load 7.94; two runs, exit 0
+  each, `$TMPDIR` left empty) with the same five lines". The lines match,
+  so there is no finding.
+- §5. Old: "`DIAGNOSTIC_CATALOG`: BASE's codes (106 on `f855765`), none
+  added;". New: "(106 on `f855765`, 107 on `dec40b1`)": MIG-B9-17, merged
+  before BASE, added a code.
+- §5. Old: "warnings (21 on `f855765`), by". New: "warnings (21 on
+  `f855765` and on `dec40b1`), by": `fixtures/sass-corpus/run.js
+  --no-timing-budget` on `dec40b1` reports 276,926 bytes,
+  `byte-identical: true`, 21 warnings and the five checks ok.
+- §7 item 1 and §10's AGENTS.md row. Old: "AGENTS.md (lines 782 to 786)"
+  and "the sentence at lines 782 to 786". New: "lines 801 to 802 on
+  `dec40b1`; 782 to 786 on `f855765`": the same sentence ("The PostCSS
+  plugin calls it on the effective theme before any engine runs") moved.
+- §7 Traps. Old: "`references: { mode: 'off' }` that emits the theme (lines
+  57 and 62). […] MIG-B9-20 rewrites that test's `includeTheme: true` before
+  this story starts." New: "(lines 58 and 63 on `dec40b1`; its `source()`
+  writes `@uxdsl theme;`, as MIG-B9-20 rewrote it)", and the sentence in the
+  future tense removed: MIG-B9-20 has merged.
