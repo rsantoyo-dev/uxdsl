@@ -731,3 +731,14 @@ new test run against the built package of the previous commit (BASE
   it asserts `(--XS)` instead. `npm test` exit 0 (5:03); the Bootstrap
   corpus 276,926 bytes, `byte-identical: true`, 21 warnings (14:58, load
   4.90); `fixtures/parity/run.js` PASS without `--update`.
+- **A project `@custom-media`** (shadowing and substitution,
+  `UXD_BREAKPOINT_SHADOWED`, the nested definition and the typed query;
+  T8, T7's second half, T16). Red on the previous commit: 2 of 10 failed;
+  T8's first assertion got `@media (min-width: 1024px)` where the project's
+  `@custom-media --lg (min-width: 900px)` asks for 900px, with no warning,
+  and T7's nested definition compiled (`null` error). Green: 10 of 10, after
+  one expectation corrected to the bytes the plugin alone already printed
+  for `lg()` on BASE (`@media (min-width: 1024px){`, no space before the
+  brace). `diagnostics-catalog.test.js` sees the new code asserted by T8.
+  `npm test` exit 0 (5:07); corpus 276,926 bytes, `byte-identical: true`,
+  21 warnings (15:06, load 4.50); parity PASS.

@@ -418,6 +418,25 @@ unquoted `$query: (--lg)`; quote it). Only `@media` preludes are rewritten:
 `(--lg)` in an `@import` media list or an `@container` prelude is left as
 written.
 
+What is written by hand wins: a `@custom-media` at the top level of the
+stylesheet that names a theme breakpoint replaces it in that stylesheet,
+with one `UXD_BREAKPOINT_SHADOWED` warning located at the definition, which
+stays in the output. `lg()` and stylesheets compiled apart keep the theme's
+query; to move `lg` everywhere, change `breakpoints.lg` in the theme.
+
+```css
+@custom-media --lg (min-width: 900px);
+@media (--lg) { .nav { display: flex; } }
+```
+
+Inside a compound prelude (`print and (--lg)`) the definition must be a
+condition such as `(min-width: 900px)`; one with a media type, a keyword or a
+list fails there, and so does a `@custom-media` for a breakpoint the
+stylesheet uses written inside a rule. A `@custom-media` for a name that is
+not a breakpoint is the author's CSS, left as written with its uses. With
+`uxdsl/postcss` alone, each file is compiled on its own, so only the
+definitions in that file are seen.
+
 <p align="center">
   <a href="https://uxdsl.vercel.app/docs/home">
     <strong>Explore the Full Docs &rarr;</strong>

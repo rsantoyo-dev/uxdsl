@@ -605,19 +605,61 @@ function unsplittableAncestor(node: PostcssNode): AtRule | undefined {
   return undefined;
 }
 
+/** A `@custom-media` definition's prelude: the name, with its dashes, and the query. */
+const CUSTOM_MEDIA_DEFINITION = /^\s*(--[A-Za-z0-9_-]+)\s+([\s\S]*\S)\s*$/;
+
+/** Whether `query` is one parenthesized group: `(min-width: 900px)`, `((a) or (b))`. */
+function isParenGroup(query: string): boolean {
+  if (!query.startsWith('(')) return false;
+  let depth = 0;
+  for (let index = 0; index < query.length; index++) {
+    if (query[index] === '(') depth++;
+    else if (query[index] === ')' && --depth === 0) return index === query.length - 1;
+  }
+  return false;
+}
+
+/** Whether `query` is a media condition (no media type, keyword or list), which can stand in parentheses inside another query. */
+function isMediaCondition(query: string): boolean {
+  if (!/^(?:\(|not\s*\()/i.test(query)) return false;
+  return !outsideParentheses(query).includes(',');
+}
+
+/** Whether the token at `offset` is a whole item of the media query list `text`. */
+function standsAlone(text: string, offset: number, length: number): boolean {
+  const before = text.slice(0, offset);
+  let depth = 0;
+  for (const char of before) {
+    if (char === '(') depth++;
+    else if (char === ')') depth--;
+  }
+  return depth === 0 && /(?:^|,)\s*$/.test(before) && /^\s*(?:,|$)/.test(text.slice(offset + length));
+}
+
 /**
  * `(--<bp>)` in an `@media` prelude names a breakpoint of the effective theme
  * and compiles to the query `<bp>()` emits, wherever the at-rule sits and
  * whatever else its prelude says: only that token changes, and the rest of
  * the prelude, its comments and the at-rule's raws stay as written. Names
- * compare case-insensitively, as the functions do. The base breakpoint has
- * no query, a breakpoint under an at-rule that cannot hold a media query has
- * nowhere to go, and a breakpoint name outside parentheses is not a media
- * feature: each is UXD_BREAKPOINT_CONTEXT. Any other `(--name)`, and every
- * other at-rule's prelude, is left as written. Only the at-rules
- * `validateOptions` collected are read, so a stylesheet whose preludes hold
- * no `--` costs nothing here. A held Sass construct in a rewritten prelude is
- * judged on the prelude as rewritten.
+ * compare case-insensitively, as the functions do.
+ *
+ * What is written by hand wins: a top-level `@custom-media --<bp> <query>;`,
+ * wherever it is in the stylesheet, replaces the theme's `<bp>` in every
+ * `(--<bp>)` of this compilation, with one UXD_BREAKPOINT_SHADOWED warning per
+ * definition, and stays in the output; the last definition of a name wins.
+ * Its query replaces a token that is a whole item of the prelude's list as
+ * written, and one inside a compound item when it is a condition. A
+ * `@custom-media` for any other name is the author's, and is left, with its
+ * uses, as written.
+ *
+ * The base breakpoint has no query, a breakpoint under an at-rule that cannot
+ * hold a media query has nowhere to go, a breakpoint name outside parentheses
+ * is not a media feature, a definition inside a rule does not define a custom
+ * media query, and a query with a media type cannot be combined inside
+ * another: each is UXD_BREAKPOINT_CONTEXT. Every other at-rule's prelude is
+ * left as written. Only the at-rules `validateOptions` collected are read, so
+ * a stylesheet whose preludes hold no `--` costs nothing here. A held Sass
+ * construct in a rewritten prelude is judged on the prelude as rewritten.
  */
 function rewriteBreakpointMedia(c: Compilation) {
   if (!c.breakpointAtRules.length) return;
@@ -626,6 +668,30 @@ function rewriteBreakpointMedia(c: Compilation) {
     const lower = name.toLowerCase();
     return c.bpNames.has(lower) ? lower : undefined;
   };
+  // The project's definitions, collected before any prelude is read: custom
+  // media are global, so one written after its use, or in a partial Sass
+  // emitted into this stylesheet, counts.
+  const defined = new Map<string, string>();
+  const shadowing = new Map<string, { name: string; query: string }>();
+  const nested = new Map<string, AtRule>();
+  const warnings: Array<() => void> = [];
+  for (const at of c.breakpointAtRules) {
+    if (at.name.toLowerCase() !== 'custom-media') continue;
+    const definition = CUSTOM_MEDIA_DEFINITION.exec(at.params);
+    if (!definition) continue;
+    const [, name, query] = definition;
+    const bp = breakpointOf(name.slice(2));
+    if (at.parent !== c.root) {
+      if (bp && !nested.has(bp)) nested.set(bp, at);
+      continue;
+    }
+    defined.set(name, query);
+    if (!bp) continue;
+    shadowing.set(bp, { name, query });
+    const theirs = bp === base ? 'no media query (the base breakpoint)' : minWidthQuery(c.bps[bp]);
+    const text = diagnostic(`UXD_BREAKPOINT_SHADOWED: @custom-media ${name} ${query} replaces the theme's ${bp}, ${theirs}, in this stylesheet: (--${bp}) compiles to ${query} here, while ${bp}() and stylesheets compiled apart keep the theme's. Remove it to use the theme's ${bp}, or change breakpoints.${bp} in the theme to move it everywhere.`).message;
+    warnings.push(() => c.result.warn(text, { node: at, word: name, plugin: PLUGIN }));
+  }
   for (const at of c.breakpointAtRules) {
     if (at.name.toLowerCase() !== 'media') continue;
     const params = at.params;
@@ -635,21 +701,40 @@ function rewriteBreakpointMedia(c: Compilation) {
       if (!bp) continue;
       throw locateError(diagnostic(`UXD_BREAKPOINT_CONTEXT: ${bare[0]} in @media ${params} is not in parentheses, so it is not a media feature and the block never applies; write (${bare[0]}). In Sass, quote a query held in a variable: $query: "(${bare[0]})".`, bare[0]), at);
     }
-    const resolve = (token: string, name: string): string => {
+    const resolve = (token: string, name: string, offset: number): string => {
       const bp = breakpointOf(name);
       if (!bp) return token;
       const outer = unsplittableAncestor(at);
       if (outer) {
         throw diagnostic(`UXD_BREAKPOINT_CONTEXT: @media ${params} cannot live inside @${outer.name}: a media query cannot be nested there; write @media ${params} around the @${outer.name} instead.`, token);
       }
+      const project = shadowing.get(bp);
+      if (project) {
+        const { query } = project;
+        if (standsAlone(params, offset, token.length)) return /^true$/i.test(query) ? 'all' : /^false$/i.test(query) ? 'not all' : query;
+        if (isParenGroup(query)) return query;
+        if (isMediaCondition(query)) return `(${query})`;
+        throw diagnostic(`UXD_BREAKPOINT_CONTEXT: (--${name}) stands for ${query} in this stylesheet (@custom-media ${project.name}), a query with a media type, a list or a keyword, which cannot be combined inside @media ${params}; write the definition as a condition such as (min-width: 900px), or use (--${name}) on its own.`, token);
+      }
+      const definition = nested.get(bp);
+      if (definition) {
+        const parent = definition.parent as AtRule | Rule;
+        throw locateError(diagnostic(`UXD_BREAKPOINT_CONTEXT: @custom-media ${CUSTOM_MEDIA_DEFINITION.exec(definition.params)![1]} is not at the top level of the stylesheet, where a custom media query is defined; move it out of the ${parent.type === 'rule' ? 'rule' : `@${parent.name}`} to replace the theme's ${bp}.`, '@custom-media'), definition);
+      }
       if (bp === base) {
         throw diagnostic(`UXD_BREAKPOINT_CONTEXT: (--${name}) is the base breakpoint: it has no media query, because its values apply at every width; write these rules outside @media, or remove (--${name}) from the condition.`, token);
       }
       return minWidthQuery(c.bps[bp]);
     };
+    // Each token's replacement, in order; the raw text with comments gets the same ones.
+    const replacements: string[] = [];
     let next: string;
     try {
-      next = params.replace(BREAKPOINT_FEATURE, (token: string, name: string) => resolve(token, name));
+      next = params.replace(BREAKPOINT_FEATURE, (token: string, name: string, offset: number) => {
+        const replacement = resolve(token, name, offset);
+        replacements.push(replacement);
+        return replacement;
+      });
     } catch (error) {
       throw locateError(error, at);
     }
@@ -660,12 +745,14 @@ function rewriteBreakpointMedia(c: Compilation) {
     const raw = (at.raws as any).params;
     at.params = next;
     if (raw && typeof raw.raw === 'string' && raw.value === params) {
-      const rawNext = raw.raw.replace(BREAKPOINT_FEATURE, (token: string, name: string) => resolve(token, name));
-      if (commentsOf(rawNext) === commentsOf(raw.raw) && withoutComments(rawNext) === withoutComments(next)) (at.raws as any).params = { value: next, raw: rawNext };
+      let index = 0;
+      const rawNext = raw.raw.replace(BREAKPOINT_FEATURE, (token: string) => replacements[index++] ?? token);
+      if (index === replacements.length && commentsOf(rawNext) === commentsOf(raw.raw) && withoutComments(rawNext) === withoutComments(next)) (at.raws as any).params = { value: next, raw: rawNext };
       else delete (at.raws as any).params;
     }
     for (const construct of c.constructs) if (construct.node === at) construct.text = ownText(at);
   }
+  for (const warning of warnings) report(c, warning);
 }
 
 // --- emitTheme ---------------------------------------------------------------

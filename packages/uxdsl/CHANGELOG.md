@@ -44,6 +44,20 @@ them. See `docs/releases/0.5.0-beta.9.md`.
   `@keyframes`, `@font-face`, `@page` or `@counter-style`; and a breakpoint
   name outside parentheses in an `@media` prelude (`@media --lg`, what Dart
   Sass prints for an unquoted `$q: (--lg); @media #{$q}`).
+- **`UXD_BREAKPOINT_SHADOWED`, a warning.** A `@custom-media --<bp> <query>;`
+  at the top level of the stylesheet, for a theme breakpoint's name in any
+  case, replaces that breakpoint in every `(--<bp>)` of the compilation:
+  wherever it is written (after its use, or in a `@use`d partial through
+  `compile()`), the last definition of a name winning, each definition
+  warning once, located at it. The `@custom-media` stays in the output, and
+  `<bp>()` and stylesheets compiled apart keep the theme's query. Its query
+  replaces a token that is a whole item of the prelude's list as written
+  (`true` → `all`, `false` → `not all`), and is wrapped in parentheses inside
+  a compound item when it is a condition; a query with a media type, a
+  keyword or a list there is `UXD_BREAKPOINT_CONTEXT`, and so is a
+  `@custom-media` for a breakpoint the stylesheet uses written inside a rule
+  or an at-rule. A `@custom-media` for any other name is left as written,
+  with its uses.
 
 ### The plugin's fixed per-build costs (MIG-B9-24)
 

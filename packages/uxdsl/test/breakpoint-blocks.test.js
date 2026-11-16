@@ -18,6 +18,7 @@ const postcss = require('postcss');
 const exported = require('../dist/plugin');
 const plugin = exported.default || exported;
 const { compile } = require('../dist/entries/index.js');
+const { temporaryDirectory } = require('./helpers/temporary-directory');
 
 const DIR = path.join(__dirname, 'mig-b9-30');
 const CSS_FROM = path.join(DIR, 'x.css');
@@ -262,4 +263,95 @@ test('MIG-B9-30: a held $variable in a prelude that also holds (--lg) is judged 
   const unresolved = await failure(postcss([uxdsl(), variables({ resolveNothing: true })]).process(source, { from: CSS_FROM }));
   assert.match(unresolved.reason, /^UXD_SASS_CONTEXT: \$x is Sass/);
   assert.deepEqual([unresolved.line, unresolved.column], [1, 1]);
+});
+
+// --- T8 -----------------------------------------------------------------------
+
+const shadowedText = (written, query, bp = 'lg', theirs = '(min-width: 1024px)') => `UXD_BREAKPOINT_SHADOWED: @custom-media ${written} ${query} replaces the theme's ${bp}, ${theirs}, in this stylesheet: (--${bp}) compiles to ${query} here, while ${bp}() and stylesheets compiled apart keep the theme's. Remove it to use the theme's ${bp}, or change breakpoints.${bp} in the theme to move it everywhere.`;
+
+test('MIG-B9-30: a project @custom-media --lg replaces the theme\'s lg with one UXD_BREAKPOINT_SHADOWED per definition, located at it, and stays in the output', async (t) => {
+  // The plugin alone: the definition stays, (--lg) is the project's query, one warning at the definition.
+  const alone = await viaPlugin('@custom-media --lg (min-width: 900px);\n@media (--lg) { .a { color: red } }\n.b { padding: xs(0) lg(1rem); }');
+  assert.equal(alone.css, '@custom-media --lg (min-width: 900px);\n@media (min-width: 900px) { .a { color: red } }\n.b { padding: 0; }\n@media (min-width: 1024px){\n.b { padding: 1rem; } }');
+  assert.deepEqual(alone.warnings, [shadowedText('--lg', '(min-width: 900px)')]);
+  const [warning] = alone.result.warnings();
+  assert.deepEqual([warning.line, warning.column], [1, 15]);
+
+  // compile(): the same, with the warning at the author's line; a definition after its use counts.
+  const compiled = await viaCompile('.a { color: red; @media (--lg) { color: blue; } }\n@custom-media --lg (min-width: 900px);\n.b { padding: xs(0) lg(1rem); }');
+  assert.match(compiled.css, /@media \(min-width: 900px\) \{\n {2}\.a \{\n {4}color: blue;/);
+  assert.match(compiled.css, /@custom-media --lg \(min-width: 900px\);/);
+  assert.match(compiled.css, /@media \(min-width: 1024px\) \{\n\.b \{\n {2}padding: 1rem;/, 'lg() keeps the theme\'s query');
+  assert.deepEqual(compiled.warnings.map((each) => each.text), [shadowedText('--lg', '(min-width: 900px)')]);
+  assert.deepEqual([compiled.warnings[0].file, compiled.warnings[0].line], [UXDSL_FROM, 2]);
+
+  // In a @use'd partial, the warning names the partial's file and line.
+  const dir = fs.realpathSync(temporaryDirectory('uxdsl-breakpoint-blocks-', t));
+  fs.writeFileSync(path.join(dir, '_breakpoints.uxdsl'), '// The project moves lg.\n@custom-media --lg (min-width: 900px);\n');
+  const entry = path.join(dir, 'main.uxdsl');
+  const partial = await viaCompile("@use 'breakpoints';\n@media (--lg) { .a { color: red; } }\n", {}, entry);
+  assert.match(partial.css, /@media \(min-width: 900px\)/);
+  assert.deepEqual(partial.warnings.map((each) => [each.text, each.file, each.line]), [[shadowedText('--lg', '(min-width: 900px)'), path.join(dir, '_breakpoints.uxdsl'), 2]]);
+
+  // Any case shadows every spelling; the last of two definitions wins, and each warns.
+  const upper = await viaPlugin('@custom-media --LG (min-width: 900px);\n@media (--lg), (--Lg) { .a { color: red } }');
+  assert.equal(upper.css, '@custom-media --LG (min-width: 900px);\n@media (min-width: 900px), (min-width: 900px) { .a { color: red } }');
+  assert.deepEqual(upper.warnings, [shadowedText('--LG', '(min-width: 900px)')]);
+  const twice = await viaPlugin('@custom-media --lg (min-width: 900px);\n@custom-media --lg (min-width: 950px);\n@media (--lg) { .a { color: red } }');
+  assert.match(twice.css, /@media \(min-width: 950px\)/);
+  assert.deepEqual(twice.warnings, [shadowedText('--lg', '(min-width: 900px)'), shadowedText('--lg', '(min-width: 950px)')]);
+
+  // What the definition becomes: a condition is wrapped inside a compound prelude; a whole list item takes the query as written.
+  const substituted = async (definition, prelude) => {
+    const { css } = await viaPlugin(`@custom-media --lg ${definition};\n@media ${prelude} { .a { color: red } }`);
+    return css.split('\n')[1].replace(/ \{ \.a \{ color: red \} \}$/, '');
+  };
+  assert.equal(await substituted('(min-width: 900px) and (hover: hover)', 'print and (--lg)'), '@media print and ((min-width: 900px) and (hover: hover))');
+  assert.equal(await substituted('not (hover: hover)', 'print and (--lg)'), '@media print and (not (hover: hover))');
+  assert.equal(await substituted('((min-width: 900px) or (hover: hover))', 'print and (--lg)'), '@media print and ((min-width: 900px) or (hover: hover))');
+  assert.equal(await substituted('screen and (min-width: 900px)', '(--lg)'), '@media screen and (min-width: 900px)');
+  assert.equal(await substituted('screen and (min-width: 900px)', '(--lg), print'), '@media screen and (min-width: 900px), print');
+  assert.equal(await substituted('true', '(--lg)'), '@media all');
+  assert.equal(await substituted('false', '(--lg)'), '@media not all');
+
+  // The base breakpoint can be given a query too, and its warning says it had none.
+  const base = await viaPlugin('@custom-media --xs (min-width: 100px);\n@media (--xs) { .a { color: red } }');
+  assert.match(base.css, /@media \(min-width: 100px\)/);
+  assert.deepEqual(base.warnings, [shadowedText('--xs', '(min-width: 100px)', 'xs', 'no media query (the base breakpoint)')]);
+
+  // Negative controls: no definition, no warning; a name that is not a breakpoint is the author's; a held
+  // Sass construct that fails the compilation takes the warning with it.
+  const none = await viaPlugin('@media (--lg) { .a { color: red } }');
+  assert.deepEqual([none.css, none.warnings], ['@media (min-width: 1024px) { .a { color: red } }', []]);
+  const own = await viaPlugin('@custom-media --narrow (max-width: 400px);\n@media (--narrow) { .a { color: red } }');
+  assert.deepEqual([own.css, own.warnings], ['@custom-media --narrow (max-width: 400px);\n@media (--narrow) { .a { color: red } }', []]);
+  const held = postcss([uxdsl(), variables({ resolveNothing: true })]).process('@custom-media --lg (min-width: 900px);\n.a { margin: $gap; }', { from: CSS_FROM });
+  assert.match(String((await failure(held)).reason), /^UXD_SASS_CONTEXT: \$gap is Sass/);
+  assert.deepEqual(held.result.messages.filter((message) => message.type === 'warning'), []);
+});
+
+test('MIG-B9-30: a breakpoint where it cannot apply is UXD_BREAKPOINT_CONTEXT: a nested @custom-media --lg the stylesheet uses, a typed project query inside a compound prelude', async () => {
+  // A @custom-media inside a rule defines nothing; when the stylesheet uses the name, the override would silently not apply.
+  const nested = await failure(viaPlugin('.x { @custom-media --lg (min-width: 1px); }\n@media (--lg) { .a { color: red } }'));
+  assert.equal(nested.reason, "UXD_BREAKPOINT_CONTEXT: @custom-media --lg is not at the top level of the stylesheet, where a custom media query is defined; move it out of the rule to replace the theme's lg.");
+  assert.deepEqual([nested.line, nested.column], [1, 6]);
+  const inMedia = await failure(viaPlugin('@media print { @custom-media --LG (min-width: 1px); }\n@media (--lg) { .a { color: red } }'));
+  assert.match(inMedia.reason, /^UXD_BREAKPOINT_CONTEXT: @custom-media --LG is not at the top level of the stylesheet, where a custom media query is defined; move it out of the @media to replace the theme's lg\.$/);
+  const viaSass = await failure(viaCompile('.x { @custom-media --lg (min-width: 1px); }\n@media (--lg) { .a { color: red; } }'));
+  assert.match(viaSass.reason, /^UXD_BREAKPOINT_CONTEXT: @custom-media --lg is not at the top level/);
+  assert.equal(viaSass.line, 1);
+
+  // A query with a media type, a keyword or a list cannot be combined inside another.
+  const typed = await failure(viaPlugin('@custom-media --lg screen and (min-width: 900px);\n@media print and (--lg) { .a { color: red } }'));
+  assert.equal(typed.reason, 'UXD_BREAKPOINT_CONTEXT: (--lg) stands for screen and (min-width: 900px) in this stylesheet (@custom-media --lg), a query with a media type, a list or a keyword, which cannot be combined inside @media print and (--lg); write the definition as a condition such as (min-width: 900px), or use (--lg) on its own.');
+  assert.deepEqual([typed.line, typed.column], [2, 18]);
+  for (const definition of ['(min-width: 1px), print', 'true', 'only screen']) {
+    assert.match(String((await failure(viaPlugin(`@custom-media --lg ${definition};\n@media print and (--lg) { .a { color: red } }`))).reason), /^UXD_BREAKPOINT_CONTEXT: \(--lg\) stands for /, definition);
+  }
+
+  // Negative controls: a lone nested @custom-media with no use is left as written, and a top-level definition beside it wins.
+  const lone = '.x { @custom-media --lg (min-width: 1px); }\n@media (--md) { .a { color: red } }';
+  assert.equal((await viaPlugin(lone)).css, '.x { @custom-media --lg (min-width: 1px); }\n@media (min-width: 768px) { .a { color: red } }');
+  const both = await viaPlugin('@custom-media --lg (min-width: 900px);\n.x { @custom-media --lg (min-width: 1px); }\n@media (--lg) { .a { color: red } }');
+  assert.match(both.css, /@media \(min-width: 900px\)/);
 });
