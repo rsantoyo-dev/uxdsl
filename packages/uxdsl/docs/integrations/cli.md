@@ -212,12 +212,18 @@ Each file is its own Sass module. An entry that `@import`ed its files gave
 them one scope; with `@use`, a file that reads another file's `$variable`,
 mixin or `%placeholder` fails as `UXD_SASS` (`Undefined variable.`,
 `Undefined mixin.`, `The target selector was not found.`), and three cases
-compile differently, without an error: a call to another file's `@function`
-stays in the CSS as written, a value an earlier file set for a variable that
-another file declares `!default` no longer applies, and a project `@function`
-named like a UXDSL function (`space()`) replaces the token only in a file
-that `@use`s its file `as *` (or `@import`s it), and in a call through the
-namespace (`helpers.space(2)`). Give each file its own `@use` for what it
+compile differently, without an error but with a `UXD_MODULE_ISOLATION`
+warning: a call to another file's `@function` stays in the CSS as written
+(warned at the call's declaration); a value an earlier file set for a
+variable that another file declares `!default` no longer applies (warned at
+the `!default` declaration when the earlier file emits no CSS of its own, as
+a settings file does; a module configured with `@use … with (…)` never
+warns, unless the value is `null`); and a project `@function` named like a
+UXDSL function (`space()`), warned at its definition when no call of the
+build reaches it, replaces the token only in a file that `@use`s its file
+`as *` (or `@import`s it), and in a call through the namespace
+(`helpers.space(2)`).
+The CSS is Dart Sass's either way. Give each file its own `@use` for what it
 reads:
 
 ```scss
@@ -232,7 +238,9 @@ With `as *` the module's members keep their bare names. With a namespaced
 the namespace (`variables.$brand`, `helpers.double(4px)`): a bare variable or
 mixin fails there, but a function called by its bare name stays in the CSS as
 written, and one named like a UXDSL function stays the token, without an
-error.
+error: the first warns `UXD_MODULE_ISOLATION`, and so does the second when
+no call of the build reaches the function (`helpers.space(2)` in one file and
+a bare `space(2)` meant as the token warn nothing).
 
 A module that a file configures with `@use … with (…)` must be configured
 before anything else loads it: name the configuring file in `--first` when the

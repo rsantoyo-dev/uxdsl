@@ -142,7 +142,8 @@ function stageIn(dir, entry, options = {}) {
 const rel = (dir) => (file) => (file === undefined ? undefined : path.relative(dir, file).replace(/\.(uxdsl|scss)$/, '.X'));
 const neutral = (dir) => (text) => text.split(dir).join('<dir>').replace(/\.(uxdsl|scss)\b/g, '.X');
 const warningOf = (dir) => (w) => ({ text: neutral(dir)(w.text), file: rel(dir)(w.file), line: w.line, column: w.column });
-const sassWarnings = (warnings) => warnings.filter((w) => !/^UXD_FUNCTION_SHADOWED:/.test(w.text));
+/** The stage's warnings without UXD_FUNCTION_SHADOWED, and without UXD_MODULE_ISOLATION where the test pins that list itself (`isolationPinned`): every other warning is Dart Sass's twin's. */
+const sassWarnings = (warnings, { isolationPinned = false } = {}) => warnings.filter((w) => !/^UXD_FUNCTION_SHADOWED:/.test(w.text) && !(isolationPinned && /^UXD_MODULE_ISOLATION:/.test(w.text)));
 const twinLocation = (dir, error) => `${rel(dir)(fileURLToPath(error.span.url))}:${error.span.start.line + 1}:${error.span.start.column + 1}`;
 const stageLocation = (dir, error) => `${rel(dir)(error.file)}:${error.line}:${error.column}`;
 /** Sass's own frame and stack: its message without the first line(s), which repeat sassMessage. */
@@ -166,7 +167,7 @@ const frameOf = (dir, frame, exact) => {
 };
 
 /** The stage agrees with Dart Sass on the twin: CSS byte for byte, loaded files, warnings, or the error's message, location and frame (`exactFrame`: alignment included). */
-function assertSameAsTwin({ ux, sc, expected, actual }, label, { exactFrame = false } = {}) {
+function assertSameAsTwin({ ux, sc, expected, actual }, label, { exactFrame = false, isolationPinned = false } = {}) {
   if (expected.error) {
     assert.ok(actual.error, `${label}: Dart Sass fails on the twin (${expected.error.sassMessage}); the stage compiled`);
     assert.equal(neutral(ux)(actual.error.sassMessage), neutral(sc)(expected.error.sassMessage), label);
@@ -177,7 +178,7 @@ function assertSameAsTwin({ ux, sc, expected, actual }, label, { exactFrame = fa
     assert.equal(actual.css, expected.css, label);
     assert.deepEqual(actual.loadedFiles.map(rel(ux)), expected.loadedFiles.map(rel(sc)), label);
   }
-  const warnings = actual.error ? [] : sassWarnings(actual.warnings);
+  const warnings = actual.error ? [] : sassWarnings(actual.warnings, { isolationPinned });
   if (!actual.error) assert.deepEqual(warnings.map(warningOf(ux)), expected.warnings.map(warningOf(sc)), `${label}: warnings`);
 }
 
@@ -729,20 +730,34 @@ const DEC17 = [
   ['IMP-U an @imported partial with a @use of its own, where the entry\'s as * module is not visible', { 'entry.uxdsl': '@use "helpers" as *;\n@import "p";\n.e { w: space(1); }\n', '_helpers.scss': H, '_p.uxdsl': '@use "sass:math";\n.p { v: space(2); w: math.div(4px, 2); }\n' }, null, ['_helpers.scss:1:11']],
 ];
 
-test('MIG-B9-12: a project function wins exactly where Dart Sass calls its bare name, decided per call site', () => {
+/** The cases whose stage warns UXD_MODULE_ISOLATION (without a map, only for a token-named function no call reaches); every other case warns none. */
+const DEC17_ISOLATION = { 'W2 @forward hide': ['_helpers.scss:1:11'] };
+
+test('MIG-B9-17: a project function wins exactly where Dart Sass calls its bare name, decided per call site, and each case warns UXD_MODULE_ISOLATION exactly where a token-named function no call reaches leaves the token (W2, @forward … hide)', () => {
   for (const [label, files, expectCss, expectShadow] of DEC17) {
     const run = twin(files, { dartOptions: { importers: [new sass.NodePackageImporter()] } });
     if (expectCss === null) {
-      assertSameAsTwin(run, label);
+      assertSameAsTwin(run, label, { isolationPinned: true });
     } else {
       assert.ok(!run.actual.error, `${label}: ${run.actual.error && run.actual.error.message}`);
       assert.equal(flat(run.actual.css), expectCss, label);
       // Where the twin compiles, the stage reports exactly its Sass warnings: the probe passes add none.
-      if (!run.expected.error) assert.deepEqual(sassWarnings(run.actual.warnings).map(warningOf(run.ux)), run.expected.warnings.map(warningOf(run.sc)), `${label}: warnings`);
+      if (!run.expected.error) assert.deepEqual(sassWarnings(run.actual.warnings, { isolationPinned: true }).map(warningOf(run.ux)), run.expected.warnings.map(warningOf(run.sc)), `${label}: warnings`);
     }
     if (expectShadow !== null) assert.deepEqual(shadowOf(run.ux, run.actual), [...expectShadow].sort(), `${label}: UXD_FUNCTION_SHADOWED`);
     for (const w of run.actual.warnings || []) if (/^UXD_FUNCTION_SHADOWED:/.test(w.text)) assert.match(w.text, /^UXD_FUNCTION_SHADOWED: @function [a-z-]+ \(.+:\d+\) replaces UXDSL's [a-z-]+\(\) in this build; rename it to use the token$/, label);
+    const isolation = (run.actual.warnings || []).filter((w) => /^UXD_MODULE_ISOLATION:/.test(w.text)).map((w) => `${path.relative(run.ux, w.file)}:${w.line}:${w.column}`);
+    assert.deepEqual(isolation, DEC17_ISOLATION[label] || [], `${label}: UXD_MODULE_ISOLATION`);
   }
+});
+
+test('MIG-B9-17: the twin comparison counts a UXD_MODULE_ISOLATION warning the stage reports and Dart Sass does not as a difference, except where the test pins that list itself (negative control)', () => {
+  const run = twin({ 'entry.uxdsl': '.a { b: c; }\n' });
+  assertSameAsTwin(run, 'plain');
+  const extra = { text: 'UXD_MODULE_ISOLATION: @function f (x:1) is not visible here', file: path.join(run.ux, 'entry.uxdsl'), line: 1, column: 1 };
+  const isolated = { ...run, actual: { ...run.actual, warnings: [...run.actual.warnings, extra] } };
+  assert.throws(() => assertSameAsTwin(isolated, 'an isolation warning'), /an isolation warning: warnings/);
+  assertSameAsTwin(isolated, 'an isolation warning pinned by its test', { isolationPinned: true });
 });
 
 /** The second-compile recipe recorded in MIG-B9-11's story, as written there: scan every loaded file, unprotect the names for the whole build, compile again. */

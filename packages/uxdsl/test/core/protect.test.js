@@ -16,7 +16,7 @@ const sass = require('sass');
 const core = require('../../dist/entries/index.js');
 const exported = require('../../dist/plugin');
 const plugin = exported.default || exported;
-const { protect, findShadowingFunctions, restoreDirectiveSpacing, TOKEN_FUNCTION_NAMES } = require('../../dist/sass/protect.js');
+const { protect, findShadowingFunctions, findTopLevelVariables, restoreDirectiveSpacing, TOKEN_FUNCTION_NAMES } = require('../../dist/sass/protect.js');
 const { THEME, CASES } = require('./protect.cases.js');
 const { CASES: MATRIX } = require('./sass-matrix.cases.js');
 
@@ -473,13 +473,14 @@ test('MIG-B9-12: protect\'s site option decides each token call (negative contro
   assert.throws(() => protect(source, { reserved: RESERVED, site: () => 'a\nb' }), TypeError);
 });
 
-test('MIG-B9-12: protect\'s bodies option gives each shadowing declaration the offset after its body; the output and the rest of each problem are unchanged', () => {
+test('MIG-B9-17: protect\'s bodies option gives each shadowing declaration the offsets after its body\'s opening and closing braces; the output and the rest of each problem are unchanged', () => {
   for (const [id, source] of CASES) {
     const plain = protect(source, { reserved: RESERVED, file: 'case.uxdsl' });
     const located = protect(source, { reserved: RESERVED, file: 'case.uxdsl', bodies: true });
     assert.equal(located.code, plain.code, id);
     sameColumnMap(located, plain, plain.code);
-    assert.deepEqual(located.problems.map(({ end, ...rest }) => rest), plain.problems, id);
+    assert.deepEqual(located.problems.map(({ end, bodyStart, ...rest }) => rest), plain.problems, id);
+    for (const problem of located.problems) assert.equal(problem.bodyStart === undefined, problem.end === undefined, id);
   }
   const source = [
     '@function space($k: radius(1), $m: "}") { @if $k { @return #{$k}px; } @return 0; }X',
@@ -493,6 +494,8 @@ test('MIG-B9-12: protect\'s bodies option gives each shadowing declaration the o
   // separate the name, the parameters and the body. No parameter list, or no closing brace: no end.
   const problems = protect(source, { reserved: RESERVED, bodies: true }).problems;
   assert.deepEqual(problems.map((p) => [p.name, p.end === undefined ? null : source[p.end]]), [['space', 'X'], ['md', 'Y'], ['tone', 'Z'], ['density', null], ['color', null]]);
+  // The body starts after its own brace, not one in a parameter's string or a comment.
+  assert.deepEqual(problems.map((p) => (p.bodyStart === undefined ? null : source.slice(p.bodyStart, p.bodyStart + 8))), [' @if $k ', ' @return', ' @return', null, null]);
   assert.deepEqual(findShadowingFunctions(source, { reserved: RESERVED, bodies: true }), problems);
 });
 
@@ -500,6 +503,32 @@ test('MIG-B9-12: protect\'s bodies option locates each shadowing declaration\'s 
   const source = '@function space($k) { @return $k; }\n@function double($n) { @return $n * 2; }';
   assert.deepEqual(protect(source, { reserved: RESERVED }).problems.map((p) => Object.keys(p)), [['code', 'message', 'line', 'column', 'name']]);
   assert.deepEqual(protect(source, { reserved: RESERVED, bodies: true }).problems.map((p) => [p.name, p.end]), [['space', source.indexOf('}') + 1]]);
+});
+
+test('MIG-B9-17: findTopLevelVariables lists the $name: statements at the top level of a file, with comments, strings, interpolations and url() skipped (negative control: a declaration in a block, a comment or an argument is not listed)', () => {
+  const source = [
+    '/* c */ $x: 1 !default;',
+    '$y: #{a} !default; $a_b: 1;',
+    '@if true { $z: 1 !default; }',
+    '$s: "a;b}" + \'{\' !default;',
+    '.r { $in: 1; }',
+    '// $c: 1;',
+    '$m: (a: 1, b: 2);',
+    '$u: url(data:x;y) !default;',
+    '@include m($k: 1);',
+    '$last: 2 // trailing !default',
+  ].join('\n');
+  const found = findTopLevelVariables(source);
+  assert.deepEqual(found.map((v) => [v.name, v.written, v.line, v.column, v.isDefault]), [
+    ['x', 'x', 1, 9, true],
+    ['y', 'y', 2, 1, true],
+    ['a-b', 'a_b', 2, 20, false],
+    ['s', 's', 4, 1, true],
+    ['m', 'm', 7, 1, false],
+    ['u', 'u', 8, 1, true],
+    ['last', 'last', 10, 1, false],
+  ]);
+  for (const v of found) assert.equal(source.slice(v.start, v.start + v.written.length + 1), `$${v.written}`);
 });
 
 // --- R9: the restore ----------------------------------------------------------------------

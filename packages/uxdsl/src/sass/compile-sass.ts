@@ -8,8 +8,9 @@ import type * as Sass from 'sass';
 import type { RawSourceMap } from 'source-map-js';
 import type { CompileWarning } from '../compile';
 import { diagnostic } from '../diagnostics';
-import { findShadowingFunctions, protect, TOKEN_FUNCTION_NAMES } from './protect';
-import type { ProtectCall, ProtectNearMiss, ProtectProblem, ProtectResult } from './protect';
+import { KNOWN_CSS_FUNCTIONS } from '../language';
+import { findShadowingFunctions, findTopLevelVariables, protect, TOKEN_FUNCTION_NAMES } from './protect';
+import type { ProtectCall, ProtectNearMiss, ProtectProblem, ProtectResult, TopLevelVariable } from './protect';
 
 // The Sass stage: one synchronous function that compiles an entry with Dart
 // Sass (the pure-JavaScript `sass` package), so that a `.scss` project renamed
@@ -92,9 +93,41 @@ import type { ProtectCall, ProtectNearMiss, ProtectProblem, ProtectResult } from
 //   succeeds, so when the first compile fails and a file names a `pkg:` URL,
 //   every token call is probed until a probe compiles: a `pkg:` package's
 //   function wins where Sass calls it even when UXDSL's token in its place
-//   would not compile. A build with no such definition runs Dart Sass once,
-//   unless that compile fails and a file the importer served contains the text
-//   `pkg:`.
+//   would not compile. A build with no such definition and no `!default`
+//   candidate (below) runs Dart Sass once, unless that compile fails and a file
+//   the importer served contains the text `pkg:`.
+// - Three things a file loaded with `@use` or `@forward` does not see, since
+//   it is its own Sass module, change a build that compiles; each is one
+//   `UXD_MODULE_ISOLATION` warning, and the CSS is Dart Sass's:
+//   - a call Dart Sass leaves in its output as written while a loaded file
+//     defines a `@function` of that name (`_` read as `-`), not a CSS function
+//     the compiler knows, a UXDSL function or a breakpoint: one per author
+//     position and name, located through the map where `compile()` locates
+//     any other position in the output; only the values of declarations Sass
+//     evaluates are read (a `url()` whose argument Sass evaluated included),
+//     and only with `sourceMap`;
+//   - a definition named like a UXDSL function that the probe instruments
+//     (a `.uxdsl` or `.scss` file) and that no evaluation reaches, while a
+//     call of its name written in a `.uxdsl` file evaluated with no function
+//     of that name visible, keeping the token: at the definition. The probe
+//     records each evaluation of such a body with a statement at its start,
+//     whatever reached it (a bare call, a namespace, another function,
+//     `meta.call`). Not reported where a loaded file defines one of the meta
+//     functions the probe reads;
+//   - a top-level `$name: … !default` in a `.uxdsl` file loaded as a module
+//     whose default applied after an earlier loaded `.uxdsl` or `.scss` file,
+//     one that emits no CSS (no mapping of the output points into it),
+//     assigned `$name` at its top level: at the declaration, naming the last
+//     such file. The candidates come from the first pass with no compile, and
+//     only with `sourceMap`; for them alone one more compile precedes each
+//     candidate declaration with a guarded twin whose value Sass evaluates
+//     exactly when the default would apply (no `with` configuration included)
+//     and which assigns null, and reports nothing when that compile fails or
+//     its CSS differs from the first pass's. The twin makes the variable
+//     exist, which a file can test, so no pass whose result the build uses
+//     carries it: never the shadowing probe.
+//   They follow `UXD_FUNCTION_SHADOWED`, by load order, line and column, and
+//   only a stage that succeeds reports them.
 // - Nothing is shared between calls: every cache lives in one call's state,
 //   and every position is translated with the pass that produced it. Every
 //   pass sees the text first read for each file the importer serves; a file
@@ -114,7 +147,7 @@ export interface SassStageInput {
 export interface SassStageOptions {
   /** The effective theme's breakpoint names. With the token functions and `tone`, the names a project `@function` is checked against (`UXD_FUNCTION_SHADOWED`). */
   reserved: Iterable<string>;
-  /** true: Dart Sass runs with a source map and the result carries it, translated. false: no map. */
+  /** true: Dart Sass runs with a source map and the result carries it, translated. false: no map, and no `UXD_MODULE_ISOLATION` for a call left as written or a `!default`. */
   sourceMap: boolean;
   /** Directories searched, in order, for a URL with no scheme that is not found relative to the importing file, each as Dart Sass searches a load path (a leading `..` in the URL is walked from the directory itself, so one that does not exist finds nothing); relative entries are appended to `process.cwd()`, each kept as written. Default: every `node_modules` from the entry's directory up to the root, nearest first. The directories of the `SASS_PATH` environment variable are searched after these, as Dart Sass searches them. */
   loadPaths?: string[];
@@ -131,7 +164,7 @@ export interface SassStageResult {
   loadedFiles: string[];
   /** The near-miss calls protect rewrote in the `.uxdsl` files loaded (`palete(primary.main)`, which Dart Sass cannot parse), in load order, each with its file and that file's text. The plugin reports each one Sass evaluated; one in a declaration Sass never evaluated is in no CSS. */
   nearMisses: SassStageNearMiss[];
-  /** Sass's warnings and `@debug` output in Sass's order (`UXD_SASS_WARNING: [<id>] <first line>`, `UXD_SASS_WARNING: DEBUG: <first line>` or `UXD_SASS_WARNING: <first line>`), then one `UXD_FUNCTION_SHADOWED: …` per shadowing definition, located at the definition. */
+  /** Sass's warnings and `@debug` output in Sass's order (`UXD_SASS_WARNING: [<id>] <first line>`, `UXD_SASS_WARNING: DEBUG: <first line>` or `UXD_SASS_WARNING: <first line>`), then one `UXD_FUNCTION_SHADOWED: …` per shadowing definition, located at the definition, then the `UXD_MODULE_ISOLATION: …` warnings by load order, line and column. */
   warnings: CompileWarning[];
 }
 
@@ -295,6 +328,16 @@ interface Definition extends ProtectProblem {
   file: string;
 }
 
+/** Located warnings of the stage's own, before they are ordered. */
+type LocatedWarning = CompileWarning & { file: string; line: number; column: number };
+
+/** What the probe decided: the pass to report, the definitions some bare call resolves to, and a warning for each token-named definition no call reaches while a bare call of its name keeps the token. */
+interface Shadowing {
+  report: Pass;
+  shadowing: Definition[];
+  unreached: LocatedWarning[];
+}
+
 interface StackFrame {
   indent: string;
   pathText: string;
@@ -311,11 +354,14 @@ export function compileSassStage(input: SassStageInput, options: SassStageOption
   const sass: typeof Sass = require('sass');
   const stage = openStage(sass, input, options);
   const first = runPass(stage, { report: true });
-  let reported: { report: Pass; shadowing: Definition[] } = { report: first, shadowing: [] };
+  let reported: Shadowing = { report: first, shadowing: [], unreached: [] };
   try {
     rethrowNonSass(stage, first);
     reported = resolveShadowing(stage, first);
-    return finish(stage, reported.report, reported.shadowing);
+    const defaults = defaultCandidates(stage, first);
+    const records = defaults ? probeDefaults(stage, first, defaults) : null;
+    const applied = defaults && records ? defaultsApplied(stage, first, defaults, records) : [];
+    return finish(stage, reported.report, reported.shadowing, [...reported.unreached, ...applied]);
   } catch (error) {
     if (error && typeof error === 'object') (error as { warnings?: CompileWarning[] }).warnings = stageWarnings(reported.report, reported.shadowing);
     throw error;
@@ -792,7 +838,7 @@ function rethrowNonSass(stage: Stage, pass: Pass): void {
   if (!isSass) throw error;
 }
 
-function finish(stage: Stage, pass: Pass, shadowing: Definition[]): SassStageResult {
+function finish(stage: Stage, pass: Pass, shadowing: Definition[], isolated: LocatedWarning[]): SassStageResult {
   rethrowNonSass(stage, pass);
   if (pass.failed) throw stageError(pass, pass.error as Sass.Exception);
   const result = pass.result as Sass.CompileResult;
@@ -803,6 +849,8 @@ function finish(stage: Stage, pass: Pass, shadowing: Definition[]): SassStageRes
   });
   const out: SassStageResult = { css: result.css, loadedFiles, warnings: stageWarnings(pass, shadowing), nearMisses };
   if (stage.sourceMap && result.sourceMap) out.map = translateMap(pass, result.sourceMap);
+  const isolation = [...isolated, ...(out.map ? leftAsWritten(stage, pass, result.css, out.map) : [])];
+  out.warnings.push(...sortedByLoadOrder(isolation, loadedFiles));
   return out;
 }
 
@@ -824,6 +872,176 @@ function stageWarnings(pass: Pass, shadowing: Definition[]): CompileWarning[] {
     .sort((a, b) => order(a.file) - order(b.file) || a.line - b.line || a.column - b.column)
     .map((definition): CompileWarning => ({ text: definition.message, file: definition.file, line: definition.line, column: definition.column }));
   return [...pass.warns.map((warn) => convertWarning(pass, warn)), ...shadow];
+}
+
+// --- module isolation ------------------------------------------------------------------
+
+/** Sass treats `_` and `-` as the same character in a name. */
+const sassSpelling = (name: string): string => name.replace(/_/g, '-');
+
+/** Located warnings sorted by the load order of their files, then line and column. */
+function sortedByLoadOrder(warnings: LocatedWarning[], loadedFiles: string[]): CompileWarning[] {
+  const order = (file: string): number => {
+    const index = loadedFiles.indexOf(file);
+    return index === -1 ? loadedFiles.length : index;
+  };
+  return warnings.slice().sort((a, b) => order(a.file) - order(b.file) || a.line - b.line || a.column - b.column);
+}
+
+/** The namespace a `@use` of `file` gets by default (its name without a leading `_` and its extensions; an index file's directory), or null when that is not a name to write in a call. */
+function namespaceOf(file: string): string | null {
+  let name = path.basename(file).replace(/^_/, '').split('.')[0];
+  if (name === 'index') name = path.basename(path.dirname(file));
+  return /^(?!\d)(?!--)[A-Za-z0-9_-]+$/.test(name) ? name : null;
+}
+
+/** The name written at a 1-based line and column of `text`. */
+function writtenAt(text: string, line: number, column: number, fallback: string): string {
+  const found = /^[A-Za-z0-9_-]+/.exec((text.split('\n')[line - 1] || '').slice(column - 1));
+  return found ? found[0] : fallback;
+}
+
+/** A call in Dart Sass's output that could be a project function's: a name and its parenthesis, not after a character that makes it a selector, a variable, a member or a pseudo-class. */
+const CALL_IN_OUTPUT = /(?<![A-Za-z0-9_.$%@&#\\:-])(-?[A-Za-z_][A-Za-z0-9_-]*)\(/g;
+/** Names a call left as written is never reported under: the CSS functions the compiler knows and UXDSL's own, lowercase. */
+const KNOWN_CALLS: ReadonlySet<string> = new Set([...(KNOWN_CSS_FUNCTIONS as readonly string[]).map((name) => name.toLowerCase()), ...TOKEN_FUNCTION_NAMES, 'tone']);
+/** Functions whose arguments Dart Sass keeps as written, where a visible function is not called either. */
+const RAW_ARGUMENTS = /^(?:expression|element|type|-[a-z]+-calc)$/i;
+
+/** A private member's leading `-` or `_`: Sass shows a member so named to no other module, through `as *` or a namespace alike. */
+const privatePrefix = (name: string): string | null => (/^[-_]/.test(name) ? name[0] : null);
+
+/** The fix a `UXD_MODULE_ISOLATION` warning names for a member of another file (`sigil`: `$` for a variable): `visible`, preceded, for a private member, by making it public. */
+function isolationFix(written: string, visible: (name: string) => string, sigil = ''): string {
+  const prefix = privatePrefix(written);
+  if (prefix === null) return visible(written);
+  return `${sigil}${written} is private to its file, as its name starts with ${prefix}: rename it without the leading ${prefix}, then ${visible(written.replace(/^[-_]+/, ''))}`;
+}
+
+/** The offset of the parenthesis that closes the one open just before `start`, quoted text skipped; the text's length when none does. */
+function closingParenthesis(text: string, start: number): number {
+  let depth = 1;
+  let quote: string | null = null;
+  for (let index = start; index < text.length; index++) {
+    const char = text[index];
+    if (quote !== null) {
+      if (char === '\\') index++;
+      else if (char === quote) quote = null;
+    } else if (char === '"' || char === "'") quote = char;
+    else if (char === '(') depth++;
+    else if (char === ')' && --depth === 0) return index;
+  }
+  return text.length;
+}
+
+interface FunctionDefinition {
+  file: string;
+  line: number;
+  column: number;
+  written: string;
+}
+
+/**
+ * One `UXD_MODULE_ISOLATION` warning per author position and name for each
+ * call Dart Sass left in its output as written while a loaded file defines a
+ * `@function` of that name (Sass's spelling), which is therefore not visible
+ * there. Only the values of declarations Dart Sass evaluates are read: not a
+ * custom property, a CSS `@function` body, a `progid:` value, the arguments
+ * of `expression()`, `element()`, `type()` or a vendor-prefixed `calc()`, an
+ * at-rule's prelude, a selector, a comment or a string, where it leaves even
+ * a visible function as written. An unquoted `url()` whose argument holds a
+ * call is one Sass evaluated (it prints `url(8px)` for a visible function),
+ * so its argument is read as a value. Each call is located where
+ * `compile()` locates a position in Dart Sass's output: the nearest mapping at
+ * or before it on the stage's map. Output PostCSS cannot parse gives none;
+ * `compile()` reports the parse error.
+ */
+function leftAsWritten(stage: Stage, pass: Pass, css: string, map: RawSourceMap): LocatedWarning[] {
+  const reserved = new Set(stage.reserved.map((name) => name.toLowerCase()));
+  const called = new Set<string>();
+  for (const match of css.matchAll(CALL_IN_OUTPUT)) {
+    const name = sassSpelling(match[1]);
+    if (!KNOWN_CALLS.has(name.toLowerCase()) && !reserved.has(name.toLowerCase())) called.add(name);
+  }
+  if (called.size === 0) return [];
+  const definers = new Map<string, FunctionDefinition[]>();
+  for (const file of loadedFilesOf(pass)) {
+    const role = roleOf(file);
+    if (role === 'css') continue;
+    const served = pass.served.get(file);
+    const text = served ? served.original : stage.texts.get(file);
+    if (text === undefined || !/@function/i.test(text)) continue;
+    for (const problem of findShadowingFunctions(role === 'sass' ? blankIndentedComments(text) : text, { reserved: called, file })) {
+      if (!called.has(problem.name)) continue;
+      const definition = { file, line: problem.line, column: problem.column, written: writtenAt(text, problem.line, problem.column, problem.name) };
+      const list = definers.get(problem.name);
+      if (list) list.push(definition);
+      else definers.set(problem.name, [definition]);
+    }
+  }
+  if (definers.size === 0) return [];
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const postcss = require('postcss') as typeof import('postcss');
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const valueParser = require('postcss-value-parser') as typeof import('postcss-value-parser');
+  let root: ReturnType<typeof postcss.parse>;
+  try {
+    root = postcss.parse(css);
+  } catch {
+    return [];
+  }
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { SourceMapConsumer } = require('source-map-js') as typeof import('source-map-js');
+  const consumer = new SourceMapConsumer(map);
+  const seen = new Set<string>();
+  const out: LocatedWarning[] = [];
+  root.walkDecls((decl) => {
+    if (decl.prop.startsWith('--') || /^\s*progid:/i.test(decl.value)) return;
+    for (let ancestor: import('postcss').Node | undefined = decl.parent as import('postcss').Node | undefined; ancestor; ancestor = ancestor.parent as import('postcss').Node | undefined) {
+      if (ancestor.type === 'atrule' && (ancestor as import('postcss').AtRule).name.toLowerCase() === 'function' && /^\s*--/.test((ancestor as import('postcss').AtRule).params)) return;
+    }
+    const valueStart = decl.prop.length + (decl.raws.between || '').length;
+    const report = (called: string, index: number): void => {
+      const name = sassSpelling(called);
+      const definitions = definers.get(name);
+      if (!definitions) return;
+      const at = decl.positionBy({ index: valueStart + index });
+      const original = consumer.originalPositionFor({ line: at.line, column: Math.max(0, at.column - 1) });
+      if (original.source == null || original.line == null || original.column == null || roleOf(original.source) === 'css') return;
+      const file = original.source;
+      const line = original.line;
+      const column = original.column + 1;
+      const key = `${file}\n${line}\n${column}\n${name}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      const own = definitions.find((definition) => definition.file === file);
+      const definition = own || definitions[0];
+      const namespace = namespaceOf(definition.file);
+      const fix = own
+        ? 'define it at the top level of its file, before this call'
+        : isolationFix(definition.written, (visible) => `@use that file as * here, or call it through its namespace${namespace ? ` (${namespace}.${visible}())` : ''}`);
+      out.push({ text: `UXD_MODULE_ISOLATION: @function ${definition.written} (${definition.file}:${definition.line}) is not visible here, so Dart Sass leaves ${called}() in the CSS as written; ${fix}`, file, line, column });
+    };
+    /** Each call in `text`, which starts at `base` in the declaration's value. */
+    const visit = (text: string, base: number): void => {
+      valueParser(text).walk((node) => {
+        if (node.type !== 'function') return undefined;
+        if (RAW_ARGUMENTS.test(node.value)) return false;
+        if (node.value.toLowerCase() === 'url') {
+          // postcss-value-parser reads an unquoted argument as one word that ends at its first `)`.
+          if (node.nodes.length > 0 && node.nodes[0].type === 'word') {
+            const open = node.sourceIndex + node.value.length + 1;
+            visit(text.slice(open, closingParenthesis(text, open)), base + open);
+          }
+          return false;
+        }
+        report(node.value, base + node.sourceIndex);
+        return undefined;
+      });
+    };
+    visit(decl.value, 0);
+  });
+  return out;
 }
 
 // --- the author's SCSS wins ----------------------------------------------------------
@@ -870,7 +1088,7 @@ const textOf = (value: Sass.Value): string => value.assertString().text;
  * evaluation of every candidate call, and a final compile (only when a
  * decision differs from the first pass) writes each call accordingly.
  */
-function resolveShadowing(stage: Stage, first: Pass): { report: Pass; shadowing: Definition[] } {
+function resolveShadowing(stage: Stage, first: Pass): Shadowing {
   const { sass } = stage;
   const own = stage.probeNames;
   const definitions: Definition[] = [];
@@ -917,9 +1135,9 @@ function resolveShadowing(stage: Stage, first: Pass): { report: Pass; shadowing:
   let discovering = first.failed && [...first.served.values()].some((served) => served.original.includes('pkg:'));
   const candidateNames = (): Set<string> => (discovering ? new Set([...TOKEN_FUNCTION_NAMES, ...definedNames()]) : definedNames());
   let names = candidateNames();
-  if (names.size === 0) return { report: first, shadowing: [] };
+  if (names.size === 0) return { report: first, shadowing: [], unreached: [] };
   const callsAName = (pass: Pass): boolean => [...pass.sites.values(), ...pass.plainCalls].some((site) => names.has(site.call.name));
-  if (!first.failed && !callsAName(first)) return { report: first, shadowing: [] };
+  if (!first.failed && !callsAName(first)) return { report: first, shadowing: [], unreached: [] };
 
   // Which names are Sass's own global functions (color, and min/max/round/abs if a breakpoint is so named).
   const builtins = new Map<string, Sass.SassFunction>();
@@ -983,7 +1201,8 @@ function resolveShadowing(stage: Stage, first: Pass): { report: Pass; shadowing:
   // so the probe evaluates exactly what the build will. Lines appended at the end of `.uxdsl` files
   // record a name's meaning where protect never rewrites its calls, and a statement after the body of
   // each definition in a `.uxdsl` or `.scss` file captures the function that evaluation of it
-  // created, for attribution.
+  // created, for attribution. A statement at the start of each such body records every evaluation of
+  // it, whatever reached it: a bare call, a namespace, another function of its module, `meta.call`.
   //
   // What a name means is read with Sass's global meta functions, function-exists and get-function,
   // so no file changes how Sass evaluates it. Where a loaded file defines a function of one of those
@@ -999,6 +1218,9 @@ function resolveShadowing(stage: Stage, first: Pass): { report: Pass; shadowing:
   let atEnd: Array<{ fileId: string; name: string; fn: Sass.SassFunction | null }> = [];
   /** The function each evaluation of a definition created, by definition (`<file id>:<line>:<column>`). */
   let captures: Array<{ definition: string; fn: Sass.SassFunction }> = [];
+  /** The definitions the probe recorded at the start of their bodies, and those some evaluation of whose body it recorded. */
+  let instrumented = new Set<string>();
+  let called = new Set<string>();
   // Calls Sass reads as raw text and never evaluates, where the probe's choice does not parse (a
   // pseudo-class argument in a selector, which Sass ends at the first ";"): they keep the token,
   // which is the text Sass leaves there.
@@ -1063,6 +1285,8 @@ function resolveShadowing(stage: Stage, first: Pass): { report: Pass; shadowing:
     records = new Map();
     atEnd = [];
     captures = [];
+    instrumented = new Set();
+    called = new Set();
     const written = new Map<string, string>();
     const endLines = new Map<string, string>();
     const meta = metaShadowed();
@@ -1085,12 +1309,16 @@ function resolveShadowing(stage: Stage, first: Pass): { report: Pass; shadowing:
         if (role === 'uxdsl' || role === 'scss') {
           // Right after a definition's body, in the scope that holds it, the bare name means the
           // function that evaluation of the definition created. The braces keep the statement inert
-          // where Sass reads a value as raw text. Inserted from the last, so earlier offsets hold.
+          // where Sass reads a value as raw text. At the start of the body, each evaluation of it is
+          // recorded. Inserted from the last, and the end before the start, so earlier offsets hold.
           const defined = findShadowingFunctions(text, { reserved: stage.reserved, file, bodies: true });
           for (const definition of defined.reverse()) {
-            if (definition.end === undefined) continue;
+            if (definition.end === undefined || definition.bodyStart === undefined) continue;
             const column = served.protected ? served.protected.toOriginalColumn(definition.line - 1, definition.column - 1) + 1 : definition.column;
-            out = `${out.slice(0, definition.end)}@if true { @debug ${own.fn('cap')}("${fileId}:${definition.line}:${column}", ${visibleFunction(definition.name, namespaced(file))}); }${out.slice(definition.end)}`;
+            const key = `${fileId}:${definition.line}:${column}`;
+            out = `${out.slice(0, definition.end)}@if true { @debug ${own.fn('cap')}("${key}", ${visibleFunction(definition.name, namespaced(file))}); }${out.slice(definition.end)}`;
+            out = `${out.slice(0, definition.bodyStart)}@debug ${own.fn('called')}("${key}");${out.slice(definition.bodyStart)}`;
+            instrumented.add(key);
           }
         }
         const lines: string[] = [];
@@ -1126,6 +1354,10 @@ function resolveShadowing(stage: Stage, first: Pass): { report: Pass; shadowing:
         },
         [`${own.fn('cap')}($definition, $f)`]: (args) => {
           if (args[1] instanceof sass.SassFunction) captures.push({ definition: textOf(args[0]), fn: args[1] });
+          return sass.sassNull;
+        },
+        [`${own.fn('called')}($definition)`]: (args) => {
+          called.add(textOf(args[0]));
           return sass.sassNull;
         },
       },
@@ -1234,7 +1466,177 @@ function resolveShadowing(stage: Stage, first: Pass): { report: Pass; shadowing:
     }
     return atEnd.some((record) => record.name === definition.name && record.fn !== null && attributed(record.fn, definition));
   });
-  return { report, shadowing };
+
+  // A definition the probe recorded at the start of its body, which no evaluation reached, while a
+  // call of its name written in a `.uxdsl` file evaluated with no function of that name visible there,
+  // and so kept UXDSL's token. Not reported where a loaded file defines one of the meta functions the
+  // probe reads, which can make it keep a token where Sass would call the function.
+  const unreached: LocatedWarning[] = [];
+  if (!metaShadowed()) {
+    const fileOfId = new Map([...stage.fileIds].map(([file, id]) => [String(id), file]));
+    const loaded = loadedFilesOf(report);
+    const order = (file: string): number => {
+      const index = loaded.indexOf(file);
+      return index === -1 ? loaded.length : index;
+    };
+    const lineAt = (file: string, offset: number): number => {
+      const served = probe.served.get(file);
+      return served ? served.original.slice(0, offset).split('\n').length : 1;
+    };
+    /** The first call of `name`, in load order, that evaluated to UXDSL's token. */
+    const tokenSite = (name: string): Site | null => {
+      const found: Site[] = [];
+      for (const [siteId, site] of probe.sites) {
+        if (site.call.name !== name || unevaluated.has(siteId) || ambiguous.has(siteId)) continue;
+        if ((records.get(siteId) || []).some((record) => record.fn === null)) found.push(site);
+      }
+      for (const record of atEnd) {
+        if (record.name !== name || record.fn !== null) continue;
+        const file = fileOfId.get(record.fileId);
+        const plain = file === undefined ? undefined : probe.plainCalls.find((site) => site.file === file && site.call.name === name);
+        if (plain) found.push(plain);
+      }
+      found.sort((a, b) => order(a.file) - order(b.file) || a.call.start - b.call.start);
+      return found.length > 0 ? found[0] : null;
+    };
+    for (const definition of definitions) {
+      const key = `${idOf(stage, definition.file)}:${definition.line}:${definition.column}`;
+      if (!instrumented.has(key) || called.has(key) || shadowing.includes(definition)) continue;
+      const site = tokenSite(definition.name);
+      if (!site) continue;
+      const served = probe.served.get(definition.file);
+      const written = served ? writtenAt(served.original, definition.line, definition.column, definition.name) : definition.name;
+      const namespace = namespaceOf(definition.file);
+      const siteWritten = site.call.raw.slice(0, site.call.raw.indexOf('('));
+      unreached.push({
+        text: `UXD_MODULE_ISOLATION: @function ${written} (${definition.file}:${definition.line}) is reached by no call, and in ${site.file}:${lineAt(site.file, site.call.start)} the bare ${siteWritten}() is UXDSL's token, because the function is not visible there; @use that file as * there or call it through its namespace${namespace ? ` (${namespace}.${written}())` : ''} to use it, or remove or rename it to keep the token`,
+        file: definition.file,
+        line: definition.line,
+        column: definition.column,
+      });
+    }
+  }
+  return { report, shadowing, unreached };
+}
+
+// --- a !default an earlier file sets ------------------------------------------------------
+
+/** Top-level `!default` names of the modules that may apply their default although an earlier file sets the name, and the earlier files' names, by file. */
+interface DefaultCandidates {
+  modules: Map<string, Set<string>>;
+  earlier: Map<string, Set<string>>;
+  loaded: string[];
+}
+
+/**
+ * The candidates, from the first pass and with no compile: a `.uxdsl` file
+ * Sass loaded as a module (not the entry, not for an `@import`) that declares
+ * a top-level `$name: … !default`, and an earlier loaded `.uxdsl` or `.scss`
+ * file that assigns `$name` at its top level without `!default` and emits no
+ * CSS of its own (no mapping of the output points into it). Null without
+ * one, and without a map.
+ */
+function defaultCandidates(stage: Stage, first: Pass): DefaultCandidates | null {
+  if (!stage.sourceMap || first.failed || !first.result || !first.result.sourceMap) return null;
+  const map = first.result.sourceMap;
+  const loaded = loadedFilesOf(first);
+  let emitting: Set<string> | null = null;
+  const plain = new Map<string, TopLevelVariable[]>();
+  const modules = new Map<string, Set<string>>();
+  const earlier = new Map<string, Set<string>>();
+  loaded.forEach((file, index) => {
+    if (file === stage.entryPath || first.imported.has(file) || roleOf(file) !== 'uxdsl') return;
+    const served = first.served.get(file);
+    if (!served || !served.original.includes('!default')) return;
+    const defaults = findTopLevelVariables(served.original).filter((variable) => variable.isDefault);
+    if (defaults.length === 0) return;
+    if (!emitting) emitting = new Set(map.sources.map((source) => (source.startsWith('file:') ? fileURLToPath(source) : source)));
+    for (const before of loaded.slice(0, index)) {
+      const role = roleOf(before);
+      const text = first.served.get(before);
+      if ((role !== 'uxdsl' && role !== 'scss') || !text || emitting.has(before) || !text.original.includes('$')) continue;
+      let assigned = plain.get(before);
+      if (!assigned) {
+        assigned = findTopLevelVariables(text.original).filter((variable) => !variable.isDefault);
+        plain.set(before, assigned);
+      }
+      for (const variable of defaults) {
+        if (!assigned.some((other) => other.name === variable.name)) continue;
+        (modules.get(file) || modules.set(file, new Set()).get(file) as Set<string>).add(variable.name);
+        (earlier.get(before) || earlier.set(before, new Set()).get(before) as Set<string>).add(variable.name);
+      }
+    }
+  });
+  return modules.size > 0 ? { modules, earlier, loaded } : null;
+}
+
+/**
+ * `text` (what Sass receives for `file`) with each candidate declaration
+ * preceded by a guarded twin, `$name: <probe>("<kind>:<file id>:<line>:<name>") !default;`:
+ * Sass evaluates its value exactly when the default would apply (the variable
+ * unset or null, and no `with` configuration for it), the probe records it,
+ * and the twin assigns null, so the declaration after it behaves as written.
+ * `d` marks a module's `!default`, `s` an earlier file's assignment.
+ */
+function guardDefaults(stage: Stage, defaults: DefaultCandidates, file: string, text: string): string {
+  const moduleNames = defaults.modules.get(file);
+  const earlierNames = defaults.earlier.get(file);
+  if (!moduleNames && !earlierNames) return text;
+  const fileId = idOf(stage, file);
+  let out = text;
+  for (const variable of findTopLevelVariables(text).reverse()) {
+    const kind = variable.isDefault ? (moduleNames && moduleNames.has(variable.name) ? 'd' : null) : earlierNames && earlierNames.has(variable.name) ? 's' : null;
+    if (kind === null) continue;
+    out = `${out.slice(0, variable.start)}$${variable.written}: ${stage.probeNames.fn('default')}("${kind}:${fileId}:${variable.line}:${variable.name}") !default; ${out.slice(variable.start)}`;
+  }
+  return out;
+}
+
+/** The candidates' records from a probe compile of their own (Sass's silent logger, no map); null when it fails or its CSS is not the first pass's. */
+function probeDefaults(stage: Stage, first: Pass, defaults: DefaultCandidates): string[] | null {
+  const records: string[] = [];
+  const probe = runPass(stage, {
+    report: false,
+    instrument: (file, _role, text) => guardDefaults(stage, defaults, file, text),
+    functions: {
+      [`${stage.probeNames.fn('default')}($id)`]: (args) => {
+        records.push(textOf(args[0]));
+        return stage.sass.sassNull;
+      },
+    },
+  });
+  return !probe.failed && probe.result && first.result && probe.result.css === first.result.css ? records : null;
+}
+
+/** One warning per module `!default` whose default applied after an earlier candidate file had set the name, naming the last such file, at the declaration's `$`. */
+function defaultsApplied(stage: Stage, first: Pass, defaults: DefaultCandidates, records: string[]): LocatedWarning[] {
+  const fileOfId = new Map([...stage.fileIds].map(([file, id]) => [String(id), file]));
+  const order = (file: string): number => defaults.loaded.indexOf(file);
+  const out: LocatedWarning[] = [];
+  const reported = new Set<string>();
+  records.forEach((record, index) => {
+    const [kind, fileId, line, name] = record.split(':');
+    const file = fileOfId.get(fileId);
+    if (kind !== 'd' || file === undefined || reported.has(record)) return;
+    let setter: { file: string; line: string } | null = null;
+    for (const earlier of records.slice(0, index)) {
+      const [earlierKind, earlierId, earlierLine, earlierName] = earlier.split(':');
+      const earlierFile = fileOfId.get(earlierId);
+      if (earlierKind === 's' && earlierName === name && earlierFile !== undefined && earlierFile !== file && order(earlierFile) < order(file)) setter = { file: earlierFile, line: earlierLine };
+    }
+    if (!setter) return;
+    const served = first.served.get(file);
+    const declared = served ? findTopLevelVariables(served.original).find((variable) => variable.isDefault && variable.name === name && String(variable.line) === line) : undefined;
+    if (!declared) return;
+    reported.add(record);
+    out.push({
+      text: `UXD_MODULE_ISOLATION: $${declared.written}: … !default applies its default here, because the $${declared.written} that ${setter.file}:${setter.line} sets is not visible in this module; ${isolationFix(declared.written, (visible) => `@use that file as * here, or configure this module with @use … with ($${visible}: …)`, '$')}`,
+      file,
+      line: declared.line,
+      column: declared.column,
+    });
+  });
+  return out;
 }
 
 // --- errors ---------------------------------------------------------------------------------

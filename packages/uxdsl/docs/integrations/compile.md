@@ -95,7 +95,8 @@ const { css, map, dependencies, warnings, themeEmitted } = await compile(
   local modules it requires (none with `theme` or `discoverTheme: false`).
   Safe to feed to a bundler's file-watcher.
 - `warnings`: `{ text, file?, line?, column? }[]`: Dart Sass's
-  (`UXD_SASS_WARNING`, then `UXD_FUNCTION_SHADOWED`), then the plugin's, each
+  (`UXD_SASS_WARNING`, then `UXD_FUNCTION_SHADOWED`, then
+  `UXD_MODULE_ISOLATION`), then the plugin's, each
   at the author's file, line and column when it has a position; one without
   a position is `{ text }` alone.
 - **The theme is emitted only where `@uxdsl theme;` is written**, in the
@@ -418,7 +419,11 @@ one `UXD_FUNCTION_SHADOWED` warning per definition, at the definition:
 build; rename it to use the token`. Rename the function to get the token
 back. Where Sass does not call the bare name, the token stays: a call
 through a namespace (`helpers.space(2)`) is the project's function and
-shadows nothing, and a bare `space(2)` in that file is the token. Sass's
+shadows nothing, and a bare `space(2)` in that file is the token. A
+definition that no call of the build reaches, bare or through a namespace,
+while a bare call in a file that does not see it keeps the token, is one
+`UXD_MODULE_ISOLATION` warning at the definition (see "Errors and
+warnings"). Sass's
 names are case-sensitive and UXDSL's are not, so after `@function space`,
 `SPACE(2)` is still UXDSL's token:
 
@@ -543,12 +548,33 @@ outside a string and a `url()`, is read as a `//` comment:
   `@debug` rule, `UXD_SASS_WARNING: DEBUG: <its text>`, in Sass's order among
   the others (a `@debug` in a loop warns once per iteration, and
   `sass.quietDeps` does not silence it).
+- **Module isolation.** A file loaded with `@use` or `@forward` is its own
+  Sass module, so a member another file defines is not visible in it. Three
+  cases compile without an error, and each is one `UXD_MODULE_ISOLATION`
+  warning, with the CSS Dart Sass's: a call of another file's `@function`
+  that Dart Sass leaves in the CSS as written, at the call's declaration
+  (where `compile()` locates any other diagnostic in it; a call Sass leaves
+  as written even when the function is visible — in a custom property, an
+  at-rule's prelude, `expression()` — is never read, while an unquoted
+  `url()` whose argument holds a call is one Sass evaluates and is read; for
+  a private function, whose name starts with `-` or `_`, the fix renames it
+  first); a project `@function` named
+  like a UXDSL function that no call of the build reaches while a bare call
+  in a file that does not see it keeps the token, at the definition; and a
+  module's top-level `!default` that applies although a file evaluated
+  earlier, which emits no CSS of its own, sets the variable, at the
+  declaration (a module configured with `@use … with (…)` or
+  `@forward … with (…)` never warns, unless its value is `null`, which
+  configures nothing). They follow `UXD_FUNCTION_SHADOWED`,
+  by load order, line and column, and only a Sass stage that succeeds
+  reports them. A build with a `!default` candidate runs Dart Sass once
+  more; any other build compiles as often as without them.
 - **An error carries the warnings that came before it.** Every error
   `compile()` rejects with has a `warnings` property, `[]` when nothing came
   first: what `CompileResult.warnings` would have listed up to the failure,
   in the same order and at the same positions (Dart Sass's, then
-  `UXD_FUNCTION_SHADOWED`, then the plugin's; no `file` for an anonymous
-  source). A `[global-builtin]` deprecation on line 3 followed by
+  `UXD_FUNCTION_SHADOWED`, then `UXD_MODULE_ISOLATION`, then the plugin's;
+  no `file` for an anonymous source). A `[global-builtin]` deprecation on line 3 followed by
   `space(999)` on line 4 rejects with the `UXD_SPACE_REFERENCE` error, whose
   `warnings` holds the deprecation. Its class, message, `file`, `line`,
   `column`, `code` and `sassFrame` are those it has without them. The CLI,

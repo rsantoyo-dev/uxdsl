@@ -56,14 +56,16 @@ fails as `UXD_SASS_CONTEXT`. In the plugin, and in the runtime:
 
 - `sass/protect.ts`, `sass/compile-sass.ts`: SCSS — Sass's resolution, modules,
   nesting, mixins, functions and control rules — and its diagnostics
-  (`UXD_SASS`, `UXD_SASS_WARNING`, `UXD_FUNCTION_SHADOWED`); no UXDSL engine
+  (`UXD_SASS`, `UXD_SASS_WARNING`, `UXD_FUNCTION_SHADOWED`,
+  `UXD_MODULE_ISOLATION`); no UXDSL engine
   reimplements any of it. `compile.ts` maps every position in Dart Sass's
   output that the plugin reports back to the author's file through the Sass
   stage's source map; a parse error in CSS the plugin parses itself (the
   generated theme, `references.css`) keeps PostCSS's position in that CSS.
   Every error `compile()` rejects with carries `warnings`, the warnings
   produced before it in the order a result lists them (Dart Sass's, then
-  `UXD_FUNCTION_SHADOWED`, then the plugin's); the CLI, `uxdsl/vite` and
+  `UXD_FUNCTION_SHADOWED`, then `UXD_MODULE_ISOLATION`, then the plugin's);
+  the CLI, `uxdsl/vite` and
   `uxdsl/webpack` print them before the error.
 - Theme discovery (`config.ts`, called from `compile.ts`): once per
   compilation. Without `theme`, `compile()` finds the theme file in

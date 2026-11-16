@@ -22,6 +22,83 @@ the entries of FEAT-009's beta.7 stories (marked "FEAT-009, MIG-B7-…"), which
 reached npm first in `0.5.0-beta.8` under the former names; MIG-B9-52 moves
 them. See `docs/releases/0.5.0-beta.9.md`.
 
+### The silent cases of `@use`'s module isolation warn `UXD_MODULE_ISOLATION` (MIG-B9-17)
+
+#### Changed
+
+- **A call of another file's `@function` that Dart Sass leaves as written
+  warns.** Under a `@use` entry (the one `generate-entry` writes) each file
+  is its own Sass module, so `width: double(4px)` in a file that does not
+  `@use` the file defining `@function double` stayed `double(4px)` in the
+  CSS without a word. `compile()` now returns one `UXD_MODULE_ISOLATION`
+  warning per author position and name, where it locates any other
+  diagnostic of that declaration (`src/widget.uxdsl:1:6`), naming the
+  function, the file that defines it and the fix: `@use that file as * here,
+  or call it through its namespace (helpers.double())`, or, when the call's
+  own file defines the function after it, `define it at the top level of its
+  file, before this call`. `uxdsl build` prints it and exits 0. A CSS
+  function the compiler knows, a UXDSL function or breakpoint, a function no
+  loaded file defines (`foo(1px)`), and a call in a custom property, an
+  at-rule's prelude, a `progid:` value, a CSS `@function` body or the
+  arguments of `expression()` or a vendor-prefixed `calc()` (where Dart Sass
+  leaves even a visible function as written) warn nothing. An unquoted
+  `url()` whose argument holds a call is one Dart Sass evaluates (it prints
+  `url(8px)` for a visible `double(4px)`), so a call left as written there
+  warns. For a private function (a name that starts with `-` or `_`, which no
+  other module sees, through `as *` or a namespace alike) the fix starts with
+  renaming it without that character. The CSS is unchanged.
+- **A project `@function` named like a UXDSL function that no call reaches
+  warns.** Where a file does not see such a function (`@function space` in
+  `_shadow.uxdsl`, a bare `space(2)` in `pad.uxdsl` under a `@use` entry, or
+  under `pad.uxdsl`'s own namespaced `@use`), the bare call stays UXDSL's
+  token, by DEC-17, and nothing said so. When no call of the build reaches
+  the definition (neither a bare call, which `UXD_FUNCTION_SHADOWED` reports,
+  nor a call through a namespace, from another function or through
+  `meta.call()`), `compile()` now returns one `UXD_MODULE_ISOLATION` warning
+  at the definition (`src/_shadow.uxdsl:1:11`), naming a file where the bare
+  call keeps the token and the fix: `@use that file as * there or call it
+  through its namespace (shadow.space()) to use it, or remove or rename it to
+  keep the token`. DEC-17's pattern, `helpers.space(2)` in one file and a
+  bare `space(2)` meant as the token, warns nothing. Nor does a definition in
+  an indented `.sass` file or a `pkg:` package, or a build in which a loaded
+  file defines `function-exists` or `get-function`. The CSS is unchanged.
+- **A `!default` an earlier file sets warns.** Under a `@use` entry,
+  `$tone: red;` in a settings file `_a-config.uxdsl` does not reach
+  `$tone: blue !default;` in `b-button.uxdsl`, which applies its default.
+  When a `.uxdsl` file loaded as a module applies a top-level `!default`
+  after a file evaluated earlier, one that emits no CSS of its own, assigned
+  the variable at its top level, `compile()` now returns one
+  `UXD_MODULE_ISOLATION` warning at the declaration
+  (`src/b-button.uxdsl:1:1`), naming the variable, the last such file and the
+  fix: `@use that file as * here, or configure this module with @use … with
+  ($tone: …)`, or, for a private variable (`$_tone`), first renaming it. A
+  module configured with `@use … with (…)` or `@forward … with (…)` never
+  warns, unless the value it is given is `null`, which Sass treats as no
+  configuration, so the default applies; nor does a module whose earlier
+  file emits CSS (a loud comment counts) or sets the variable after the
+  module's default applied. The CSS is unchanged.
+- **The new code** is in `DIAGNOSTIC_CATALOG`, owner `core`, after
+  `UXD_FUNCTION_SHADOWED`; `compile()`'s warnings are Dart Sass's, then
+  `UXD_FUNCTION_SHADOWED`, then `UXD_MODULE_ISOLATION` (by load order, line
+  and column), then the plugin's. An `@import` entry, or the reading file's
+  own `@use … as *`, shares the members and warns nothing new;
+  `uxdsl/postcss` alone is unchanged. The first warning reads Dart Sass's
+  output, and the second rides on the compile the stage already runs for a
+  function named like a UXDSL function: neither costs a compile. A build with
+  a `!default` candidate (a module's `!default` and an earlier file of
+  settings that assigns the same name) compiles once more; every other build
+  as often as before.
+- **On a later error.** When the plugin, or the dotted near-miss check that
+  follows it, rejects a compile whose Sass stage succeeded, the error's
+  `warnings` carries the `UXD_MODULE_ISOLATION` warnings in the same place
+  as a result lists them, so the CLI, `uxdsl/vite` and `uxdsl/webpack` print
+  them before the error. A Sass failure (`UXD_SASS`) carries none of them.
+
+#### Visual changes
+
+- None. Every compiled output, the Bootstrap corpus and the theme CSS are
+  byte-identical; only `compile()`'s warnings gain the new code.
+
 ### Dotted near-misses keep their suggestion through `compile()`, `@debug` is a warning, and no project name changes the Sass stage (MIG-B9-26)
 
 #### Changed

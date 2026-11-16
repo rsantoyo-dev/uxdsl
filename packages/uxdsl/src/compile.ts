@@ -11,8 +11,10 @@
 //    does: expanded style, Sass's resolution of `@use`, `@forward` and
 //    `@import`, nesting, mixins, functions and control rules, so a `.scss`
 //    project renamed to `.uxdsl` compiles to Dart Sass's CSS. A Sass failure is
-//    `UXD_SASS`, a Sass warning `UXD_SASS_WARNING`, and a project `@function`
-//    that replaces a UXDSL function `UXD_FUNCTION_SHADOWED`. The stage always
+//    `UXD_SASS`, a Sass warning `UXD_SASS_WARNING`, a project `@function`
+//    that replaces a UXDSL function `UXD_FUNCTION_SHADOWED`, and a member
+//    another file defines that a module loaded with `@use` cannot see,
+//    compiling without an error, `UXD_MODULE_ISOLATION`. The stage always
 //    produces a source map, which locates everything after it.
 // 3. restore (./sass/protect.ts): `@ds-x (…)`, as Dart Sass writes an unknown
 //    at-rule, becomes `@ds-x(…)` again.
@@ -127,9 +129,11 @@ export interface CompileResult {
    * `@import` target; then the discovered theme file and the local modules
    * it requires. */
   dependencies: string[];
-  /** Dart Sass's warnings (`UXD_SASS_WARNING` in Sass's order, then
-   * `UXD_FUNCTION_SHADOWED` at each definition), then the plugin's; each at
-   * the author's file, line and column when it has a position. */
+  /** Dart Sass's warnings (`UXD_SASS_WARNING` in Sass's order), then the Sass
+   * stage's (`UXD_FUNCTION_SHADOWED` at each definition, then
+   * `UXD_MODULE_ISOLATION` by load order, line and column), then the
+   * plugin's; each at the author's file, line and column when it has a
+   * position. */
   warnings: CompileWarning[];
   /** Whether this compilation emitted the theme: its stylesheet, or a file it
    * loads, reached `@uxdsl theme;`. */

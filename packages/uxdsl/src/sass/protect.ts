@@ -69,8 +69,12 @@ import { TOKEN_FUNCTIONS, unknownFunctionMessage } from '../language';
 //   Without the option the output, the column map and the problems are those
 //   of the rules above;
 // - `options.bodies`, when true, also gives each shadowing declaration the
-//   offset just after its body's closing brace (`ProtectProblem.end`), found
-//   with the same skipping of comments, strings and interpolation.
+//   offsets just after its body's opening brace (`ProtectProblem.bodyStart`)
+//   and closing brace (`ProtectProblem.end`), found with the same skipping of
+//   comments, strings and interpolation.
+//
+// `findTopLevelVariables` lists a file's top-level variable declarations with
+// the same skipping, for a file in the SCSS syntax.
 
 /** The token function names, lowercase, from the language's own table. */
 export const TOKEN_FUNCTION_NAMES: ReadonlySet<string> = new Set(Object.keys(TOKEN_FUNCTIONS).map((name) => name.toLowerCase()));
@@ -87,6 +91,8 @@ export interface ProtectProblem {
   name: string;
   /** With `options.bodies`: the offset just after the closing brace of the declaration's body; absent when the name is not followed by a parameter list and a braced body (comments and whitespace between them allowed). */
   end?: number;
+  /** With `options.bodies`: the offset just after the opening brace of the declaration's body; present exactly when `end` is. */
+  bodyStart?: number;
 }
 
 /** A call `options.site` is asked about. */
@@ -115,7 +121,7 @@ export interface ProtectOptions {
   file?: string;
   /** Asked about every token and plain call (see the file comment). For a token call, `undefined` applies the default rule, `null` leaves it as written and a one-line string replaces it; for a plain call the return value is ignored. */
   site?: (call: ProtectCall) => string | null | undefined;
-  /** Also locate the end of each shadowing declaration's body (`ProtectProblem.end`). */
+  /** Also locate the body of each shadowing declaration (`ProtectProblem.bodyStart` and `end`). */
   bodies?: boolean;
 }
 
@@ -233,16 +239,16 @@ function skipBlank(s: string, from: number): number {
   return k;
 }
 
-/** `from` just after a `@function` name: the index after the closing brace of its body, or -1 when a parameter list and a braced body do not follow. */
-function endOfFunctionBody(s: string, from: number): number {
+/** `from` just after a `@function` name: the indexes after the opening and the closing brace of its body, or null when a parameter list and a braced body do not follow. */
+function functionBody(s: string, from: number): { start: number; end: number } | null {
   const open = skipBlank(s, from);
-  if (s[open] !== '(') return -1;
+  if (s[open] !== '(') return null;
   const close = matchParen(s, open);
-  if (close === -1) return -1;
+  if (close === -1) return null;
   const brace = skipBlank(s, close + 1);
-  if (s[brace] !== '{') return -1;
+  if (s[brace] !== '{') return null;
   const end = matchBracket(s, brace, '{', '}');
-  return end === -1 ? -1 : end + 1;
+  return end === -1 ? null : { start: brace + 1, end: end + 1 };
 }
 
 /** The [from, to) ranges between the top-level commas of [from, to). */
@@ -434,8 +440,11 @@ class Protector {
       name,
     };
     if (this.bodies) {
-      const end = endOfFunctionBody(this.src, to);
-      if (end !== -1) problem.end = end;
+      const body = functionBody(this.src, to);
+      if (body) {
+        problem.end = body.end;
+        problem.bodyStart = body.start;
+      }
     }
     this.problems.push(problem);
   }
@@ -718,6 +727,90 @@ export function protect(source: string, options: ProtectOptions = {}): ProtectRe
     problems: protector.problems,
     nearMisses: protector.nearMisses,
   };
+}
+
+/** A variable declaration at the top level of a file (`$name: …;` outside any block). */
+export interface TopLevelVariable {
+  /** The name as Sass resolves it (`_` read as `-`), without `$`. */
+  name: string;
+  /** The name as written, without `$`. */
+  written: string;
+  /** Offset of the `$`. */
+  start: number;
+  /** 1-based line and column of the `$`. */
+  line: number;
+  column: number;
+  /** Whether the declaration carries the `!default` flag. */
+  isDefault: boolean;
+}
+
+/** `from` just after a declaration's `:`: the index of the `;`, `{` or `}` that ends its value (or the text's end), and whether a `!default` flag stands in it. Strings, comments, interpolations and an unquoted `url(…)` do not count. */
+function endOfValue(s: string, from: number): { end: number; isDefault: boolean } {
+  let depth = 0;
+  let isDefault = false;
+  let k = from;
+  while (k < s.length) {
+    const c = s[k];
+    if (c === '"' || c === "'") { k = endOfString(s, k); continue; }
+    if (c === '/' && s[k + 1] === '*') { k = endOfBlockComment(s, k); continue; }
+    if (c === '/' && s[k + 1] === '/') { k = endOfLineComment(s, k); continue; }
+    if (c === '#' && s[k + 1] === '{') { k = endOfInterpolation(s, k); continue; }
+    if ((c === 'u' || c === 'U') && /^url\(\s*[^\s"']/i.test(s.slice(k, k + 6)) && !isIdentChar(s[k - 1])) {
+      const close = matchParen(s, k + 3);
+      if (close !== -1) { k = close + 1; continue; }
+    }
+    if (c === '!' && /^!default(?![A-Za-z0-9_-])/.test(s.slice(k, k + 9))) isDefault = true;
+    if (c === '(') depth++;
+    else if (c === ')') depth--;
+    else if ((c === ';' || c === '{' || c === '}') && depth <= 0) return { end: k, isDefault };
+    k++;
+  }
+  return { end: s.length, isDefault };
+}
+
+/** The variable declarations at the top level of `source` (SCSS syntax), in order: each `$name:` that starts a statement outside any block, with comments, strings and interpolations skipped as protect skips them. */
+export function findTopLevelVariables(source: string): TopLevelVariable[] {
+  const s = source;
+  const out: TopLevelVariable[] = [];
+  let depth = 0;
+  let parens = 0;
+  let statementStart = true;
+  let line = 1;
+  let lineStart = 0;
+  let counted = 0;
+  let k = 0;
+  while (k < s.length) {
+    const c = s[k];
+    if (c === '/' && s[k + 1] === '*') { k = endOfBlockComment(s, k); continue; }
+    if (c === '/' && s[k + 1] === '/') { k = endOfLineComment(s, k); continue; }
+    if (WHITESPACE.test(c)) { k++; continue; }
+    if (statementStart && depth === 0 && c === '$' && isIdentStart(s[k + 1])) {
+      let j = k + 2;
+      while (j < s.length && isIdentChar(s[j])) j++;
+      const colon = skipBlank(s, j);
+      if (s[colon] === ':') {
+        const value = endOfValue(s, colon + 1);
+        for (; counted < k; counted++) {
+          if (s[counted] === '\n') { line++; lineStart = counted + 1; }
+        }
+        const written = s.slice(k + 1, j);
+        out.push({ name: sassName(written), written, start: k, line, column: k - lineStart + 1, isDefault: value.isDefault });
+        k = value.end;
+        statementStart = false;
+        continue;
+      }
+    }
+    statementStart = false;
+    if (c === '"' || c === "'") { k = endOfString(s, k); continue; }
+    if (c === '#' && s[k + 1] === '{') { k = endOfInterpolation(s, k); continue; }
+    if (c === '(') parens++;
+    else if (c === ')') parens--;
+    else if (c === '{') { depth++; statementStart = true; }
+    else if (c === '}') { depth = Math.max(0, depth - 1); statementStart = true; }
+    else if (c === ';' && parens <= 0) statementStart = true;
+    k++;
+  }
+  return out;
 }
 
 /** The `@function` declarations in `source` that shadow a UXDSL function — the same scan as `protect`, for a file Sass loaded (`.scss` included) whose text is not rewritten. */

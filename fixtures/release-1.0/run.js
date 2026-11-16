@@ -225,6 +225,26 @@ function assertDebugWarned(built) {
   return 'the @debug at src/a.uxdsl:2:1';
 }
 
+/** The one line S-7 expects on stderr for another file's @function called under a @use entry. */
+const S7_ISOLATION_LINE = '[uxdsl] Warning: src/widget.uxdsl:1:6: UXD_MODULE_ISOLATION: @function double (src/_helpers.uxdsl:1) is not visible here, so Dart Sass leaves double() in the CSS as written; @use that file as * here, or call it through its namespace (helpers.double())';
+
+/**
+ * S-7's verdict on `uxdsl build` of src/a.uxdsl, `@use './helpers';\n@use './widget';\n`,
+ * where src/_helpers.uxdsl defines `@function double` and src/widget.uxdsl
+ * writes `.w { width: double(4px); }`: exit 0, the output written, and one
+ * UXD_MODULE_ISOLATION warning at the call's declaration, naming the
+ * function's file and its namespace.
+ */
+function assertIsolationWarned(built) {
+  const stderr = built.stderr || '';
+  if (built.status !== 0) throw new Error(`exited ${built.status}: ${stderr.trim().split('\n')[0] || '(no stderr)'}`);
+  if (!/^\[uxdsl\] (built|unchanged) out\/a\.css/m.test(built.stdout || '')) throw new Error(`stdout: ${(built.stdout || '').trim().split('\n')[0] || '(empty)'}`);
+  const isolations = stderr.split('\n').filter((line) => line.includes('UXD_MODULE_ISOLATION'));
+  if (isolations.length !== 1) throw new Error(`${isolations.length} UXD_MODULE_ISOLATION warnings, expected 1`);
+  if (isolations[0] !== S7_ISOLATION_LINE) throw new Error(`the isolation warning is not located at src/widget.uxdsl:1:6: ${isolations[0]}`);
+  return 'double() at src/widget.uxdsl:1:6';
+}
+
 /**
  * The project S-5 and S-6 build: styles/panel.uxdsl @uses styles/_partial.uxdsl,
  * which @imports styles/_legacy.uxdsl, so Dart Sass loads the three files and
@@ -1064,15 +1084,19 @@ async function main() {
   });
 
   // --- beta.9: what the Sass stage reports -----------------------------------
-  console.log('\nWhat the Sass stage reports (FEAT-010, MIG-B9-26):');
-  await check('S-7', '[tarball] the installed CLI prints a dotted near-miss as UXD_FUNCTION_UNKNOWN with its suggestion (exit 1) and a @debug as a located warning (exit 0)', () => {
+  console.log('\nWhat the Sass stage reports (FEAT-010, MIG-B9-26 and MIG-B9-17):');
+  await check('S-7', '[tarball] the installed CLI prints a dotted near-miss as UXD_FUNCTION_UNKNOWN with its suggestion (exit 1), a @debug as a located warning (exit 0), and another file\'s @function under a @use entry as a located UXD_MODULE_ISOLATION warning (exit 0)', () => {
     const p = project('cli-sass-reports');
     p.write('uxdsl.config.cjs', "module.exports = { entry: './src/a.uxdsl', outFile: './out/a.css' };\n");
     p.write('src/a.uxdsl', '.a {\n  color: palete(primary.main);\n}\n');
     const nearMiss = assertNearMissSuggested(p.spawn('build'));
     p.write('src/a.uxdsl', '$gap: 4px;\n@debug "gap is #{$gap}";\n.a {\n  padding: 1px;\n}\n');
     const debug = assertDebugWarned(p.spawn('build'));
-    return `${nearMiss}; ${debug}`;
+    p.write('src/_helpers.uxdsl', '@function double($x) { @return $x * 2; }\n');
+    p.write('src/widget.uxdsl', '.w { width: double(4px); }\n');
+    p.write('src/a.uxdsl', "@use './helpers';\n@use './widget';\n");
+    const isolation = assertIsolationWarned(p.spawn('build'));
+    return `${nearMiss}; ${debug}; ${isolation}`;
   });
 
   // --- beta.7: init, editor support, fonts, contrast -----------------------
@@ -1286,4 +1310,4 @@ async function main() {
 
 if (require.main === module) main().catch((error) => { console.error(error); process.exitCode = 1; });
 
-module.exports = { contrastSignature, exceptedSignature, contrastBaselineOf, assertContrastBaseline, auditLockfile, assertAuthorLocated, assertSassFramed, assertLocatedWarning, assertNearMissSuggested, assertDebugWarned, webpackAdapterRecord, assertWebpackAdapter, viteAdapterRecord, assertViteAdapter, assertMissingImport, mapIntegrityProblems, DROPPED };
+module.exports = { contrastSignature, exceptedSignature, contrastBaselineOf, assertContrastBaseline, auditLockfile, assertAuthorLocated, assertSassFramed, assertLocatedWarning, assertNearMissSuggested, assertDebugWarned, assertIsolationWarned, S7_ISOLATION_LINE, webpackAdapterRecord, assertWebpackAdapter, viteAdapterRecord, assertViteAdapter, assertMissingImport, mapIntegrityProblems, DROPPED };

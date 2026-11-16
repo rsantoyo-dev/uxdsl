@@ -2219,8 +2219,9 @@ test('MIG-B9-22: generate-entry leaves out only its output file: a file with its
 });
 
 // Each case: two files, what a generated @use entry gives (the UXD_SASS head
-// line, or the CSS it compiles to without an error), the @use the reading file
-// adds to read the member again, and the CSS the shared member gives.
+// line, or the CSS it compiles to without an error and the one warning it
+// prints, if any), the @use the reading file adds to read the member again,
+// the CSS the shared member gives and what that build prints.
 const ISOLATION_CASES = [
   {
     name: "another file's $variable",
@@ -2250,29 +2251,35 @@ const ISOLATION_CASES = [
     name: "another file's @function",
     files: { 'src/_helpers.uxdsl': '@function double($x) { @return $x * 2; }\n', 'src/widget.uxdsl': '.w { width: double(4px); }\n' },
     silent: /\.w \{\n {2}width: double\(4px\);\n\}/,
+    warned: '[uxdsl] Warning: src/widget.uxdsl:1:6: UXD_MODULE_ISOLATION: @function double (src/_helpers.uxdsl:1) is not visible here, so Dart Sass leaves double() in the CSS as written; @use that file as * here, or call it through its namespace (helpers.double())',
     reader: 'src/widget.uxdsl',
     use: "@use './helpers' as *;\n",
     shared: /\.w \{\n {2}width: 8px;\n\}/,
+    sharedStderr: '',
   },
   {
     name: 'a !default an earlier file sets',
     files: { 'src/_a-config.uxdsl': '$tone: red;\n', 'src/b-button.uxdsl': '$tone: blue !default;\n.btn { color: $tone; }\n' },
     silent: /\.btn \{\n {2}color: blue;\n\}/,
+    warned: '[uxdsl] Warning: src/b-button.uxdsl:1:1: UXD_MODULE_ISOLATION: $tone: … !default applies its default here, because the $tone that src/_a-config.uxdsl:1 sets is not visible in this module; @use that file as * here, or configure this module with @use … with ($tone: …)',
     reader: 'src/b-button.uxdsl',
     use: "@use './a-config' as *;\n",
     shared: /\.btn \{\n {2}color: red;\n\}/,
+    sharedStderr: '',
   },
   {
     name: 'a project @function named like a UXDSL function',
     files: { 'src/_shadow.uxdsl': '@function space($n) { @return $n * 4px; }\n', 'src/pad.uxdsl': '.p { padding: space(2); }\n' },
     silent: /\.p \{\n {2}padding: var\(--uxdsl__space__2\);\n\}/,
+    warned: "[uxdsl] Warning: src/_shadow.uxdsl:1:11: UXD_MODULE_ISOLATION: @function space (src/_shadow.uxdsl:1) is reached by no call, and in src/pad.uxdsl:1 the bare space() is UXDSL's token, because the function is not visible there; @use that file as * there or call it through its namespace (shadow.space()) to use it, or remove or rename it to keep the token",
     reader: 'src/pad.uxdsl',
     use: "@use './shadow' as *;\n",
     shared: /\.p \{\n {2}padding: 8px;\n\}/,
+    sharedStderr: "[uxdsl] Warning: src/_shadow.uxdsl:1:11: UXD_FUNCTION_SHADOWED: @function space (src/_shadow.uxdsl:1) replaces UXDSL's space() in this build; rename it to use the token\n",
   },
 ];
 
-test('MIG-B9-14: under a generated @use entry each file is its own module: a variable, mixin or placeholder from another file fails as UXD_SASS, a function call and a !default change without an error, and the file\'s own @use restores each', () => {
+test('MIG-B9-17: under a generated @use entry each file is its own module: a variable, mixin or placeholder from another file fails as UXD_SASS, another file\'s @function left as written, a project @function named like a UXDSL function that no call reaches and a !default an earlier file sets each warn UXD_MODULE_ISOLATION once, located, the file\'s own @use restores each, and a module configured with `with (...)` warns nothing', () => {
   for (const c of ISOLATION_CASES) {
     // One project per case, so that one loud failure cannot hide another case.
     const dir = entryProject(c.files);
@@ -2284,7 +2291,7 @@ test('MIG-B9-14: under a generated @use entry each file is its own module: a var
       assert.match(built.stderr, c.loud, c.name);
     } else {
       assert.equal(built.status, 0, `${c.name}: ${built.stderr}`);
-      assert.equal(built.stderr, '', `${c.name}: no error and no warning`);
+      assert.equal(built.stderr, c.warned ? `${c.warned}\n` : '', `${c.name}: ${c.warned ? 'one located warning' : 'no error and no warning'}`);
       assert.match(fs.readFileSync(path.join(dir, 'out', 'app.css'), 'utf8'), c.silent, c.name);
     }
     // The reading file's own @use reads the member again.
@@ -2292,6 +2299,7 @@ test('MIG-B9-14: under a generated @use entry each file is its own module: a var
     const fixed = runCli(dir, 'build');
     assert.equal(fixed.status, 0, `${c.name}, with its own @use: ${fixed.stderr}`);
     assert.match(fs.readFileSync(path.join(dir, 'out', 'app.css'), 'utf8'), c.shared, `${c.name}, with its own @use`);
+    if (c.sharedStderr !== undefined) assert.equal(fixed.stderr, c.sharedStderr, `${c.name}, with its own @use: what the build prints`);
   }
 
   // A module another file configures with `with (...)` must be loaded there
@@ -2309,12 +2317,13 @@ test('MIG-B9-14: under a generated @use entry each file is its own module: a var
   assert.equal(runCli(configured, 'generate-entry', '--src', 'src', '--first', 'brand').status, 0);
   const ordered = runCli(configured, 'build');
   assert.equal(ordered.status, 0, ordered.stderr);
+  assert.equal(ordered.stderr, '', 'a configured !default warns nothing');
   const css = fs.readFileSync(path.join(configured, 'out', 'app.css'), 'utf8');
   assert.match(css, /\.v \{\n {2}color: blue;\n\}/);
   assert.match(css, /\.brand \{\n {2}color: blue;\n\}/);
 });
 
-test('MIG-B9-14: through a hand-written @import entry the same files share their members (negative control)', () => {
+test('MIG-B9-17: through a hand-written @import entry the same files share their members, and nothing warns UXD_MODULE_ISOLATION (negative control)', () => {
   for (const c of ISOLATION_CASES) {
     const dir = entryProject(c.files);
     // The defining file first, as a generated entry lists it.
@@ -2323,14 +2332,15 @@ test('MIG-B9-14: through a hand-written @import entry the same files share their
     const built = runCli(dir, 'build');
     assert.equal(built.status, 0, `${c.name}: ${built.stderr}`);
     assert.match(fs.readFileSync(path.join(dir, 'out', 'app.css'), 'utf8'), c.shared, c.name);
+    assert.doesNotMatch(built.stderr, /UXD_MODULE_ISOLATION/, c.name);
   }
 });
 
 // A file's own namespaced @use (the form the generated entry writes) brings the
 // module's members in under the namespace only: a bare variable or mixin fails,
-// while a bare function call is plain CSS to Sass, so it stays as written, and
-// one named like a UXDSL function becomes the token.
-test("MIG-B9-14: under a file's own namespaced @use, a bare call of the module's @function stays in the CSS and one named like a UXDSL function stays the token, with no error or warning, while a bare variable or mixin fails; through the namespace, or under `as *`, each is the module's", () => {
+// while a bare function call is plain CSS to Sass, so it stays as written, with
+// a warning, and one named like a UXDSL function becomes the token.
+test("MIG-B9-17: under a file's own namespaced @use, a bare call of the module's @function stays in the CSS and warns UXD_MODULE_ISOLATION at the call, and one named like a UXDSL function that no call reaches stays the token and warns at the definition, while a bare variable or mixin fails; through the namespace, or under `as *`, each is the module's", () => {
   const dir = entryProject({
     'src/_helpers.uxdsl': '@function space($n) { @return $n * 4px; }\n@function double($x) { @return $x * 2; }\n$gap: 3px;\n@mixin pad { padding: 1px; }\n',
     'src/pad.uxdsl': "@use './helpers';\n.p { padding: space(2); height: double(4px); }\n",
@@ -2342,7 +2352,11 @@ test("MIG-B9-14: under a file's own namespaced @use, a bare call of the module's
 
   const bare = runCli(dir, 'build');
   assert.equal(bare.status, 0, bare.stderr);
-  assert.equal(bare.stderr, '', 'no error and no warning');
+  assert.deepEqual(bare.stderr.split('\n'), [
+    "[uxdsl] Warning: src/_helpers.uxdsl:1:11: UXD_MODULE_ISOLATION: @function space (src/_helpers.uxdsl:1) is reached by no call, and in src/pad.uxdsl:2 the bare space() is UXDSL's token, because the function is not visible there; @use that file as * there or call it through its namespace (helpers.space()) to use it, or remove or rename it to keep the token",
+    '[uxdsl] Warning: src/pad.uxdsl:2:25: UXD_MODULE_ISOLATION: @function double (src/_helpers.uxdsl:2) is not visible here, so Dart Sass leaves double() in the CSS as written; @use that file as * here, or call it through its namespace (helpers.double())',
+    '',
+  ], 'a located warning for space() at its definition, then one for double() at the call');
   assert.match(css(), /\.p \{\n {2}padding: var\(--uxdsl__space__2\);\n {2}height: double\(4px\);\n\}/);
 
   write(dir, 'src/pad.uxdsl', "@use './helpers';\n.p { padding: helpers.space(2); height: helpers.double(4px); }\n");
@@ -2363,6 +2377,7 @@ test("MIG-B9-14: under a file's own namespaced @use, a bare call of the module's
   const imported = runCli(dir, 'build');
   assert.equal(imported.status, 0, imported.stderr);
   assert.match(imported.stderr, /^\[uxdsl\] Warning: src\/_helpers\.uxdsl:1:11: UXD_FUNCTION_SHADOWED: /m);
+  assert.doesNotMatch(imported.stderr, /UXD_MODULE_ISOLATION/);
   assert.match(css(), /\.p \{\n {2}padding: 8px;\n {2}height: 8px;\n\}/);
 
   for (const [rule, message] of [['.q { margin: $gap; }', /^\[uxdsl\] Error: src\/pad\.uxdsl:2:\d+: UXD_SASS: Undefined variable\.$/m], ['.q { @include pad; }', /^\[uxdsl\] Error: src\/pad\.uxdsl:2:\d+: UXD_SASS: Undefined mixin\.$/m]]) {
