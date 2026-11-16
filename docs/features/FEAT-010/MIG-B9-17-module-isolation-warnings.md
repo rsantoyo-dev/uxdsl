@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 2 |
 | Decision gate | DEC-17 (decided 2026-10-23), within which C5 stays. No DEC is open. Registered by decision 6 of 2026-11-10, which split MIG-B9-26 into MIG-B9-26 (C1 to C3) and this story (C4 to C6); its three questions, MIG-B9-26's Q4 to Q6, are answered by decisions 9 to 11 of 2026-11-10 (§15) |
-| Status | Ready |
+| Status | In progress: implemented on `feat/b9-17-module-isolation-warnings` (§14); review, fixer and delivery to follow |
 | Size | M (decision 6 of 2026-11-10: "The M part, C4 to C6") |
 | Depends on | MIG-B9-26 (decision 6 of 2026-11-10: this story is its M part, and edits after it the files both share). As MIG-B9-26's file named them for C4 to C6: MIG-B9-14 (merged, PR #71: the CLI prints `compile()`'s warnings). Under README §7: MIG-B9-20 (`compile.ts`, `test/cli/**`, `fixtures/release-1.0/run.js`, `migration.md`, `cli.md`, `unified-engine-audit.md`, and the tests it rewrites when it removes `includeTheme`), MIG-B9-21 (`compile.ts`, `unified-engine-audit.md`) and MIG-B9-25 (`test/cli/**`, `fixtures/release-1.0/verdicts.test.js`); MIG-B9-26 also waits for all three |
 | Blocks | MIG-B9-91. Under README §7: MIG-B9-27 (`migration.md`, where both rewrite an item); MIG-B9-28, 19 and 06 (`test/cli/**`; MIG-B9-19 and 06 in MIG-B9-39's place, by decisions 28 and 29 of 2026-11-13); MIG-B9-30, 32, 33, 34, 35, 37 and 38 (`diagnostics.ts`); MIG-B9-30 and 31 (`fixtures/release-1.0/run.js`); in `0.5.0-beta.10`, MIG-B9-52 (`migration.md`), MIG-B9-60, 61 and 63 (`cli.md`) and, provisionally, MIG-B9-66 (`verdicts.test.js`; decision 15 of 2026-11-10) |
@@ -502,7 +502,141 @@ The body:
 
 ## 14. Closure record
 
-To be filled in the delivering PR.
+- **PR:** none yet; the deliverer opens it (`feat/b9-17-module-isolation-warnings`
+  into `feat/beta9`). Only the owner merges into `main`.
+- **Base and implementation:** BASE `5dace3a` (`git merge-base HEAD
+  origin/feat/beta9`; MIG-B9-26 merged as PR #97). Commits: `4df6a10`
+  (stale corrections and design record), `fb8f4d6` (C4), `03e9a1c` (C5),
+  `a766df4` (C6; the last change to `compile-sass.ts` and `protect.ts`),
+  `f5f835b` (S-7's isolation case), `3b9ee9c` (documentation and
+  `compile.ts`'s comments), then this closure commit. `git diff a766df4 HEAD
+  -- packages/uxdsl/src/sass/compile-sass.ts packages/uxdsl/src/sass/protect.ts`
+  is empty, so AC6's three runs below are the first three after the last
+  change to either file.
+- **Environment:** macOS, `MacBookPro18,3`, Node v20.19.0, npm 11.21.1, Dart
+  Sass 1.107.0, PostCSS 8.5.31; every command with its own empty `TMPDIR`
+  under the session's scratch directory, left empty.
+- **Criterion to test:**
+  - C4 → T6 (B5-1 and B5-4 rows), T6d (one warning per declaration, the
+    mixin, the next-line oracle 3:5, the same-file F5 variant, the contexts
+    Sass leaves as written, PostCSS's parse error kept), T7 (the CLI's
+    widget case and the namespaced bare build), T9 (S-7 from the tarball).
+  - C5 → T6 (B5-3 and B5-4), T6b (namespace and in-module calls reach the
+    definition, a breakpoint, a `@ds-*` parameter, F8), T-DEC17
+    (`compile-sass.test.js`: W2 warns `_helpers.scss:1:11`, every other row
+    `[]`), T7 (the shadow case and the namespaced build).
+  - C6 → T6 (B5-2), T6c (spellings, two variables, the last of two earlier
+    files; silent after `@use`, when the earlier file emits CSS, with a loud
+    comment, under `@use … with`/`@forward … with`), T7 (the `!default` case
+    and its `with` sub-case `''`).
+  - C7 → T6-control, T7's `@import`, `as *` and qualified builds, parity,
+    the playground build and the captures.
+  - C8 → T8 (Dart Sass compile counts) and AC6.
+  - The catalog → T11 (`diagnostics-catalog.test.js`, retitled core-set
+    test) and `diagnostics-coverage.test.js`, unedited.
+  - `findTopLevelVariables` and `bodyStart` → T-protect (`protect.test.js`).
+- **Commands (load average in braces; each exit as stated):**
+  - `npm test`: exit 0 on `a766df4` (I1: 1660 pass, 0 fail, 08:48–08:53,
+    load 27.7 at the start), on `f5f835b`'s tree (1662 pass, 0 fail,
+    08:58–09:04 {4.47 9.33 15.78}; the documentation edits of `3b9ee9c` were
+    being made in the working tree while it ran) and on `3b9ee9c` (1662 pass,
+    0 fail, 09:05–09:11 {10.57 9.37 13.23} at the start); `tmpdir-guard`
+    clean, `TMPDIR` 0 entries left each time (AC10). Re-run on the closure
+    commit's tree: exit 0, 1662 pass, 0 fail, 09:16–09:22 {8.73 9.39
+    11.19} at the start, 0 entries left.
+  - AC1, `node --test packages/uxdsl/test/near-miss-functions.test.js
+    packages/uxdsl/test/core/sass-stage-diagnostics.test.js` with an empty
+    `TMPDIR`: exit 0, 18/18, the directory still empty. Mutations (I1, run
+    locally on a `compile-sass.ts` byte-identical to `a766df4`'s, never
+    committed): no C4 fails T6, T6d and T8; no C5 fails T6 and T6b; no C6
+    fails T6, T6-control, T6c and T8; a probe on every build fails T8; no F8
+    skip fails T6b; ignoring the `called` record fails T-DEC17's T-c, K2, W1
+    and B2 rows, T6b and three MIG-B9-12 tests; C6 records always on their
+    own probe (no folding) fails T8's folding check.
+  - AC3, `node --test packages/uxdsl/test/cli/uxdsl-cli.test.js`: exit 0,
+    156/156 (09:11 {5.98 8.13 11.37}). Mutation (I1): no detection, so stderr
+    is `''`, fails both T7 tests that expect isolation lines.
+  - AC4, `node --test packages/uxdsl/test/diagnostics-catalog.test.js
+    packages/uxdsl/test/diagnostics-coverage.test.js`: exit 0, 56/56.
+  - AC5, `node fixtures/parity/run.js`: exit 0, "PASS: 10 parity case(s)",
+    no `--update`; `git diff --exit-code 5dace3a -- fixtures/parity/expected`:
+    exit 0.
+  - AC6, `node fixtures/sass-corpus/run.js` (I1), the first three
+    invocations after `a766df4`, in a row, none discarded, `TMPDIR` 0
+    entries before and after each:
+    - 2026-11-16 08:55:39 EST {6.01 12.59 18.05}: medians 348 ms (Dart Sass)
+      and 477 ms (`compile()`), 1.37×;
+    - 08:55:46 {6.08 12.49 17.99}: 386 and 499 ms, 1.29×;
+    - 08:55:52 {7.26 12.54 17.94}: 365 and 478 ms, 1.31×.
+    Each exit 0, `byte-identical: true`, 276926 bytes, `compile() returned
+    21 warnings` (BASE's 21), every corpus check `ok`. No later commit
+    touches `compile-sass.ts` or `protect.ts`.
+  - AC7, `npm run verify:doc-examples`: exit 0, 71 examples and 24 theme
+    excerpts across 101 files; `node scripts/generate-agent-guide.js
+    --check` and `node scripts/generate-language-artifacts.js --check`: exit
+    0, no drift (nothing regenerated).
+  - AC8, `node --test fixtures/release-1.0/verdicts.test.js`: exit 0, 14/14
+    (T9's accept test and negative control included); `npm run verify:1.0 --
+    --skip-playground-walk` on `3b9ee9c`: exit 0, "72/72 automated checks
+    passed", S-7 `ok … double() at src/widget.uxdsl:1:6` (09:12–09:15
+    {7.79 8.28 11.27}). The gate leaves its five consumer directories in
+    `TMPDIR` (`run.js` does not remove them, and this story does not change
+    that; the gate runs outside `tmpdir-guard`); they were removed by hand. Mutation: BASE's tarball (`git archive 5dace3a`, built
+    with BASE's `tsconfig.base.json`, `npm pack`ed and installed into a
+    scratch project) builds the S-7 isolation project with exit 0 and an
+    empty stderr, and `assertIsolationWarned` rejects it with `0
+    UXD_MODULE_ISOLATION warnings, expected 1`.
+  - AC9: `git diff --name-only 5dace3a -- packages/playground-nextjs` lists
+    nothing; `npm --prefix packages/playground-nextjs run uxdsl:build`: exit
+    0, `unchanged src/app/uxdsl.css`, BASE's eleven `UXD_SASS_WARNING` lines
+    (`DemoColors.uxdsl:104:16`) and no `UXD_MODULE_ISOLATION` (also in the
+    pre-commit hook of every commit); `node
+    packages/playground-nextjs/scripts/capture-capabilities.js --check`: exit
+    0, up to date.
+  - `node --test --test-concurrency=1 packages/uxdsl/test/performance/*.test.js`:
+    exit 0 (1 test).
+  - `node --test scripts/no-history-comments.test.js`: exit 0 (4 tests).
+- **Dart Sass compiles (T8):** exactly 1 for B5-1 (with its C4 warning), a
+  module `!default` with nothing earlier, a namespace-only
+  `helpers.space(2)`, plain tokens, and an `@import`-only build with a
+  non-token `@function` and unused `!default` declarations, as on BASE. B5-2
+  runs 2 (one C6 probe; BASE 1); B5-3 runs more than 1, as on BASE; B5-2 and
+  B5-3 together run as many as B5-3 alone (the C6 records ride on the
+  shadowing probe).
+- **Failing first:** C4 (`fb8f4d6`): T6's C4 row, T6d and T8 failed before
+  the fix; C5 (`03e9a1c`): protect's `bodyStart` test, T6, T6-control and
+  T6b; C6 (`a766df4`): the CLI's generated-`@use` test,
+  `findTopLevelVariables`, T6, T6-control, T6c and T8 (re-run against
+  `03e9a1c`'s `compile-sass.ts` and `protect.ts`); S-7 (`f5f835b`): both new
+  verdict tests failed while `run.js` exported no `assertIsolationWarned`.
+- **Documentation:** `cli.md` (generate-entry's isolation paragraph and the
+  namespaced-`@use` paragraph), `migration.md` item 9 (the same two
+  passages, nothing else), `compile.md` (the warnings order at both places,
+  one sentence in DEC-17's passage, the "Module isolation" bullet under
+  "Errors and warnings"), `unified-engine-audit.md`, `compile.ts`'s header
+  and `CompileResult.warnings` comments, `compile-sass.ts`'s header and doc
+  comments, the package README (the CLI's warning list, the namespaced
+  sentence, one sentence in "From SCSS"), the CHANGELOG subsection (five
+  `#### Changed` bullets, `#### Visual changes`: none), the catalog entry,
+  and README §7's rows (F9: 17 added to `protect.ts`,
+  `compile-sass.test.js` and `compile.md`). No doc example shows the
+  warning: the harness compiles one file and does not check warnings.
+  `AGENTS.md` unchanged.
+- **Scope:** `git diff --name-only 5dace3a HEAD` lists only the files of the
+  two work plans; `bin/uxdsl.js` and every playground file are unchanged;
+  no story id or history comment under `src`.
+- **Known limits (recorded, not failures):** an unquoted Sass string that
+  prints `name(…)` while a loaded file defines `@function name` gives a
+  false C4 warning; C6 misses an earlier `.sass`, `pkg:` or
+  importer-unserved file, an earlier file with a loud comment or an included
+  mixin, and a build with no map (`sourceMap: false`, direct stage calls
+  only); the dedicated C6 probe reports nothing when it fails or its CSS
+  differs from the first pass's.
+- **Not verified:** Windows; `npm run verify:playground-browser` (the
+  real-Chrome walk; the deliverer runs it before the PR, README §2); CI's
+  results, which are in the PR.
+- **Owner checks (§9), not marked:** the wording of the three
+  `UXD_MODULE_ISOLATION` messages and of the catalog entry.
 
 ## 15. Findings and follow-ups
 
