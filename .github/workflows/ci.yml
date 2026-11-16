@@ -106,6 +106,7 @@ jobs:
           echo "files checked out with CRLF: $n"
           test "$n" = 0
       - name: Install the root and the package
+        id: install
         run: |
           npm ci --ignore-scripts --no-audit --no-fund
           (cd packages/uxdsl && npm ci --ignore-scripts --no-audit --no-fund)
@@ -116,9 +117,10 @@ jobs:
       # Each test file alone, in a directory of its own under the runner's
       # TEMP, which keeps its 8.3 short name: a line "exit N: <step>" or
       # "left N in <directory>: <step>" names the file that failed or left
-      # something, and a failing step's output follows its line.
+      # something, and a failing step's output follows its line. It runs
+      # whether or not the suites passed, once the install has.
       - name: Each test file alone leaves nothing in its temporary directory
-        if: success() || failure()
+        if: (success() || failure()) && steps.install.outcome == 'success'
         run: |
           set +e
           base=$(mktemp -d "$(cygpath -u "$TEMP")/uxdsl-loop.XXXXXX") || exit 1
