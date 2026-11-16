@@ -77,7 +77,7 @@ jobs:
   windows:
     name: npm test (uxdsl, Windows)
     runs-on: windows-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     defaults:
       run:
         shell: bash
@@ -117,7 +117,8 @@ jobs:
       # Each test file alone, in a directory of its own under the runner's
       # TEMP, which keeps its 8.3 short name: a line "exit N: <step>" or
       # "left N in <directory>: <step>" names the file that failed or left
-      # something, and a failing step's output follows its line. It runs
+      # something, and a failing step's output follows its line; a file that
+      # runs for more than 20 minutes is stopped, as "exit 124". It runs
       # whether or not the suites passed, once the install has.
       - name: Each test file alone leaves nothing in its temporary directory
         if: (success() || failure()) && steps.install.outcome == 'success'
@@ -129,7 +130,7 @@ jobs:
             local d w code
             d=$(mktemp -d "$base/step.XXXXXX") || { echo "no step directory: $*"; fail=1; return; }
             w=$(cygpath -w "$d")
-            (cd packages/uxdsl && TMPDIR="$w" TMP="$w" TEMP="$w" "$@") > "$base/out" 2>&1
+            (cd packages/uxdsl && TMPDIR="$w" TMP="$w" TEMP="$w" timeout -k 30 1200 "$@") > "$base/out" 2>&1
             code=$?
             if [ "$code" != 0 ]; then echo "exit $code: $*"; cat "$base/out"; fail=1; fi
             rmdir "$d" 2> /dev/null || { echo "left $(ls -A "$d" | wc -l | tr -d ' ') in $w: $*"; fail=1; }

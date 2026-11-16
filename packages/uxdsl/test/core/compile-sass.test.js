@@ -16,6 +16,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const { temporaryDirectory } = require('../helpers/temporary-directory');
+const { posixSeparators } = require('../helpers/separators');
 const path = require('node:path');
 const { pathToFileURL, fileURLToPath } = require('node:url');
 const { spawnSync } = require('node:child_process');
@@ -193,7 +194,7 @@ function stageError(fn) {
   assert.fail('the stage compiled; it should fail');
 }
 
-const shadowOf = (dir, result) => result.warnings.filter((w) => /^UXD_FUNCTION_SHADOWED:/.test(w.text)).map((w) => `${path.relative(dir, w.file)}:${w.line}:${w.column}`).sort();
+const shadowOf = (dir, result) => result.warnings.filter((w) => /^UXD_FUNCTION_SHADOWED:/.test(w.text)).map((w) => posixSeparators(`${path.relative(dir, w.file)}:${w.line}:${w.column}`)).sort();
 
 // --- T1: resolution (IM1, IM2, IM3) --------------------------------------------------
 
@@ -381,7 +382,7 @@ test('MIG-B9-12: pkg: resolves a package\'s scss and css; a bare package path re
   };
   const quiet = twin(deps, { sassOptions: { quietDeps: true } });
   assertSameAsTwin(quiet, 'quietDeps');
-  assert.deepEqual(quiet.actual.warnings.map((w) => path.relative(quiet.ux, w.file)), ['_own.uxdsl', 'node_modules/kit/_base.uxdsl']);
+  assert.deepEqual(quiet.actual.warnings.map((w) => posixSeparators(path.relative(quiet.ux, w.file))), ['_own.uxdsl', 'node_modules/kit/_base.uxdsl']);
   assert.match(quiet.actual.warnings[0].text, /^UXD_SASS_WARNING: \[slash-div\] /);
   assert.equal(quiet.actual.warnings[1].text, 'UXD_SASS_WARNING: kit warns');
   assertSameAsTwin(twin(deps), 'without quietDeps');
@@ -440,7 +441,8 @@ test('MIG-B9-12: in a package loaded through pkg:, Sass\'s own .sass, .scss and 
   assert.equal(flat(loaded.css), '.scss-partial { b: c; } .kit { b: c; }');
   assert.deepEqual(loaded.warnings, []);
   const viaLoadPath = project({ ...pair, 'entry.uxdsl': '@use "kit/index";\n' });
-  assert.equal(stageError(() => inDir(viaLoadPath, () => stage({ entry: path.join(viaLoadPath, 'entry.uxdsl') }))).sassMessage, "It's not clear which file to import. Found:\n  node_modules/kit/_tokens.scss\n  node_modules/kit/_tokens.uxdsl");
+  // Sass's message names each file with the platform's separator.
+  assert.equal(posixSeparators(stageError(() => inDir(viaLoadPath, () => stage({ entry: path.join(viaLoadPath, 'entry.uxdsl') }))).sassMessage), "It's not clear which file to import. Found:\n  node_modules/kit/_tokens.scss\n  node_modules/kit/_tokens.uxdsl");
 });
 
 test('MIG-B9-12: in a package loaded through pkg:, Sass\'s own candidates answer first (negative control: a lone .uxdsl partial, and the same files through a load path, follow the .scss twin)', () => {
@@ -472,7 +474,14 @@ test('MIG-B9-12: a URL that begins with .. is searched under each load path as D
   const options = { stageOptions: { loadPaths: ['nope/deeper'] }, dartOptions: { loadPaths: ['nope/deeper'] } };
   const missing = twin(part, options);
   assertSameAsTwin(missing, 'an explicit load path that does not exist');
-  assert.equal(missing.actual.error.sassMessage, "Can't find stylesheet to import.");
+  if (process.platform === 'win32') {
+    // Windows reads the ".." of nope/deeper/../../part without nope existing,
+    // so Dart Sass, and the stage with it, find _part.uxdsl there.
+    assert.ok(!missing.actual.error, missing.actual.error && missing.actual.error.message);
+    assert.equal(flat(missing.actual.css), '.p { b: c; }');
+  } else {
+    assert.equal(missing.actual.error.sassMessage, "Can't find stylesheet to import.");
+  }
   const present = twin({ ...part, 'nope/deeper': null }, options);
   assertSameAsTwin(present, 'the same load path, existing');
   assert.equal(flat(present.actual.css), '.p { b: c; }');
@@ -748,7 +757,7 @@ test('MIG-B9-17: a project function wins exactly where Dart Sass calls its bare 
     }
     if (expectShadow !== null) assert.deepEqual(shadowOf(run.ux, run.actual), [...expectShadow].sort(), `${label}: UXD_FUNCTION_SHADOWED`);
     for (const w of run.actual.warnings || []) if (/^UXD_FUNCTION_SHADOWED:/.test(w.text)) assert.match(w.text, /^UXD_FUNCTION_SHADOWED: @function [a-z-]+ \(.+:\d+\) replaces UXDSL's [a-z-]+\(\) in this build; rename it to use the token$/, label);
-    const isolation = (run.actual.warnings || []).filter((w) => /^UXD_MODULE_ISOLATION:/.test(w.text)).map((w) => `${path.relative(run.ux, w.file)}:${w.line}:${w.column}`);
+    const isolation = (run.actual.warnings || []).filter((w) => /^UXD_MODULE_ISOLATION:/.test(w.text)).map((w) => posixSeparators(`${path.relative(run.ux, w.file)}:${w.line}:${w.column}`));
     assert.deepEqual(isolation, DEC17_ISOLATION[label] || [], `${label}: UXD_MODULE_ISOLATION`);
   }
 });
@@ -1286,7 +1295,7 @@ test('MIG-B9-12: an in-memory source whose entry path does not exist resolves it
   const source = '@use "../../part";\n@use "pkg:kit";\n.v { w: space(10-2); }\n';
   const result = stage({ entry, source }, { sourceMap: true });
   assert.equal(result.css, '.p {\n  c: palette(primary.main);\n}\n\n.kit {\n  a: b;\n}\n\n.v {\n  w: space(10-2);\n}');
-  assert.deepEqual(result.loadedFiles.map((file) => path.relative(dir, file)), ['missing/deeper/virtual.uxdsl', '_part.uxdsl', 'node_modules/kit/i.scss']);
+  assert.deepEqual(result.loadedFiles.map((file) => posixSeparators(path.relative(dir, file))), ['missing/deeper/virtual.uxdsl', '_part.uxdsl', 'node_modules/kit/i.scss']);
   assert.equal(result.map.sourcesContent[result.map.sources.indexOf(entry)], source);
 });
 
@@ -1294,13 +1303,22 @@ test('MIG-B9-12: an in-memory source whose entry path does not exist resolves it
   const dir = project({ '_part.uxdsl': '.p { c: red; }\n', 'real.uxdsl': '.disk { a: b; }\n' });
   // The same source in a sibling directory, with the default load paths: none of them exists, so "../../part" is not found.
   const virtual = path.join(dir, 'elsewhere/virtual.uxdsl');
-  const elsewhere = stageError(() => stage({ entry: virtual, source: '@use "../../part";\n' }));
-  assert.equal(elsewhere.code, 'UXD_SASS');
-  assert.equal(elsewhere.sassMessage, "Can't find stylesheet to import.");
-  // Dart Sass on the .scss twin, with the same load paths, says the same.
   const twinDir = project({ '_part.scss': '.p { c: red; }\n' });
   const twinEntry = path.join(twinDir, 'elsewhere/virtual.scss');
-  assert.throws(() => sass.compileString('@use "../../part";\n', { url: pathToFileURL(twinEntry), loadPaths: nodeModulesChain(twinEntry), logger: sass.Logger.silent }), { sassMessage: "Can't find stylesheet to import." });
+  const dartSass = () => sass.compileString('@use "../../part";\n', { url: pathToFileURL(twinEntry), loadPaths: nodeModulesChain(twinEntry), logger: sass.Logger.silent });
+  if (process.platform === 'win32') {
+    // Windows reads the ".." of <dir>/elsewhere/node_modules/../../part
+    // without node_modules existing, so that load path reaches <dir>/_part,
+    // for Dart Sass on the .scss twin as for the stage.
+    assert.equal(flat(stage({ entry: virtual, source: '@use "../../part";\n' }).css), '.p { c: red; }');
+    assert.equal(flat(dartSass().css), '.p { c: red; }');
+  } else {
+    const elsewhere = stageError(() => stage({ entry: virtual, source: '@use "../../part";\n' }));
+    assert.equal(elsewhere.code, 'UXD_SASS');
+    assert.equal(elsewhere.sassMessage, "Can't find stylesheet to import.");
+    // Dart Sass on the .scss twin, with the same load paths, says the same.
+    assert.throws(dartSass, { sassMessage: "Can't find stylesheet to import." });
+  }
   const memory = stage({ entry: path.join(dir, 'real.uxdsl'), source: '@use "part";\n.mem { a: b; }\n' });
   assert.equal(memory.css, '.p {\n  c: red;\n}\n\n.mem {\n  a: b;\n}');
   assert.doesNotMatch(memory.css, /disk/);

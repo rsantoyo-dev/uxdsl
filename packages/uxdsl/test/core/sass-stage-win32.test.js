@@ -123,7 +123,7 @@ test('MIG-B9-28: on win32 lstat reports a junction as a symbolic link, so the Sa
 });
 
 test('MIG-B9-28: on win32 a name written in another case in a directory whose ACL denies listing takes its on-disk case, unlike macOS\'s written case (decision 2 of 2026-11-09 narrowed to macOS)', { skip: ONLY_WIN32 }, async (t) => {
-  const dir = fs.realpathSync.native(scratch(t, 'uxdsl-stage-acl-'));
+  const dir = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-stage-acl-')));
   write(dir, { 'entry.uxdsl': '@use "locked/PART";\n', 'locked/_part.uxdsl': '.p { a: b; }\n' });
   const locked = path.join(dir, 'locked');
   const user = process.env.USERNAME;
@@ -131,10 +131,26 @@ test('MIG-B9-28: on win32 a name written in another case in a directory whose AC
   const icacls = (...args) => {
     const run = spawnSync('icacls', [locked, ...args], { encoding: 'utf8' });
     assert.equal(run.status, 0, `icacls ${args.join(' ')}: ${run.stdout}${run.stderr}`);
+    return run.stdout;
   };
-  icacls('/deny', `${user}:(RD)`);
-  t.after(() => icacls('/remove:d', user));
-  assert.throws(() => fs.readdirSync(locked), { code: 'EPERM' }, 'the ACL denies listing the directory');
+  // Listing is denied to the user and to Everyone (S-1-1-0); one hook lifts
+  // both denials before it removes the directory, which it then can list.
+  const denied = [user, '*S-1-1-0'];
+  for (const who of denied) icacls('/deny', `${who}:(RD)`);
+  t.after(() => {
+    for (const who of denied) icacls('/remove:d', who);
+    fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5 });
+  });
+  let listing;
+  try {
+    listing = fs.readdirSync(locked);
+  } catch (error) {
+    listing = error;
+  }
+  if (listing?.code !== 'EPERM') {
+    const privileges = spawnSync('whoami', ['/priv'], { encoding: 'utf8' }).stdout;
+    assert.fail(`the ACL does not deny listing the directory, so the case cannot be set up: readdirSync gave ${listing instanceof Error ? listing.code : JSON.stringify(listing)}\n${icacls()}\n${privileges}`);
+  }
   assert.equal(fs.realpathSync.native(path.join(locked, '_PART.uxdsl')), path.join(locked, '_part.uxdsl'), 'the real path still names the file as stored');
   let accessible = true;
   try {
