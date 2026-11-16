@@ -742,3 +742,14 @@ new test run against the built package of the previous commit (BASE
   brace). `diagnostics-catalog.test.js` sees the new code asserted by T8.
   `npm test` exit 0 (5:07); corpus 276,926 bytes, `byte-identical: true`,
   21 warnings (15:06, load 4.50); parity PASS.
+- **Unknown names, judged at `OnceExit`** (`UXD_BREAKPOINT_UNKNOWN` with
+  the usable breakpoints and a suggestion; T6, T9, T17's control). Red on
+  the previous commit: 2 of 12 failed, both because `(--lgg)` and an
+  undefined `(--narrow)` compiled (`null` error), and T17's control found
+  `(--lgg)` compiling. Green: 12 of 12, after recording the measured
+  `compile()` position: the Sass stage's map gives the `@media` rule's line
+  and column (`x.uxdsl:2:1`), while the plugin alone points at the token
+  (`x.css:2:8`). The function form's pins (`breakpoint-unknown.test.js`,
+  `near-miss-functions.test.js`, `sass-stage-diagnostics.test.js`) pass
+  unchanged. `npm test` exit 0 (5:13); corpus 276,926 bytes,
+  `byte-identical: true`, 21 warnings (15:13, load 5.80); parity PASS.

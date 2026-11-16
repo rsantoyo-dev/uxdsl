@@ -95,7 +95,7 @@ test('MIG-B9-30: an example whose only UXDSL is @media (--lg) is compiled by the
   const file = path.join(dir, 'page.md');
   fs.writeFileSync(file, [
     '```css', '@media (--lg) { .a { color: red; } }', '```', '',
-    '```css', '@media (--xs) { .a { color: red } }  /* UXD_DIRECTIVE_CONTEXT: wrong */', '```', '',
+    '```css', '@media (--lgg) { .a { color: red } }  /* UXD_DIRECTIVE_CONTEXT: wrong */', '```', '',
     '```css', '@media (min-width: 1024px) { .a { color: red; } }', '```',
   ].join('\n'));
   const { examples } = collectExamples(path.relative(ROOT, file));
@@ -104,7 +104,7 @@ test('MIG-B9-30: an example whose only UXDSL is @media (--lg) is compiled by the
   assert.deepEqual(await runExample(examples[0]), []);
   // Negative control: an example documented with the wrong code is reported with the code it really fails with.
   const [wrong] = await runExample(examples[1]);
-  assert.match(wrong, /documented as UXD_DIRECTIVE_CONTEXT but fails with UXD_BREAKPOINT_CONTEXT$/);
+  assert.match(wrong, /documented as UXD_DIRECTIVE_CONTEXT but fails with UXD_BREAKPOINT_UNKNOWN$/);
 });
 
 test('statementsOf makes every top-level node a statement (a @theme block too) and reads only same-line trailing comments', () => {

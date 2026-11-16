@@ -692,6 +692,7 @@ function rewriteBreakpointMedia(c: Compilation) {
     const text = diagnostic(`UXD_BREAKPOINT_SHADOWED: @custom-media ${name} ${query} replaces the theme's ${bp}, ${theirs}, in this stylesheet: (--${bp}) compiles to ${query} here, while ${bp}() and stylesheets compiled apart keep the theme's. Remove it to use the theme's ${bp}, or change breakpoints.${bp} in the theme to move it everywhere.`).message;
     warnings.push(() => c.result.warn(text, { node: at, word: name, plugin: PLUGIN }));
   }
+  const usable = c.ordered.filter(({ name }) => name !== base).map(({ name }) => name);
   for (const at of c.breakpointAtRules) {
     if (at.name.toLowerCase() !== 'media') continue;
     const params = at.params;
@@ -703,7 +704,14 @@ function rewriteBreakpointMedia(c: Compilation) {
     }
     const resolve = (token: string, name: string, offset: number): string => {
       const bp = breakpointOf(name);
-      if (!bp) return token;
+      if (!bp) {
+        // Neither a breakpoint nor a definition: judged at OnceExit, so a plugin that resolves custom media may still do it.
+        if (!defined.has(`--${name}`)) {
+          const suggestion = closestKey(name, [...usable, ...Array.from(defined.keys(), (key) => key.slice(2))]);
+          c.unknownMedia.push({ node: at, token, name: `--${name}`, suggestion: didYouMean(suggestion ? [`(--${suggestion})`] : []) });
+        }
+        return token;
+      }
       const outer = unsplittableAncestor(at);
       if (outer) {
         throw diagnostic(`UXD_BREAKPOINT_CONTEXT: @media ${params} cannot live inside @${outer.name}: a media query cannot be nested there; write @media ${params} around the @${outer.name} instead.`, token);
@@ -752,7 +760,32 @@ function rewriteBreakpointMedia(c: Compilation) {
     }
     for (const construct of c.constructs) if (construct.node === at) construct.text = ownText(at);
   }
+  // While an unknown name waits for OnceExit, what the steps report waits with it.
+  if (c.unknownMedia.length > 0 && c.held === null) c.held = [];
   for (const warning of warnings) report(c, warning);
+}
+
+/** The error of a `(--name)` no breakpoint and no definition accounts for, at its token. */
+function unknownMediaError(c: Compilation, record: UnknownMedia): unknown {
+  const base = c.ordered[0].name;
+  const usable = c.ordered.filter(({ name }) => name !== base).map(({ name }) => `(--${name})`).join(', ') || 'none';
+  return locateError(diagnostic(`UXD_BREAKPOINT_UNKNOWN: (${record.name}) is not a breakpoint of the theme or a @custom-media of this stylesheet; breakpoints usable in @media: ${usable}.${record.suggestion}`, record.token), record.node);
+}
+
+/**
+ * At OnceExit, each `(--name)` that was neither a breakpoint nor a definition
+ * in Once fails if it is still there: its at-rule still in the stylesheet,
+ * its prelude still holding the name, and no top-level `@custom-media` of
+ * that name now. Another plugin in the run that resolved it, or added its
+ * definition, has been heard.
+ */
+function rejectUnknownMedia(c: Compilation, root: Root) {
+  for (const record of c.unknownMedia) {
+    if (record.node.root() !== root) continue;
+    if (!new RegExp(`\\(\\s*${record.name}\\s*\\)`).test(record.node.params)) continue;
+    const definedNow = root.nodes.some((node) => node.type === 'atrule' && node.name.toLowerCase() === 'custom-media' && CUSTOM_MEDIA_DEFINITION.exec(node.params)?.[1] === record.name);
+    if (!definedNow) throw unknownMediaError(c, record);
+  }
 }
 
 // --- emitTheme ---------------------------------------------------------------
@@ -1295,23 +1328,28 @@ function runSteps(c: Compilation, constructs: SassConstruct[]) {
 /**
  * The held constructs in `OnceExit`, which PostCSS runs after every plugin's
  * `Once` and visitors: the first construct still there fails, then any Sass
- * construct now in the stylesheet that the theme did not generate; when none
- * is left, the held reports are given. A root another plugin replaced cannot
- * be looked in, so its first construct fails, as the plugin alone fails.
+ * construct now in the stylesheet that the theme did not generate, then any
+ * unknown `(--name)` still there (`rejectUnknownMedia`); when none is left,
+ * the held reports are given. A root another plugin replaced cannot be
+ * looked in, so its first construct fails, as the plugin alone fails, or,
+ * with none, its first unknown `(--name)`.
  */
 function releaseSassSyntax(root: Root, pending: Map<Root, { compilation: Compilation; constructs: SassConstruct[] }>) {
   const entry = pending.get(root);
   if (!entry) {
     const [replaced] = pending.values();
     pending.clear();
-    if (replaced) throw replaced.constructs[0].error;
+    if (replaced) throw replaced.constructs.length > 0 ? replaced.constructs[0].error : unknownMediaError(replaced.compilation, replaced.compilation.unknownMedia[0]);
     return;
   }
   pending.delete(root);
   const left = entry.constructs.find((construct) => stillThere(construct, root));
   if (left) throw left.error;
-  const added = findSassConstructs(entry.compilation, true);
-  if (added.length > 0) throw added[0].error;
+  if (entry.constructs.length > 0) {
+    const added = findSassConstructs(entry.compilation, true);
+    if (added.length > 0) throw added[0].error;
+  }
+  rejectUnknownMedia(entry.compilation, root);
   const reports = entry.compilation.held ?? [];
   entry.compilation.held = null;
   for (const emit of reports) emit();
@@ -1319,10 +1357,11 @@ function releaseSassSyntax(root: Root, pending: Map<Root, { compilation: Compila
 
 /**
  * The Sass check runs over the author's stylesheet in `Once`, before the
- * steps. A construct the steps leave alone waits, in a map this PostCSS run's
- * `prepare()` creates, for `OnceExit`, so a plugin that resolves it in a
- * visitor or in its own `Once` may be listed before or after this one; the
- * plugin alone fails on its first construct, with none of the steps' reports.
+ * steps. A construct the steps leave alone, or an unknown `(--name)` in an
+ * `@media` prelude, waits, in a map this PostCSS run's `prepare()` creates,
+ * for `OnceExit`, so a plugin that resolves it in a visitor or in its own
+ * `Once` may be listed before or after this one; the plugin alone fails on
+ * its first construct, with none of the steps' reports.
  */
 function uxdslPlugin(opts: UxdslOptions = {}) {
   return {
@@ -1334,7 +1373,7 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
           const compilation = validateOptions(root, result, opts);
           const constructs = holdSassSyntax(compilation);
           runSteps(compilation, constructs);
-          if (constructs.length > 0) pending.set(root, { compilation, constructs });
+          if (constructs.length > 0 || compilation.unknownMedia.length > 0) pending.set(root, { compilation, constructs });
         },
         OnceExit(root: Root) {
           releaseSassSyntax(root, pending);

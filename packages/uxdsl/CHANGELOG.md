@@ -59,6 +59,20 @@ them. See `docs/releases/0.5.0-beta.9.md`.
   or an at-rule. A `@custom-media` for any other name is left as written,
   with its uses.
 
+#### Changed
+
+- **An unknown `(--name)` in an `@media` prelude fails.** One that is
+  neither a breakpoint of the theme nor a top-level `@custom-media` of the
+  stylesheet, which passed through as written (a block no browser applies),
+  is now `UXD_BREAKPOINT_UNKNOWN`, listing the breakpoints usable in `@media`
+  and, when one is close, `Did you mean "(--lg)"?`. It is judged at the
+  plugin's `OnceExit`, after every plugin's visitors, so a plugin that
+  resolves custom media in the same PostCSS run (`postcss-custom-media`,
+  `postcss-preset-env`) may be listed before or after `uxdsl/postcss`. With
+  `uxdsl/postcss` alone each file is compiled on its own: a custom media
+  defined in another file is unknown there. The function form's message is
+  unchanged.
+
 ### The plugin's fixed per-build costs (MIG-B9-24)
 
 #### Changed

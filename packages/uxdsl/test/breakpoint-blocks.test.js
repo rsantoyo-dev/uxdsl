@@ -355,3 +355,77 @@ test('MIG-B9-30: a breakpoint where it cannot apply is UXD_BREAKPOINT_CONTEXT: a
   const both = await viaPlugin('@custom-media --lg (min-width: 900px);\n.x { @custom-media --lg (min-width: 1px); }\n@media (--lg) { .a { color: red } }');
   assert.match(both.css, /@media \(min-width: 900px\)/);
 });
+
+// --- T6 -----------------------------------------------------------------------
+
+const unknownText = (name, suggestion, usable = '(--sm), (--md), (--lg), (--xl)') => `UXD_BREAKPOINT_UNKNOWN: (${name}) is not a breakpoint of the theme or a @custom-media of this stylesheet; breakpoints usable in @media: ${usable}.${suggestion ? ` Did you mean "${suggestion}"?` : ''}`;
+
+test('MIG-B9-30: an unknown (--name) in @media is UXD_BREAKPOINT_UNKNOWN with the usable breakpoints and a suggestion, on both paths, located', async () => {
+  const alone = await failure(viaPlugin('.a { color: red; }\n@media (--lgg) { .a { color: blue } }'));
+  assert.equal(alone.reason, unknownText('--lgg', '(--lg)'));
+  assert.deepEqual([alone.file, alone.line, alone.column], [CSS_FROM, 2, 8]);
+  const compiled = await failure(viaCompile('.a { color: red; }\n@media (--lgg) { .a { color: blue; } }'));
+  assert.equal(compiled.reason, unknownText('--lgg', '(--lg)'));
+  // Through compile() the Sass stage's map locates the @media rule's line; its column is the rule's.
+  assert.deepEqual([compiled.file, compiled.line, compiled.column], [UXDSL_FROM, 2, 1]);
+
+  assert.equal((await failure(viaPlugin('@media (--LGG) { .a { color: red } }'))).reason, unknownText('--LGG', '(--lg)'));
+  assert.equal((await failure(viaPlugin('@media (--large) { .a { color: red } }'))).reason, unknownText('--large'));
+  assert.equal((await failure(viaPlugin('@media (--xxll) { .a { color: red } }', { breakpoints: { xxl: 1536 } }))).reason, unknownText('--xxll', '(--xxl)', '(--sm), (--md), (--lg), (--xl), (--xxl)'));
+  // A stylesheet's own definitions are offered too, as written.
+  assert.equal((await failure(viaPlugin('@custom-media --Narrow (max-width: 400px);\n@media (--narrow) { .a { color: red } }'))).reason, unknownText('--narrow', '(--Narrow)'));
+  // A nested @media, and one in a list, are read the same way.
+  assert.equal((await failure(viaPlugin('.a { @media screen and (--nope), print { color: red } }'))).reason, unknownText('--nope'));
+
+  // Negative control: a name the stylesheet defines is left as written, beside a rewritten breakpoint.
+  const defined = await viaPlugin('@custom-media --narrow (max-width: 400px);\n@media (--narrow) and (--md) { .a { color: red } }');
+  assert.equal(defined.css, '@custom-media --narrow (max-width: 400px);\n@media (--narrow) and (min-width: 768px) { .a { color: red } }');
+  assert.deepEqual(defined.warnings, []);
+});
+
+// --- T9 -----------------------------------------------------------------------
+
+/** As postcss-custom-media: its Once collects and removes the top-level definitions, an AtRule visitor resolves the uses. */
+const customMedia = ({ resolveNothing = false } = {}) => ({
+  postcssPlugin: 'stand-in/custom-media',
+  prepare() {
+    const queries = new Map();
+    return {
+      Once(root) {
+        root.each((node) => {
+          if (node.type !== 'atrule' || node.name !== 'custom-media') return;
+          const [, name, query] = /^(--[\w-]+)\s+([\s\S]+)$/.exec(node.params);
+          queries.set(name, query);
+          node.remove();
+        });
+      },
+      AtRule: {
+        media(at) {
+          if (!resolveNothing) at.params = at.params.replace(/\(\s*(--[\w-]+)\s*\)/g, (token, name) => (queries.has(name) ? queries.get(name) : token));
+        },
+      },
+    };
+  },
+});
+
+test('MIG-B9-30: in a PostCSS chain a custom media another plugin resolves is not UXD_BREAKPOINT_UNKNOWN, because it is judged at OnceExit', async () => {
+  const own = '@custom-media --narrow (max-width: 400px);\n@media (--narrow) { .a { color: red } }';
+  for (const order of [[customMedia(), uxdsl()], [uxdsl(), customMedia()]]) {
+    const result = await postcss(order).process(own, { from: CSS_FROM });
+    assert.equal(result.css, '@media (max-width: 400px) { .a { color: red } }', order[0].postcssPlugin);
+  }
+  // uxdsl/postcss first: it sees the project's --lg, warns and applies it, and the other plugin finds nothing left to do.
+  const project = '@custom-media --lg (min-width: 900px);\n@media (--lg) { .a { color: red } }';
+  const first = await postcss([uxdsl(), customMedia()]).process(project, { from: CSS_FROM });
+  assert.equal(first.css, '@media (min-width: 900px) { .a { color: red } }');
+  assert.deepEqual(first.warnings().map((warning) => warning.text), [shadowedText('--lg', '(min-width: 900px)')]);
+  // The documented caveat: listed after it, uxdsl/postcss never sees the definition the other plugin removed in its Once.
+  const after = await postcss([customMedia(), uxdsl()]).process(project, { from: CSS_FROM });
+  assert.equal(after.css, '@media (min-width: 1024px) { .a { color: red } }');
+  assert.deepEqual(after.warnings(), []);
+
+  // Negative controls: with no plugin to resolve it, or one that removes the definition and resolves nothing, it fails at OnceExit.
+  const undefinedName = '@media (--narrow) { .a { color: red } }';
+  assert.equal((await failure(postcss([uxdsl()]).process(undefinedName, { from: CSS_FROM }))).reason, unknownText('--narrow'));
+  assert.equal((await failure(postcss([customMedia({ resolveNothing: true }), uxdsl()]).process(own, { from: CSS_FROM }))).reason, unknownText('--narrow'));
+});

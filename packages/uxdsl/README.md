@@ -437,6 +437,18 @@ not a breakpoint is the author's CSS, left as written with its uses. With
 `uxdsl/postcss` alone, each file is compiled on its own, so only the
 definitions in that file are seen.
 
+A `(--name)` in an `@media` prelude that is neither a breakpoint of the
+theme nor a `@custom-media` of the stylesheet fails with
+`UXD_BREAKPOINT_UNKNOWN`, which lists the breakpoints usable in `@media` and
+suggests the closest name. It is judged once every plugin of the PostCSS
+run has had its turn, so a plugin such as `postcss-custom-media` that
+resolves the stylesheet's custom media may be listed before or after
+`uxdsl/postcss`.
+
+```css
+@media (--lgg) { .nav { display: flex; } }  /* UXD_BREAKPOINT_UNKNOWN: did you mean "(--lg)"? */
+```
+
 <p align="center">
   <a href="https://uxdsl.vercel.app/docs/home">
     <strong>Explore the Full Docs &rarr;</strong>
