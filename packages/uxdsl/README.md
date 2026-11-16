@@ -66,7 +66,7 @@ PostCSS's for a UXDSL error. It does so in a one-shot build and under
 `--watch`, where every failed build of the session, the first one included,
 prints `[uxdsl] build failed:` and leaves the last good CSS on disk. Every
 `compile()` warning (Dart Sass's deprecations and `@warn`,
-`UXD_FUNCTION_SHADOWED`, the plugin's) prints once per build as
+`UXD_FUNCTION_SHADOWED`, `UXD_MODULE_ISOLATION`, the plugin's) prints once per build as
 `[uxdsl] Warning: <file>:<line>:<column>: <text>` (one without a position,
 such as Dart Sass's summary of the deprecations it omitted, once for each
 entry that reports it), and the build config's

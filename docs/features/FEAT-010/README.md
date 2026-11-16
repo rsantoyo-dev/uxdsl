@@ -452,8 +452,8 @@ edit `bin/uxdsl.js`).
 | `packages/uxdsl/src/plugin.ts` | 04, 05, 13, 20, 21, 24, 27, 30, 31, 35 |
 | `packages/uxdsl/src/compile.ts` | 13, 20, 21, 26, 17, 38 |
 | `packages/uxdsl/src/sass/compile-sass.ts` | 12, 21, 23, 26, 17 |
-| `packages/uxdsl/src/sass/protect.ts` | 11, 21, 26 |
-| `packages/uxdsl/test/core/compile-sass.test.js` | 12, 25, 26, 28 |
+| `packages/uxdsl/src/sass/protect.ts` | 11, 21, 26, 17 |
+| `packages/uxdsl/test/core/compile-sass.test.js` | 12, 25, 26, 17, 28 |
 | `packages/uxdsl/test/core/sass-stage-diagnostics.test.js` (new) | 26, 17 |
 | `packages/uxdsl/test/cli/**` | 14, 20, 21, 22, 25, 17, 28, 38, 19, 06 |
 | `packages/uxdsl/test/no-silent-output.test.js` | 13, 25, 27, 28 |
@@ -469,7 +469,7 @@ edit `bin/uxdsl.js`).
 | `packages/uxdsl/src/control-engine.ts`, `inputs.ts`, `buttons.ts`, `surfaces.ts` | 21, 31, 32, 34, 35, 36 |
 | `packages/uxdsl/CHANGELOG.md` | every story that lists it in Owns or Shares (append-only, one subsection per story; MIG-B9-27, in its outcome A, also rewrites MIG-B9-13's `### Breaking` item on PostCSS chains, by decision 14 of 2026-11-10, and no other story edits that item) |
 | `AGENTS.md` and the generated agent guide | 01, 04, 13, 15, 20, 30, 31, 32, 33, 34, 35, 36, 37, 51 |
-| `packages/uxdsl/docs/integrations/compile.md` | 13, 15, 21, 26, 27, 38 |
+| `packages/uxdsl/docs/integrations/compile.md` | 13, 15, 21, 26, 17, 27, 38 |
 | `packages/uxdsl/docs/integrations/cli.md` | 20, 21, 17, 19, 06, 60, 61, 63 |
 | `packages/uxdsl/docs/integrations/vite.md`, `webpack.md` | 20, 21, 39 |
 | `packages/uxdsl/docs/migration.md` | 20, 26, 17, 27, 30, 31, 32, 33, 34, 35, 36, 52, 60 (append-only, one subsection per story, by decision 31 of 2026-11-10; a story that rewrites an existing passage lists the file in Shares and is serialized as before: MIG-B9-26, 17 and 27 rewrite items 6, 9 and 4 of "beta.9 — Sass inside compile()", and MIG-B9-52 restructures the file. A story that only appends its subsection waits for no story on this file) |

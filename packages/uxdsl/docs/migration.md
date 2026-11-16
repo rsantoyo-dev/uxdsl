@@ -185,13 +185,18 @@ What to check when you upgrade:
    mixin, function or `%placeholder` another file defined; after regenerating,
    such a file fails as `UXD_SASS` (`Undefined variable.`, `Undefined mixin.`,
    `The target selector was not found.`), or, in three cases, compiles
-   differently without an error: a call to another file's `@function` stays in
-   the CSS as written, a value an earlier file set for a variable that another
-   file declares `!default` no longer applies, and a project `@function` named
-   like a UXDSL function (`space()`) replaces the token only in a file that
-   `@use`s its file `as *` (or `@import`s it), and in a call through the
-   namespace (`helpers.space(2)`). Give each file its own `@use` for what it
-   reads:
+   differently without an error but with a `UXD_MODULE_ISOLATION` warning: a
+   call to another file's `@function` stays in the CSS as written (warned at
+   the call's declaration); a value an earlier file set for a variable that
+   another file declares `!default` no longer applies (warned at the
+   `!default` declaration when the earlier file emits no CSS of its own, as a
+   settings file does; a module configured with `@use … with (…)` never
+   warns); and a project `@function` named like a UXDSL function (`space()`)
+   replaces the token only in a file that `@use`s its file `as *` (or
+   `@import`s it), and in a call through the namespace (`helpers.space(2)`)
+   (warned at the definition when no call of the build reaches the
+   function). The CSS is Dart Sass's either way. Give each file its own
+   `@use` for what it reads:
 
    ```scss
    // src/card.uxdsl, which reads $brand from src/_variables.uxdsl
@@ -205,7 +210,10 @@ What to check when you upgrade:
    through the namespace (`variables.$brand`, `helpers.double(4px)`): a bare
    variable or mixin fails there, but a function called by its bare name
    stays in the CSS as written, and one named like a UXDSL function stays the
-   token, without an error.
+   token, without an error: the first warns `UXD_MODULE_ISOLATION`, and so
+   does the second when no call of the build reaches the function
+   (`helpers.space(2)` in one file and a bare `space(2)` meant as the token
+   warn nothing).
 
    A module that another file configures (`@use './variables' with (…)`)
    must be configured before anything loads it: put the configuring file

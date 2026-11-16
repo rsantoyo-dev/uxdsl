@@ -81,6 +81,11 @@ them. See `docs/releases/0.5.0-beta.9.md`.
   a `!default` candidate (a module's `!default` and an earlier file of
   settings that assigns the same name) compiles once more; every other build
   as often as before.
+- **On a later error.** When the plugin, or the dotted near-miss check that
+  follows it, rejects a compile whose Sass stage succeeded, the error's
+  `warnings` carries the `UXD_MODULE_ISOLATION` warnings in the same place
+  as a result lists them, so the CLI, `uxdsl/vite` and `uxdsl/webpack` print
+  them before the error. A Sass failure (`UXD_SASS`) carries none of them.
 
 #### Visual changes
 
