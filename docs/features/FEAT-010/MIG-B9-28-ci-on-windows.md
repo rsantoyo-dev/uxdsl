@@ -9,7 +9,7 @@
 | Size | M (registered as "S or split (its scout sizes it)"). This file is the first part: the `uxdsl` package's own suites on Windows. What a larger scope would add is §15's questions 1 and 2, with no new id (question 1's second part is MIG-B9-66, decision 15 of 2026-11-10) |
 | Depends on | None by registration (D11). Under §7 it starts after five earlier rows merge, which edit test files it shares (§3): MIG-B9-20 (`test/cli/**`), MIG-B9-25 (`test/cli/**`, `compile-sass.test.js`, `sass-source-maps.test.js`, `no-silent-output.test.js`), MIG-B9-26 (`compile-sass.test.js`), MIG-B9-17 (`test/cli/uxdsl-cli.test.js`, which decision 6 of 2026-11-10 moved from MIG-B9-26 to it) and MIG-B9-27 (`no-silent-output.test.js`) |
 | Blocks | MIG-B9-91 (D11); MIG-B9-66, in `0.5.0-beta.10` (decision 15 of 2026-11-10). Under §7, MIG-B9-38, 19 and 06 (MIG-B9-19 and 06 in MIG-B9-39's place, by decisions 28 and 29 of 2026-11-13) and every later story on `packages/uxdsl/test/cli/**` or on another file in Shares |
-| Base | `feat/beta9` after MIG-B9-20, MIG-B9-25, MIG-B9-26, MIG-B9-17 and MIG-B9-27. The preconditions and the baseline were run on `f855765` (§3, §4), and they are run again when the story starts |
+| Base | `feat/beta9` after MIG-B9-20, MIG-B9-25, MIG-B9-26, MIG-B9-17 and MIG-B9-27. The preconditions and the baseline were run on `f855765` (§3, §4), and run again on `dec40b1` when the story started (2026-11-16, macOS 27.0, Node 20.19.0, load 18.44; §15, "Re-baseline on `dec40b1`") |
 | Owns | `packages/uxdsl/test/core/sass-stage-win32.test.js` (new), `packages/uxdsl/test/win32-harness.test.js` (new: the encoded negative controls of T3 and T4), `packages/uxdsl/test/helpers/npm.js` (new) |
 | Shares | `.github/workflows/ci.yml` (one job added; the `test` and `gate` jobs stay as they are. README §7's row 28, 66; MIG-B9-66 is provisional, decision 15 of 2026-11-10); `packages/uxdsl/test/cli/watch-mode.test.js`, `uxdsl-cli.test.js`, `watch-selection.test.js` and `init.test.js` (the row `packages/uxdsl/test/cli/**`); `packages/uxdsl/test/core/compile-sass.test.js` (`project()`); `packages/uxdsl/test/core/sass-source-maps.test.js` (MIG-B9-13's emulated LM-3 test, on win32); `packages/uxdsl/test/canonical-grammar.test.js`, `no-silent-output.test.js`, `removed-language-surface.test.js` and `types.test.js` (POSIX path literals, `npm pack`, `'dir'` symlinks); `packages/uxdsl/README.md` (one sentence; under §15's question 6, item 1, option (b), also the sentence at lines 1550–1553 on `f855765`, edited rather than appended); `packages/uxdsl/CHANGELOG.md` (one subsection) |
 | Output impact | none. CI and tests only: no file under `packages/uxdsl/src` or `packages/uxdsl/bin` changes |
@@ -91,13 +91,13 @@ command grep -qF "const FOLDS_CASE = process.platform === 'darwin' || process.pl
 command grep -qF "fs.accessSync(dir, fs.constants.R_OK);" packages/uxdsl/src/sass/compile-sass.ts  # canList, C6c
 command grep -qF "the NFD half runs on darwin only" packages/uxdsl/test/core/sass-stage-case.test.js
 command grep -qF "when the stage names its files as Windows does (C:" packages/uxdsl/test/core/sass-source-maps.test.js
-command grep -qF "const dir = fs.realpathSync(fs.mkdtempSync(" packages/uxdsl/test/core/compile-sass.test.js   # project(), C5
+command grep -qF "const dir = fs.realpathSync(temporaryDirectory('uxdsl-sass-stage-'));" packages/uxdsl/test/core/compile-sass.test.js   # project(), C5
 node -v | command grep -q "^v20\.19\."                                                             # CI's Node line
 test -f packages/uxdsl/dist/sass/compile-sass.js                                                   # the worktree is built
 ```
 
-When the story starts, these four start gates also exit 0. On `f855765`
-each exits 1, because none of the four stories has merged yet. Each checks
+When the story starts, these five start gates also exit 0. On `f855765`
+each exits 1, because none of the five stories has merged yet. Each checks
 the base itself (HEAD's tree), not a commit subject:
 
 ```bash
@@ -105,6 +105,7 @@ the base itself (HEAD's tree), not a commit subject:
 ! command grep -qx "To be filled in the delivering PR." docs/features/FEAT-010/MIG-B9-25-suites-remove-temp-dirs.md       # MIG-B9-25 merged (the suites remove their temporary directories)
 ! command grep -qx "To be filled in the delivering PR." docs/features/FEAT-010/MIG-B9-26-near-misses-debug-isolation.md   # MIG-B9-26 merged (both parts' files, if the owner splits it)
 ! command grep -qx "To be filled in the delivering PR." docs/features/FEAT-010/MIG-B9-27-postcss-chain.md                 # MIG-B9-27 merged, in either outcome
+! command grep -qx "To be filled in the delivering PR." docs/features/FEAT-010/MIG-B9-17-module-isolation-warnings.md     # MIG-B9-17 merged (test/cli/uxdsl-cli.test.js)
 ```
 
 On that base, the preconditions above and the baseline below are run again.
@@ -195,6 +196,11 @@ in the worktree gives `# tests 723`, `# pass 723`, `# skipped 0`, exit 0.
 The parity oracle's printed expected and actual look identical: they differ
 by the `\r` the CRLF checkout put into the committed oracle.
 
+Re-run on `dec40b1` (2026-11-16): `698 w/crlf` (5 `w/-text`, 1 `w/none`),
+and the unit group gives `# tests 756`, `# pass 753`, `# fail 3`: the two
+above and `Once() is the sequence of named steps, over one Compilation
+object` (`compiler-structure.test.js`). The LF control gives 756/756.
+
 **B3 — What the package's suites assume, read from the base.**
 
 ```text
@@ -221,6 +227,16 @@ packages/uxdsl/test/removed-language-surface.test.js:34:  assert.equal(error.fil
 - The package's tests read `fixtures/mig07-consumer/theme.json` and its
   `entries/` as committed files. None needs the installed tarball, so the
   Windows job does not run `fixtures/mig07-consumer/run.js`.
+- Re-run on `dec40b1` (2026-11-16): the two npm calls are at
+  `watch-mode.test.js:78` and `removed-language-surface.test.js:154`; the
+  links at `compile-sass.test.js:464` (`'junction'`), `init.test.js:98`
+  (`'dir'`), `types.test.js:31` and `:108` (`'dir'`), and, since MIG-B9-25,
+  `temporary-directory.test.js:37` and `:49` (no type: a directory symlink,
+  which needs the privilege to create one on win32). POSIX path literals are
+  also compared with PostCSS's `file` in `postcss-chain.test.js:229` (MIG-B9-27)
+  and `sass-stage-diagnostics.test.js:419`. The watch line is at
+  `watch-mode.test.js:1145`, and the CLI prints it at `bin/uxdsl.js:1874`
+  (`built` at `:1138`, `regenerated` at `:1893` and `:1897`).
 - Under `packages/uxdsl/test`, a test is skipped by platform at exactly the
   five places C3 lists. Every other `skip:` is the Bootstrap corpus test's
   (`UXDSL_SASS_CORPUS`).
@@ -369,12 +385,13 @@ Must stay byte-identical with the base:
 - **CLI paths printed in POSIX form:** question 7, option (b).
 - **A user's `.uxdsl` file with CRLF line endings:** no test covers it. It is
   a §15 finding with a proposed follow-up and no id.
-- **The flaky watch test** (`waitFor timed out` on ubuntu): MIG-B9-39 owns it
-  (the decision of 2026-11-08 on MIG-B9-14's flag 16).
+- **The flaky watch tests:** MIG-B9-19 owns the CLI's (decision 28 of
+  2026-11-13); the atomic-replace failure is MIG-B9-06's (decision 28 of
+  2026-11-15), and so is the webpack loader watch tests' extra-build class
+  (decision 40 of 2026-11-15).
 - **Timing on Windows:** P10 is measured on the owner's Mac (decision D9 of
   2026-11-04), and the performance group asserts only ratios
   (`test/performance/reference-performance.test.js:3`).
-- **The temporary directories the suites leave,** on Windows too: MIG-B9-25.
 
 ## 7. Approach and traps
 
@@ -482,7 +499,7 @@ Non-normative.
      swallow the error.
    - No `continue-on-error`, no new `skip:` and no `--test-name-pattern` to
      make the job green: C3 names every skip.
-   - The flaky watch test of MIG-B9-39 may also fail on Windows. Record each
+   - The flaky watch tests (MIG-B9-19's, MIG-B9-06's) may also fail on Windows. Record each
      occurrence in §14 with its log. Re-run the job once and record both
      runs. It is not fixed here.
    - The Windows job does not prepare `fixtures/mig07-consumer`; the
@@ -509,7 +526,7 @@ the job pass.
 | Id | File | Title | Level | Proves | Negative control |
 | --- | --- | --- | --- | --- | --- |
 | T1 | `.github/workflows/ci.yml`, job `windows`; its log through `gh run view --job <id> --log` | the six groups' TAP summaries | CI (`windows-latest`) | C1, C3 | §4's B1: an unexpanded glob runs no test and exits 1. The job's first run, pushed alone, fails on what the fixes remove (§7, item 1) |
-| T2 | same job, step "The tree has ubuntu's line endings" | — | CI | C2 | §4's B2: the same count on a checkout with `core.autocrlf=true` is 667, and the step exits 1. On that tree two unit tests, the parity oracles and two `--check`s fail |
+| T2 | same job, step "The tree has ubuntu's line endings" | — | CI | C2 | §4's B2: the same count on a checkout with `core.autocrlf=true` is 698 on `dec40b1` (667 on `f855765`), and the step exits 1. On that tree three unit tests (two on `f855765`), the parity oracles and two `--check`s fail |
 | T3 | `packages/uxdsl/test/helpers/npm.js`, through `test/cli/watch-mode.test.js` and `test/removed-language-surface.test.js` | their existing titles | unit, CLI | C4 | encoded in `packages/uxdsl/test/win32-harness.test.js` (new): `MIG-B9-28: on win32 npm cannot be started without the helper, and the helper starts it (negative control)`. Without the helper, `execFileSync('npm', ['--version'])` fails with `ENOENT` or `EINVAL`; through it, the same call exits 0. Skipped off win32 with its reason |
 | T4 | the tests in Shares that compare paths | their existing titles | unit, CLI | C5 | encoded in `win32-harness.test.js`: `MIG-B9-28: on win32 a POSIX absolute literal is not the path PostCSS and path.resolve give for it (negative control)`. `path.resolve('/project/src/app.uxdsl')` starts with a drive letter and differs from the literal, so a test that compared the literal fails there. Skipped off win32 with its reason |
 | T5 | `packages/uxdsl/test/core/sass-stage-win32.test.js` (new; removes what it creates, `t.after`) | `MIG-B9-28: on win32 a path component written as an 8.3 short name keeps that spelling in loadedFiles and compile()'s dependencies, as its directory lists it` | unit | C6a, C6d | the test asserts that `fs.realpathSync.native` spells the component in its long form, so a spelling taken from the real path unconditionally, as Dart Sass does, fails it. On win32 it fails, never skips, when no short name can be found or made |
@@ -571,7 +588,7 @@ on the branch tip.
 - **AC7** `gh run view --job <id> --log | command grep -q "files checked out with CRLF: 0"`
   exits 0: the line-ending step printed it on `windows-latest`.
   - Locally, the same command on a clone checked out with
-    `core.autocrlf=true` exits 1 (B2: 667 files).
+    `core.autocrlf=true` exits 1 (B2: 698 files on `dec40b1`, 667 on `f855765`).
   - §14 records the image's own `core.autocrlf` with its origin.
   - Test file: the job's step.
   - Mutation: without the `core.autocrlf` step, on an image whose Git
@@ -605,12 +622,13 @@ Owner checks, never marked PASS by the agent:
   name keeps that spelling. Only if the owner answers question 6, item 1
   with (b): on win32, a name in a directory whose ACL denies listing takes
   its on-disk case, unlike macOS.
-- `packages/uxdsl/README.md`: one sentence after the paragraph that ends at
-  line 1556 ("…on a loaded file's path."), which says "On macOS and Windows
+- `packages/uxdsl/README.md`: one sentence after the sentence that ends at
+  line 1685 on `dec40b1` ("…on a loaded file's path.", inside list item 2,
+  which continues at line 1686), whose item says "On macOS and Windows
   each loaded file is spelled in its on-disk case". The sentence says that
   CI runs the package's suites on Windows, and gives C6a's spelling. Only
-  under question 6, item 1, option (b): the sentence at lines 1550–1553
-  ("…or one in a directory that cannot be listed, keeps the spelling it is
+  under question 6, item 1, option (b): the sentence at lines 1679–1682 on
+  `dec40b1` (1550–1553 on `f855765`; "…or one in a directory that cannot be listed, keeps the spelling it is
   written in") is edited so that it names macOS only, since an appended
   sentence would leave the README contradicting itself.
 
@@ -912,3 +930,98 @@ Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-15), 
   - The root `npm test` is `node scripts/tmpdir-guard.js npm run test:steps`. The `uxdsl` package's own `test` script, which the Windows job runs (decision 15 of 2026-11-10), does not run inside the guard. Whether the Windows job wraps that script in the guard is an open question for this story's re-baseline.
   - This story's §6 sends "The temporary directories the suites leave, on Windows too" to MIG-B9-25. MIG-B9-25 did not run on Windows, which has no CI job before this story; this decision brings the Windows run back to this story. Where a directory a Windows run leaves is fixed is also an open question for the re-baseline: decision 19 of 2026-11-10 covers a product defect the job finds ("the story stops at the first one, and the owner decides each"), and a fix in a test file outside this story's Shares would bring README §7 waits with it.
 - No README §7 row or wait changes by this decision: MIG-B9-25 is merged, and the guard and the loop are run, not edited. If the re-baseline's answers mean editing files outside the Shares, the Shares and the index follow then.
+
+### Re-baseline on `dec40b1` (2026-11-16)
+
+The story started on `dec40b1` (MIG-B9-27 merged as PR #100, after
+MIG-B9-17, 26, 39, 25, 21 and 20). Its scout re-ran §3 and §4 there (macOS
+27.0, Node 20.19.0, load average 18.44): every precondition and the five
+start gates exit 0 once the stale lines below are corrected; B1 holds as
+recorded; the package's suites give 756 / 365 (1 skipped) / 276 / 32 / 29 / 1
+on macOS, exit 0, and the ubuntu `npm test` job of the same tree (job
+133472170456, run 43916511579) gives the same counts, with 6 skipped in
+`test/core` (the corpus and five `sass-stage-case.test.js` tests that run
+only on darwin and win32). The repository is public. Stale lines, corrected
+in place (README §1 item 4) or, for §2's line references, recorded here only:
+
+| Where | Old | New |
+| --- | --- | --- |
+| §3 precondition | ``command grep -qF "const dir = fs.realpathSync(fs.mkdtempSync(" packages/uxdsl/test/core/compile-sass.test.js   # project(), C5`` | ``command grep -qF "const dir = fs.realpathSync(temporaryDirectory('uxdsl-sass-stage-'));" packages/uxdsl/test/core/compile-sass.test.js   # project(), C5`` (MIG-B9-25 moved `project()` onto the helper; it still uses the JavaScript `fs.realpathSync`, so finding 4 and C5 apply) |
+| §3 start gates | four gates | five: adds `! command grep -qx "To be filled in the delivering PR." docs/features/FEAT-010/MIG-B9-17-module-isolation-warnings.md`, which the 2026-11-10 block's "Under README §7, after decision 6" asks for |
+| Header, Base | "they are run again when the story starts" | "run again on `dec40b1` when the story started (2026-11-16 …)" |
+| §4 B2 | `667 w/crlf`; `# tests 723`, `# pass 721`, `# fail 2` | a re-run paragraph: `698 w/crlf`; `# tests 756`, `# pass 753`, `# fail 3` (adds `Once() is the sequence of named steps, over one Compilation object`, `compiler-structure.test.js`); LF control 756/756. T2 and AC7 say 698 |
+| §4 B3 | `removed-language-surface.test.js:155`; `compile-sass.test.js:455`; `init.test.js:96`; watch line 1143; `bin/uxdsl.js:1168`, `:1907`, `:1925` | a re-run item: `:154`; `:464`; `:98`; `temporary-directory.test.js:37` and `:49` (untyped symlinks, new); `postcss-chain.test.js:229` and `sass-stage-diagnostics.test.js:419` (POSIX literals outside the Shares); `watch-mode.test.js:1145`; `bin/uxdsl.js:1138`, `:1874`, `:1893`, `:1897` |
+| §2 Sources | `compile-sass.ts` line 152; `canList` 384-396; `spell` 427-456, the win32 root at 435; header 36-40; `compile-sass.test.js:1373`; `uxdsl-cli.test.js:2140`, `:2428`; `sass-source-maps.test.js:418`, `:429`; `compile.ts:467-469` | line 202; 480-491; 522-554, the root at 531; header 30-42 (the "cannot be listed" clause at 41-42); `:1396`; `:2177`, `:2480`; `:419`, `:430`; `compile.ts:523-525` (§2 quotes the story as written; these are the lines on `dec40b1`) |
+| §6, §7 item 5 | "The flaky watch test … MIG-B9-39 owns it"; "The flaky watch test of MIG-B9-39 may also fail on Windows" | MIG-B9-19 owns the CLI's flaky watch tests (decision 28 of 2026-11-13); the atomic-replace failure and the webpack loader watch tests' extra-build class are MIG-B9-06's (decisions 28 and 40 of 2026-11-15) |
+| §6 | "The temporary directories the suites leave, on Windows too: MIG-B9-25." | removed: decision 27 of 2026-11-15 brings them into this story (C8 below) |
+| §11, the 2026-11-10 block | package README lines 1550–1553, "the paragraph that ends at line 1556" | lines 1679–1682 on `dec40b1`; the sentence ends at line 1685 inside list item 2, which continues at 1686, so the new sentence goes after 1685 in that item |
+
+### Owner decisions taken under the standing instruction (2026-11-16)
+
+The re-baseline raised six flags. Under the owner's standing instruction of
+2026-11-10 ("fusiona todo.. y preguntas como recomendadas, y sgeuimos"),
+each is answered with its recommended option and implemented; they were not
+put to the owner one by one, and the owner may override any of them.
+
+- **F1 (decision 27, open question 1): does the Windows job wrap the
+  package's test script in `scripts/tmpdir-guard.js`?** (a) Yes, step 8 is
+  `node scripts/tmpdir-guard.js npm --prefix packages/uxdsl test`; (b) no,
+  the guard runs once elsewhere for the record. **Answer: (a)**: a gate on
+  Windows at no extra run time; the guard prints nothing on success, so
+  AC2's TAP lines are unaffected.
+- **F2 (decision 27, open question 2): where is a Windows leftover fixed?**
+  (a) In the test file that leaves it, or in
+  `test/helpers/temporary-directory.js`, here, the file joining Shares with
+  the run id that showed it; (b) a finding routed to a follow-up; (c)
+  tolerated. **Answer: (a)** for a cause in a test or the harness; a cause in
+  `src` or `bin` stays decision 19's stop.
+- **F3: how the job runs MIG-B9-25's §12 loop.** (a) A permanent step 9
+  (`if: success() || failure()`), limited to the package's steps; (b) only
+  on failure; (c) on branch commits, then removed. **Answer: (a)**. The
+  loop's other §12 steps (vscode, playground, fixtures, scripts) are
+  MIG-B9-66's.
+- **F4: test files outside the Shares that fail on win32 for a harness
+  reason.** (a) Widen Shares to each file the job shows, with its run id;
+  on README §7's `test/vite/index.test.js, test/webpack/loader.test.js` row
+  put 28 before the provisional 06; (b) stop and ask for each.
+  **Answer: (a)**.
+- **F5: how `test/helpers/npm.js` starts npm on win32.** (a) `shell: true`
+  with each argument double-quoted, refusing (a `TypeError` naming it) an
+  argument holding a cmd metacharacter, as `scripts/tmpdir-guard.js` starts
+  its command; (b) `process.execPath` with `npm-cli.js`. **Answer: (a)**.
+- **F6: an encoded negative control for "os.tmpdir() reads TEMP and TMP on
+  Windows".** (a) T11 in `win32-harness.test.js`; (b) none. **Answer: (a)**.
+
+What changes in the contract (the C-n text above stays as written; these
+amendments rule):
+
+- **C1, amended.** Step 1 first prints `git config --show-origin --get
+  core.autocrlf || true` (AC7's record of the image's default), then sets
+  it to `false`. Step 8 is `node scripts/tmpdir-guard.js npm --prefix
+  packages/uxdsl test` (F1). Step 9 is C8's loop (F3).
+- **C8 (new) — The tmpdir guard and MIG-B9-25's §12 loop on Windows.**
+  (i) Step 8 runs the package's suites inside the guard, so the job fails
+  when a passing run leaves an entry in its `TEMP`. (ii) Step 9, `if:
+  success() || failure()`, runs each `packages/uxdsl/test/*.test.js` and
+  `test/{core,cli,vite,webpack}/*.test.js` with `node --test`, and
+  `test/performance/*.test.js` with `--test-concurrency=1`, each in a fresh
+  directory made under the runner's own `TEMP` (which keeps its 8.3 short
+  name, T5's precondition), passed as a Windows path in `TMPDIR`, `TMP` and
+  `TEMP`. It prints `exit N: <step>` and `left N in <dir>: <step>` lines, a
+  failing step's output after its line and nothing for a passing step (so
+  AC2's counts come from step 8 alone), ends with `fail=<0|1>` and exits 1
+  when `fail=1`. (iii) A leftover from a test is fixed in that test or in
+  `test/helpers/temporary-directory.js`, never swallowed (F2). §14 records
+  each run's guard result and loop lines.
+- **T11 (new, `win32-harness.test.js`):** `MIG-B9-28: on win32 the tmpdir
+  guard sets TEMP and TMP, so a passing command that leaves an entry in
+  os.tmpdir() fails it (negative control)`. It runs the guard on a `node -e`
+  that makes a directory in `os.tmpdir()` and asserts exit 1 and the listed
+  entry, then on one that also removes it and asserts exit 0. Skipped off
+  win32 with its reason (F6).
+- **AC2, AC3, AC4 counts.** AC2: `ok N - MIG-B9-28:` counts 7 (T5–T8, the
+  two controls of T3 and T4, T11), none with `# SKIP`. AC3: `# skipped 7`.
+  AC4: the unit group is BASE + 3, `test/core` BASE + 4.
+- **Shares.** Each file outside the Shares that the Windows job shows
+  failing for a harness reason joins them, listed with the run id that
+  showed it (F4).

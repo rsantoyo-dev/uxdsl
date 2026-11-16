@@ -73,3 +73,68 @@ jobs:
           (cd fixtures/mig02-nextjs-cssmodules && npm install --ignore-scripts --no-audit --no-fund)
       - name: Release gate
         run: npm run verify:1.0
+
+  windows:
+    name: npm test (uxdsl, Windows)
+    runs-on: windows-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: bash
+    steps:
+      # Git for Windows may default core.autocrlf to true; the oracles, the
+      # generated-artifact checks and the hashed fixtures compare LF bytes.
+      - name: Check out with LF line endings, as on ubuntu
+        run: |
+          git config --show-origin --get core.autocrlf || true
+          git config --global core.autocrlf false
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: '**/package-lock.json'
+      - name: npm 11
+        run: npm install -g npm@11 && npm -v
+      # cmd.exe, npm's default script shell on Windows, does not expand the
+      # globs of the package's test script, and Node 20 does not either.
+      - name: npm runs the package's scripts with bash, which expands their globs
+        run: npm config set script-shell "$(cygpath -w "$(command -v bash)")"
+      - name: The tree has ubuntu's line endings
+        run: |
+          n=$(git ls-files --eol | grep -c 'w/crlf' || true)
+          echo "files checked out with CRLF: $n"
+          test "$n" = 0
+      - name: Install the root and the package
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          (cd packages/uxdsl && npm ci --ignore-scripts --no-audit --no-fund)
+      # The guard runs the suites with TMPDIR, TMP and TEMP set to a directory
+      # of its own and fails a passing run that leaves an entry there.
+      - name: Test the package
+        run: node scripts/tmpdir-guard.js npm --prefix packages/uxdsl test
+      # Each test file alone, in a directory of its own under the runner's
+      # TEMP, which keeps its 8.3 short name: a line "exit N: <step>" or
+      # "left N in <directory>: <step>" names the file that failed or left
+      # something, and a failing step's output follows its line.
+      - name: Each test file alone leaves nothing in its temporary directory
+        if: success() || failure()
+        run: |
+          set +e
+          base=$(mktemp -d "$(cygpath -u "$TEMP")/uxdsl-loop.XXXXXX") || exit 1
+          fail=0
+          step() {
+            local d w code
+            d=$(mktemp -d "$base/step.XXXXXX") || { echo "no step directory: $*"; fail=1; return; }
+            w=$(cygpath -w "$d")
+            (cd packages/uxdsl && TMPDIR="$w" TMP="$w" TEMP="$w" "$@") > "$base/out" 2>&1
+            code=$?
+            if [ "$code" != 0 ]; then echo "exit $code: $*"; cat "$base/out"; fail=1; fi
+            rmdir "$d" 2> /dev/null || { echo "left $(ls -A "$d" | wc -l | tr -d ' ') in $w: $*"; fail=1; }
+          }
+          for f in packages/uxdsl/test/*.test.js packages/uxdsl/test/{core,cli,vite,webpack}/*.test.js; do step node --test "${f#packages/uxdsl/}"; done
+          for f in packages/uxdsl/test/performance/*.test.js; do step node --test --test-concurrency=1 "${f#packages/uxdsl/}"; done
+          rm -f "$base/out"
+          rmdir "$base" 2> /dev/null
+          echo "fail=$fail"
+          test "$fail" = 0
