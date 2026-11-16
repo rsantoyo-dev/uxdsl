@@ -297,3 +297,32 @@ test('MIG-B9-27: a Sass construct pending when another plugin replaces the root 
   const resolved = await run([uxdsl(), resolving()], nested('padding: space(2);'));
   assertSassError(resolved.error, '&_title', 2, 3, 'replaced root, resolved');
 });
+
+// --- a construct added before a held one -------------------------------------
+
+test('MIG-B9-27: when another plugin adds a Sass construct before one still held, the held construct\'s error is reported, as the plugin alone reports it', async () => {
+  const addVariable = () => ({
+    postcssPlugin: 'stand-in/add-variable',
+    Once(root) {
+      root.prepend(postcss.decl({ prop: '$late', value: '1px' }));
+    },
+  });
+  const source = '.b { &__x { color: red; } }';
+  const { error } = await run([uxdsl(), addVariable()], source);
+  assertSassError(error, '&__x', 1, 6, 'held, then $late added before it');
+  assert.deepEqual(range(error), [1, 6, 1, 10]);
+  // Negative control: with the held construct resolved, the added one is
+  // still found at the end of the run and fails, never silently.
+  const resolveHeld = () => ({
+    postcssPlugin: 'stand-in/add-variable-resolve-held',
+    Once(root) {
+      root.walkRules('&__x', (rule) => {
+        rule.selector = '.b__x';
+        rule.parent.after(rule);
+      });
+      root.prepend(postcss.decl({ prop: '$late', value: '1px' }));
+    },
+  });
+  const added = await run([uxdsl(), resolveHeld()], source);
+  assert.match(added.error?.reason || '', /^UXD_SASS_CONTEXT: \$late is Sass;/, 'the added construct');
+});

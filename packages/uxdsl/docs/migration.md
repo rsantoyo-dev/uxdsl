@@ -128,11 +128,13 @@ What to check when you upgrade:
    `compile()` or an adapter, or remove it. In a PostCSS chain, what another
    plugin resolves in its visitors or its own `Once` — `&_title` left for
    postcss-nested or `tailwindcss/nesting`, `$gap` for postcss-simple-vars —
-   compiles in either plugin order; a Sass construct `uxdsl/postcss`'s own
-   steps read does not, whatever the order: a token's `$variable` argument
-   (`space($n)`) or a `$variable` holding a token or a responsive value
-   (`$pad: space(2)`) fails as `UXD_SASS_CONTEXT`. Run that plugin in a PostCSS
-   pass of its own before `uxdsl/postcss`, or move the file to `.uxdsl`.
+   compiles in either plugin order (a stylesheet that also holds another
+   UXDSL mistake reports its first Sass construct); a Sass construct
+   `uxdsl/postcss`'s own steps read does not, whatever the order: a token's
+   `$variable` argument (`space($n)`) or a `$variable` holding a token or a
+   responsive value (`$pad: space(2)`) fails as `UXD_SASS_CONTEXT`. Run that
+   plugin in a PostCSS pass of its own before `uxdsl/postcss`, or move the
+   file to `.uxdsl`.
 
    ```css
    .card { padding: density(2); }

@@ -41,12 +41,18 @@ them. See `docs/releases/0.5.0-beta.9.md`.
 - **What still fails.** A construct the steps read — a token's `$variable`
   argument (`space($n)`), a `$variable` holding a token or a responsive value
   (`$pad: space(2)`, `$pad: xs(1rem) md(2rem)`) — fails as
-  `UXD_SASS_CONTEXT` in a chain, in either order, as before; so does any
-  construct in a root of a PostCSS Document (postcss-html and similar
-  syntaxes), whose roots are checked before the other plugins run. A
-  construct the other plugin leaves fails as `UXD_SASS_CONTEXT` when the run
-  ends; an error that plugin gives itself (postcss-simple-vars' undefined
-  variable) is reported as it gives it.
+  `UXD_SASS_CONTEXT` in a chain, in either order, as before. In a root of a
+  PostCSS Document (postcss-html and similar syntaxes), a construct still
+  there when `uxdsl/postcss`'s `Once` runs fails as `UXD_SASS_CONTEXT`, as
+  before: those roots are checked there, before any plugin's visitors, so
+  only a plugin listed first that resolves it in its own `Once`
+  (`tailwindcss/nesting`) chains with it. A construct the other plugin leaves
+  fails as `UXD_SASS_CONTEXT` when the run ends; an error that plugin gives
+  itself (postcss-simple-vars' undefined variable) is reported as it gives
+  it. A stylesheet the two passes would fail on another UXDSL mistake (an
+  unknown token, a second `@ds-button` in a rule) reports the first Sass
+  construct in one run, as the plugin alone does; the two passes show that
+  mistake.
 - **The plugin alone and `compile()` are unchanged.** For a stylesheet
   holding Sass, the plugin alone reports the same first construct, at the same
   position, even when the stylesheet holds another mistake, and none of the
@@ -989,8 +995,10 @@ What to check in a project when upgrading is in the migration guide,
   `uxdsl/postcss`'s own steps read: a token's `$variable` argument
   (`space($n)`), or a `$variable` holding a token or a responsive value
   (`$pad: space(2)`, `$pad: xs(1rem) md(2rem)`), left for postcss-simple-vars,
-  fails as `UXD_SASS_CONTEXT`, as does any Sass construct in a root of a
-  PostCSS Document. Run such a plugin in a PostCSS pass of its own before
+  fails as `UXD_SASS_CONTEXT`, as does a Sass construct still in a root of a
+  PostCSS Document when `uxdsl/postcss`'s `Once` runs, and the first Sass
+  construct of a stylesheet that also holds another UXDSL mistake. Run such a
+  plugin in a PostCSS pass of its own before
   `uxdsl/postcss`, or move the file to `.uxdsl` and compile it with
   `compile()`. What another plugin resolves without the steps reading it —
   postcss-nested's `&_title`, postcss-simple-vars' `$gap` — compiles in either

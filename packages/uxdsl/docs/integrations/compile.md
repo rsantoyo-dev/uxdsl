@@ -620,10 +620,13 @@ adapter, or remove the Sass. Native nesting passes:
   checked again at the end of the run, so a plugin that resolves it in its
   visitors or in its own `Once` — postcss-nested's `&_title`,
   `tailwindcss/nesting`'s, postcss-simple-vars' `$gap` — may be listed before
-  or after `uxdsl/postcss`. A construct the steps read (`space($n)`, a
-  `$variable` holding a token or a responsive value), and any construct in a
-  root of a PostCSS Document, still fails as `UXD_SASS_CONTEXT` in either
-  order; the [package README](../../README.md) gives the workaround.
+  or after `uxdsl/postcss`, and the run gives what the two passes give when
+  they compile; with another UXDSL mistake in the stylesheet, it reports the
+  first Sass construct, as the plugin alone does. A construct the steps read
+  (`space($n)`, a `$variable` holding a token or a responsive value) still
+  fails as `UXD_SASS_CONTEXT` in either order, and so does a construct still
+  in a root of a PostCSS Document when `uxdsl/postcss`'s `Once` runs; the
+  [package README](../../README.md) gives the workaround.
 - `compile()` accepts `@ds-surface (contained)`, with a space before the
   parenthesis, because restore removes it; the plugin alone refuses it
   (`UXD_SURFACE_ARGUMENT`). Write no space.
