@@ -9,7 +9,7 @@ const { spawnSync } = require('node:child_process');
 const { createRequire } = require('node:module');
 const { pathToFileURL } = require('node:url');
 const {
-  assertAuthorLocated, assertSassFramed, assertLocatedWarning, assertNearMissSuggested, assertDebugWarned, webpackAdapterRecord, assertWebpackAdapter, viteAdapterRecord, assertViteAdapter, assertMissingImport,
+  assertAuthorLocated, assertSassFramed, assertLocatedWarning, assertNearMissSuggested, assertDebugWarned, assertIsolationWarned, S7_ISOLATION_LINE, webpackAdapterRecord, assertWebpackAdapter, viteAdapterRecord, assertViteAdapter, assertMissingImport,
 } = require('./run');
 const { PACKAGE_DIR } = require('../lib/tarball-consumer');
 
@@ -135,6 +135,32 @@ test('MIG-B9-26: S-7 rejects BASE\'s UXD_SASS line, an empty stderr and an unloc
     [{ status: 1, stdout: '', stderr: '[uxdsl] Error: x\n' }, /^exited 1/],
   ]) {
     assert.throws(() => assertDebugWarned(built), { message: reason }, built.stderr);
+  }
+});
+
+const buildIsolation = () => buildProject({
+  'uxdsl.config.cjs': S7_CONFIG,
+  'src/_helpers.uxdsl': '@function double($x) { @return $x * 2; }\n',
+  'src/widget.uxdsl': '.w { width: double(4px); }\n',
+  'src/a.uxdsl': "@use './helpers';\n@use './widget';\n",
+});
+
+test('MIG-B9-17: S-7 accepts the CLI\'s isolation case as one UXD_MODULE_ISOLATION warning at src/widget.uxdsl:1:6', () => {
+  const built = buildIsolation();
+  assert.equal(built.stderr, `${S7_ISOLATION_LINE}\n`);
+  assert.equal(assertIsolationWarned(built), 'double() at src/widget.uxdsl:1:6', built.stderr);
+});
+
+test('MIG-B9-17: S-7 rejects an empty stderr and an unlocated warning for the isolation case (negative control)', () => {
+  const built = buildIsolation();
+  for (const [stderr, status, reason] of [
+    // BASE: the call stays in the CSS as written, with no warning.
+    ['', 0, /^0 UXD_MODULE_ISOLATION warnings, expected 1$/],
+    [`${S7_ISOLATION_LINE.replace('src/widget.uxdsl:1:6: ', '')}\n`, 0, /not located at src\/widget\.uxdsl:1:6/],
+    [`${S7_ISOLATION_LINE}\n${S7_ISOLATION_LINE}\n`, 0, /^2 UXD_MODULE_ISOLATION warnings, expected 1$/],
+    ['[uxdsl] Error: x\n', 1, /^exited 1/],
+  ]) {
+    assert.throws(() => assertIsolationWarned({ status, stdout: built.stdout, stderr }), { message: reason }, stderr);
   }
 });
 
