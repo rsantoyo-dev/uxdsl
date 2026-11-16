@@ -42,13 +42,29 @@ them. See `docs/releases/0.5.0-beta.9.md`.
   at-rule's prelude, a `progid:` value, a CSS `@function` body or the
   arguments of `url()` (where Dart Sass leaves even a visible function as
   written) warn nothing. The CSS is unchanged.
+- **A project `@function` named like a UXDSL function that no call reaches
+  warns.** Where a file does not see such a function (`@function space` in
+  `_shadow.uxdsl`, a bare `space(2)` in `pad.uxdsl` under a `@use` entry, or
+  under `pad.uxdsl`'s own namespaced `@use`), the bare call stays UXDSL's
+  token, by DEC-17, and nothing said so. When no call of the build reaches
+  the definition (neither a bare call, which `UXD_FUNCTION_SHADOWED` reports,
+  nor a call through a namespace, from another function or through
+  `meta.call()`), `compile()` now returns one `UXD_MODULE_ISOLATION` warning
+  at the definition (`src/_shadow.uxdsl:1:11`), naming a file where the bare
+  call keeps the token and the fix: `@use that file as * there or call it
+  through its namespace (shadow.space()) to use it, or remove or rename it to
+  keep the token`. DEC-17's pattern, `helpers.space(2)` in one file and a
+  bare `space(2)` meant as the token, warns nothing. Nor does a definition in
+  an indented `.sass` file or a `pkg:` package, or a build in which a loaded
+  file defines `function-exists` or `get-function`. The CSS is unchanged.
 - **The new code** is in `DIAGNOSTIC_CATALOG`, owner `core`, after
   `UXD_FUNCTION_SHADOWED`; `compile()`'s warnings are Dart Sass's, then
   `UXD_FUNCTION_SHADOWED`, then `UXD_MODULE_ISOLATION` (by load order, line
   and column), then the plugin's. An `@import` entry, or the reading file's
   own `@use … as *`, shares the members and warns nothing new;
-  `uxdsl/postcss` alone is unchanged. The warning reads Dart Sass's output
-  and costs no compile.
+  `uxdsl/postcss` alone is unchanged. The first warning reads Dart Sass's
+  output, and the second rides on the compile the stage already runs for a
+  function named like a UXDSL function: neither costs a compile.
 
 #### Visual changes
 

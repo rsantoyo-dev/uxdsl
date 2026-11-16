@@ -296,6 +296,16 @@ interface Definition extends ProtectProblem {
   file: string;
 }
 
+/** Located warnings of the stage's own, before they are ordered. */
+type LocatedWarning = CompileWarning & { file: string; line: number; column: number };
+
+/** What the probe decided: the pass to report, the definitions some bare call resolves to, and a warning for each token-named definition no call reaches while a bare call of its name keeps the token. */
+interface Shadowing {
+  report: Pass;
+  shadowing: Definition[];
+  unreached: LocatedWarning[];
+}
+
 interface StackFrame {
   indent: string;
   pathText: string;
@@ -312,11 +322,11 @@ export function compileSassStage(input: SassStageInput, options: SassStageOption
   const sass: typeof Sass = require('sass');
   const stage = openStage(sass, input, options);
   const first = runPass(stage, { report: true });
-  let reported: { report: Pass; shadowing: Definition[] } = { report: first, shadowing: [] };
+  let reported: Shadowing = { report: first, shadowing: [], unreached: [] };
   try {
     rethrowNonSass(stage, first);
     reported = resolveShadowing(stage, first);
-    return finish(stage, reported.report, reported.shadowing);
+    return finish(stage, reported.report, reported.shadowing, reported.unreached);
   } catch (error) {
     if (error && typeof error === 'object') (error as { warnings?: CompileWarning[] }).warnings = stageWarnings(reported.report, reported.shadowing);
     throw error;
@@ -793,7 +803,7 @@ function rethrowNonSass(stage: Stage, pass: Pass): void {
   if (!isSass) throw error;
 }
 
-function finish(stage: Stage, pass: Pass, shadowing: Definition[]): SassStageResult {
+function finish(stage: Stage, pass: Pass, shadowing: Definition[], unreached: LocatedWarning[]): SassStageResult {
   rethrowNonSass(stage, pass);
   if (pass.failed) throw stageError(pass, pass.error as Sass.Exception);
   const result = pass.result as Sass.CompileResult;
@@ -804,7 +814,7 @@ function finish(stage: Stage, pass: Pass, shadowing: Definition[]): SassStageRes
   });
   const out: SassStageResult = { css: result.css, loadedFiles, warnings: stageWarnings(pass, shadowing), nearMisses };
   if (stage.sourceMap && result.sourceMap) out.map = translateMap(pass, result.sourceMap);
-  const isolation = out.map ? leftAsWritten(stage, pass, result.css, out.map) : [];
+  const isolation = [...unreached, ...(out.map ? leftAsWritten(stage, pass, result.css, out.map) : [])];
   out.warnings.push(...sortedByLoadOrder(isolation, loadedFiles));
   return out;
 }
@@ -835,7 +845,7 @@ function stageWarnings(pass: Pass, shadowing: Definition[]): CompileWarning[] {
 const sassSpelling = (name: string): string => name.replace(/_/g, '-');
 
 /** Located warnings sorted by the load order of their files, then line and column. */
-function sortedByLoadOrder(warnings: Array<CompileWarning & { file: string; line: number; column: number }>, loadedFiles: string[]): CompileWarning[] {
+function sortedByLoadOrder(warnings: LocatedWarning[], loadedFiles: string[]): CompileWarning[] {
   const order = (file: string): number => {
     const index = loadedFiles.indexOf(file);
     return index === -1 ? loadedFiles.length : index;
@@ -883,7 +893,7 @@ interface FunctionDefinition {
  * or before it on the stage's map. Output PostCSS cannot parse gives none;
  * `compile()` reports the parse error.
  */
-function leftAsWritten(stage: Stage, pass: Pass, css: string, map: RawSourceMap): Array<CompileWarning & { file: string; line: number; column: number }> {
+function leftAsWritten(stage: Stage, pass: Pass, css: string, map: RawSourceMap): LocatedWarning[] {
   const reserved = new Set(stage.reserved.map((name) => name.toLowerCase()));
   const called = new Set<string>();
   for (const match of css.matchAll(CALL_IN_OUTPUT)) {
@@ -921,7 +931,7 @@ function leftAsWritten(stage: Stage, pass: Pass, css: string, map: RawSourceMap)
   const { SourceMapConsumer } = require('source-map-js') as typeof import('source-map-js');
   const consumer = new SourceMapConsumer(map);
   const seen = new Set<string>();
-  const out: Array<CompileWarning & { file: string; line: number; column: number }> = [];
+  const out: LocatedWarning[] = [];
   root.walkDecls((decl) => {
     if (decl.prop.startsWith('--') || /^\s*progid:/i.test(decl.value)) return;
     for (let ancestor: import('postcss').Node | undefined = decl.parent as import('postcss').Node | undefined; ancestor; ancestor = ancestor.parent as import('postcss').Node | undefined) {
@@ -999,7 +1009,7 @@ const textOf = (value: Sass.Value): string => value.assertString().text;
  * evaluation of every candidate call, and a final compile (only when a
  * decision differs from the first pass) writes each call accordingly.
  */
-function resolveShadowing(stage: Stage, first: Pass): { report: Pass; shadowing: Definition[] } {
+function resolveShadowing(stage: Stage, first: Pass): Shadowing {
   const { sass } = stage;
   const own = stage.probeNames;
   const definitions: Definition[] = [];
@@ -1046,9 +1056,9 @@ function resolveShadowing(stage: Stage, first: Pass): { report: Pass; shadowing:
   let discovering = first.failed && [...first.served.values()].some((served) => served.original.includes('pkg:'));
   const candidateNames = (): Set<string> => (discovering ? new Set([...TOKEN_FUNCTION_NAMES, ...definedNames()]) : definedNames());
   let names = candidateNames();
-  if (names.size === 0) return { report: first, shadowing: [] };
+  if (names.size === 0) return { report: first, shadowing: [], unreached: [] };
   const callsAName = (pass: Pass): boolean => [...pass.sites.values(), ...pass.plainCalls].some((site) => names.has(site.call.name));
-  if (!first.failed && !callsAName(first)) return { report: first, shadowing: [] };
+  if (!first.failed && !callsAName(first)) return { report: first, shadowing: [], unreached: [] };
 
   // Which names are Sass's own global functions (color, and min/max/round/abs if a breakpoint is so named).
   const builtins = new Map<string, Sass.SassFunction>();
@@ -1112,7 +1122,8 @@ function resolveShadowing(stage: Stage, first: Pass): { report: Pass; shadowing:
   // so the probe evaluates exactly what the build will. Lines appended at the end of `.uxdsl` files
   // record a name's meaning where protect never rewrites its calls, and a statement after the body of
   // each definition in a `.uxdsl` or `.scss` file captures the function that evaluation of it
-  // created, for attribution.
+  // created, for attribution. A statement at the start of each such body records every evaluation of
+  // it, whatever reached it: a bare call, a namespace, another function of its module, `meta.call`.
   //
   // What a name means is read with Sass's global meta functions, function-exists and get-function,
   // so no file changes how Sass evaluates it. Where a loaded file defines a function of one of those
@@ -1128,6 +1139,9 @@ function resolveShadowing(stage: Stage, first: Pass): { report: Pass; shadowing:
   let atEnd: Array<{ fileId: string; name: string; fn: Sass.SassFunction | null }> = [];
   /** The function each evaluation of a definition created, by definition (`<file id>:<line>:<column>`). */
   let captures: Array<{ definition: string; fn: Sass.SassFunction }> = [];
+  /** The definitions the probe recorded at the start of their bodies, and those some evaluation of whose body it recorded. */
+  let instrumented = new Set<string>();
+  let called = new Set<string>();
   // Calls Sass reads as raw text and never evaluates, where the probe's choice does not parse (a
   // pseudo-class argument in a selector, which Sass ends at the first ";"): they keep the token,
   // which is the text Sass leaves there.
@@ -1192,6 +1206,8 @@ function resolveShadowing(stage: Stage, first: Pass): { report: Pass; shadowing:
     records = new Map();
     atEnd = [];
     captures = [];
+    instrumented = new Set();
+    called = new Set();
     const written = new Map<string, string>();
     const endLines = new Map<string, string>();
     const meta = metaShadowed();
@@ -1214,12 +1230,16 @@ function resolveShadowing(stage: Stage, first: Pass): { report: Pass; shadowing:
         if (role === 'uxdsl' || role === 'scss') {
           // Right after a definition's body, in the scope that holds it, the bare name means the
           // function that evaluation of the definition created. The braces keep the statement inert
-          // where Sass reads a value as raw text. Inserted from the last, so earlier offsets hold.
+          // where Sass reads a value as raw text. At the start of the body, each evaluation of it is
+          // recorded. Inserted from the last, and the end before the start, so earlier offsets hold.
           const defined = findShadowingFunctions(text, { reserved: stage.reserved, file, bodies: true });
           for (const definition of defined.reverse()) {
-            if (definition.end === undefined) continue;
+            if (definition.end === undefined || definition.bodyStart === undefined) continue;
             const column = served.protected ? served.protected.toOriginalColumn(definition.line - 1, definition.column - 1) + 1 : definition.column;
-            out = `${out.slice(0, definition.end)}@if true { @debug ${own.fn('cap')}("${fileId}:${definition.line}:${column}", ${visibleFunction(definition.name, namespaced(file))}); }${out.slice(definition.end)}`;
+            const key = `${fileId}:${definition.line}:${column}`;
+            out = `${out.slice(0, definition.end)}@if true { @debug ${own.fn('cap')}("${key}", ${visibleFunction(definition.name, namespaced(file))}); }${out.slice(definition.end)}`;
+            out = `${out.slice(0, definition.bodyStart)}@debug ${own.fn('called')}("${key}");${out.slice(definition.bodyStart)}`;
+            instrumented.add(key);
           }
         }
         const lines: string[] = [];
@@ -1255,6 +1275,10 @@ function resolveShadowing(stage: Stage, first: Pass): { report: Pass; shadowing:
         },
         [`${own.fn('cap')}($definition, $f)`]: (args) => {
           if (args[1] instanceof sass.SassFunction) captures.push({ definition: textOf(args[0]), fn: args[1] });
+          return sass.sassNull;
+        },
+        [`${own.fn('called')}($definition)`]: (args) => {
+          called.add(textOf(args[0]));
           return sass.sassNull;
         },
       },
@@ -1363,7 +1387,57 @@ function resolveShadowing(stage: Stage, first: Pass): { report: Pass; shadowing:
     }
     return atEnd.some((record) => record.name === definition.name && record.fn !== null && attributed(record.fn, definition));
   });
-  return { report, shadowing };
+
+  // A definition the probe recorded at the start of its body, which no evaluation reached, while a
+  // call of its name written in a `.uxdsl` file evaluated with no function of that name visible there,
+  // and so kept UXDSL's token. Not reported where a loaded file defines one of the meta functions the
+  // probe reads, which can make it keep a token where Sass would call the function.
+  const unreached: LocatedWarning[] = [];
+  if (!metaShadowed()) {
+    const fileOfId = new Map([...stage.fileIds].map(([file, id]) => [String(id), file]));
+    const loaded = loadedFilesOf(report);
+    const order = (file: string): number => {
+      const index = loaded.indexOf(file);
+      return index === -1 ? loaded.length : index;
+    };
+    const lineAt = (file: string, offset: number): number => {
+      const served = probe.served.get(file);
+      return served ? served.original.slice(0, offset).split('\n').length : 1;
+    };
+    /** The first call of `name`, in load order, that evaluated to UXDSL's token. */
+    const tokenSite = (name: string): Site | null => {
+      const found: Site[] = [];
+      for (const [siteId, site] of probe.sites) {
+        if (site.call.name !== name || unevaluated.has(siteId) || ambiguous.has(siteId)) continue;
+        if ((records.get(siteId) || []).some((record) => record.fn === null)) found.push(site);
+      }
+      for (const record of atEnd) {
+        if (record.name !== name || record.fn !== null) continue;
+        const file = fileOfId.get(record.fileId);
+        const plain = file === undefined ? undefined : probe.plainCalls.find((site) => site.file === file && site.call.name === name);
+        if (plain) found.push(plain);
+      }
+      found.sort((a, b) => order(a.file) - order(b.file) || a.call.start - b.call.start);
+      return found.length > 0 ? found[0] : null;
+    };
+    for (const definition of definitions) {
+      const key = `${idOf(stage, definition.file)}:${definition.line}:${definition.column}`;
+      if (!instrumented.has(key) || called.has(key) || shadowing.includes(definition)) continue;
+      const site = tokenSite(definition.name);
+      if (!site) continue;
+      const served = probe.served.get(definition.file);
+      const written = served ? writtenAt(served.original, definition.line, definition.column, definition.name) : definition.name;
+      const namespace = namespaceOf(definition.file);
+      const siteWritten = site.call.raw.slice(0, site.call.raw.indexOf('('));
+      unreached.push({
+        text: `UXD_MODULE_ISOLATION: @function ${written} (${definition.file}:${definition.line}) is reached by no call, and in ${site.file}:${lineAt(site.file, site.call.start)} the bare ${siteWritten}() is UXDSL's token, because the function is not visible there; @use that file as * there or call it through its namespace${namespace ? ` (${namespace}.${written}())` : ''} to use it, or remove or rename it to keep the token`,
+        file: definition.file,
+        line: definition.line,
+        column: definition.column,
+      });
+    }
+  }
+  return { report, shadowing, unreached };
 }
 
 // --- errors ---------------------------------------------------------------------------------

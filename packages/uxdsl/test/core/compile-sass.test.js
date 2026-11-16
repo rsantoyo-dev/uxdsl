@@ -142,7 +142,8 @@ function stageIn(dir, entry, options = {}) {
 const rel = (dir) => (file) => (file === undefined ? undefined : path.relative(dir, file).replace(/\.(uxdsl|scss)$/, '.X'));
 const neutral = (dir) => (text) => text.split(dir).join('<dir>').replace(/\.(uxdsl|scss)\b/g, '.X');
 const warningOf = (dir) => (w) => ({ text: neutral(dir)(w.text), file: rel(dir)(w.file), line: w.line, column: w.column });
-const sassWarnings = (warnings) => warnings.filter((w) => !/^UXD_FUNCTION_SHADOWED:/.test(w.text));
+/** The stage's warnings that are Dart Sass's, without the stage's own codes. */
+const sassWarnings = (warnings) => warnings.filter((w) => !/^UXD_(FUNCTION_SHADOWED|MODULE_ISOLATION):/.test(w.text));
 const twinLocation = (dir, error) => `${rel(dir)(fileURLToPath(error.span.url))}:${error.span.start.line + 1}:${error.span.start.column + 1}`;
 const stageLocation = (dir, error) => `${rel(dir)(error.file)}:${error.line}:${error.column}`;
 /** Sass's own frame and stack: its message without the first line(s), which repeat sassMessage. */
@@ -729,7 +730,10 @@ const DEC17 = [
   ['IMP-U an @imported partial with a @use of its own, where the entry\'s as * module is not visible', { 'entry.uxdsl': '@use "helpers" as *;\n@import "p";\n.e { w: space(1); }\n', '_helpers.scss': H, '_p.uxdsl': '@use "sass:math";\n.p { v: space(2); w: math.div(4px, 2); }\n' }, null, ['_helpers.scss:1:11']],
 ];
 
-test('MIG-B9-12: a project function wins exactly where Dart Sass calls its bare name, decided per call site', () => {
+/** The cases whose stage warns UXD_MODULE_ISOLATION (without a map, only for a token-named function no call reaches); every other case warns none. */
+const DEC17_ISOLATION = { 'W2 @forward hide': ['_helpers.scss:1:11'] };
+
+test('MIG-B9-17: a project function wins exactly where Dart Sass calls its bare name, decided per call site, and each case warns UXD_MODULE_ISOLATION exactly where a token-named function no call reaches leaves the token (W2, @forward … hide)', () => {
   for (const [label, files, expectCss, expectShadow] of DEC17) {
     const run = twin(files, { dartOptions: { importers: [new sass.NodePackageImporter()] } });
     if (expectCss === null) {
@@ -742,6 +746,8 @@ test('MIG-B9-12: a project function wins exactly where Dart Sass calls its bare 
     }
     if (expectShadow !== null) assert.deepEqual(shadowOf(run.ux, run.actual), [...expectShadow].sort(), `${label}: UXD_FUNCTION_SHADOWED`);
     for (const w of run.actual.warnings || []) if (/^UXD_FUNCTION_SHADOWED:/.test(w.text)) assert.match(w.text, /^UXD_FUNCTION_SHADOWED: @function [a-z-]+ \(.+:\d+\) replaces UXDSL's [a-z-]+\(\) in this build; rename it to use the token$/, label);
+    const isolation = (run.actual.warnings || []).filter((w) => /^UXD_MODULE_ISOLATION:/.test(w.text)).map((w) => `${path.relative(run.ux, w.file)}:${w.line}:${w.column}`);
+    assert.deepEqual(isolation, DEC17_ISOLATION[label] || [], `${label}: UXD_MODULE_ISOLATION`);
   }
 });
 

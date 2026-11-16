@@ -69,8 +69,9 @@ import { TOKEN_FUNCTIONS, unknownFunctionMessage } from '../language';
 //   Without the option the output, the column map and the problems are those
 //   of the rules above;
 // - `options.bodies`, when true, also gives each shadowing declaration the
-//   offset just after its body's closing brace (`ProtectProblem.end`), found
-//   with the same skipping of comments, strings and interpolation.
+//   offsets just after its body's opening brace (`ProtectProblem.bodyStart`)
+//   and closing brace (`ProtectProblem.end`), found with the same skipping of
+//   comments, strings and interpolation.
 
 /** The token function names, lowercase, from the language's own table. */
 export const TOKEN_FUNCTION_NAMES: ReadonlySet<string> = new Set(Object.keys(TOKEN_FUNCTIONS).map((name) => name.toLowerCase()));
@@ -87,6 +88,8 @@ export interface ProtectProblem {
   name: string;
   /** With `options.bodies`: the offset just after the closing brace of the declaration's body; absent when the name is not followed by a parameter list and a braced body (comments and whitespace between them allowed). */
   end?: number;
+  /** With `options.bodies`: the offset just after the opening brace of the declaration's body; present exactly when `end` is. */
+  bodyStart?: number;
 }
 
 /** A call `options.site` is asked about. */
@@ -115,7 +118,7 @@ export interface ProtectOptions {
   file?: string;
   /** Asked about every token and plain call (see the file comment). For a token call, `undefined` applies the default rule, `null` leaves it as written and a one-line string replaces it; for a plain call the return value is ignored. */
   site?: (call: ProtectCall) => string | null | undefined;
-  /** Also locate the end of each shadowing declaration's body (`ProtectProblem.end`). */
+  /** Also locate the body of each shadowing declaration (`ProtectProblem.bodyStart` and `end`). */
   bodies?: boolean;
 }
 
@@ -233,16 +236,16 @@ function skipBlank(s: string, from: number): number {
   return k;
 }
 
-/** `from` just after a `@function` name: the index after the closing brace of its body, or -1 when a parameter list and a braced body do not follow. */
-function endOfFunctionBody(s: string, from: number): number {
+/** `from` just after a `@function` name: the indexes after the opening and the closing brace of its body, or null when a parameter list and a braced body do not follow. */
+function functionBody(s: string, from: number): { start: number; end: number } | null {
   const open = skipBlank(s, from);
-  if (s[open] !== '(') return -1;
+  if (s[open] !== '(') return null;
   const close = matchParen(s, open);
-  if (close === -1) return -1;
+  if (close === -1) return null;
   const brace = skipBlank(s, close + 1);
-  if (s[brace] !== '{') return -1;
+  if (s[brace] !== '{') return null;
   const end = matchBracket(s, brace, '{', '}');
-  return end === -1 ? -1 : end + 1;
+  return end === -1 ? null : { start: brace + 1, end: end + 1 };
 }
 
 /** The [from, to) ranges between the top-level commas of [from, to). */
@@ -434,8 +437,11 @@ class Protector {
       name,
     };
     if (this.bodies) {
-      const end = endOfFunctionBody(this.src, to);
-      if (end !== -1) problem.end = end;
+      const body = functionBody(this.src, to);
+      if (body) {
+        problem.end = body.end;
+        problem.bodyStart = body.start;
+      }
     }
     this.problems.push(problem);
   }

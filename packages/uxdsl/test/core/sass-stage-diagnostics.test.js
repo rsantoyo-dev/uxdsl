@@ -333,16 +333,22 @@ async function isolated(t, files, entry) {
 const isolationOf = (warnings) => warnings.filter((w) => / UXD_MODULE_ISOLATION: /.test(w) || /^UXD_MODULE_ISOLATION: /.test(w));
 
 const C4_WIDGET = "src/widget.uxdsl:1:6 UXD_MODULE_ISOLATION: @function double (src/_helpers.uxdsl:1) is not visible here, so Dart Sass leaves double() in the CSS as written; @use that file as * here, or call it through its namespace (helpers.double())";
+const C5_SHADOW = "src/_shadow.uxdsl:1:11 UXD_MODULE_ISOLATION: @function space (src/_shadow.uxdsl:1) is reached by no call, and in src/pad.uxdsl:1 the bare space() is UXDSL's token, because the function is not visible there; @use that file as * there or call it through its namespace (shadow.space()) to use it, or remove or rename it to keep the token";
+const C5_HELPERS = "src/_helpers.uxdsl:1:11 UXD_MODULE_ISOLATION: @function space (src/_helpers.uxdsl:1) is reached by no call, and in src/pad.uxdsl:2 the bare space() is UXDSL's token, because the function is not visible there; @use that file as * there or call it through its namespace (helpers.space()) to use it, or remove or rename it to keep the token";
 const C4_PAD = "src/pad.uxdsl:2:25 UXD_MODULE_ISOLATION: @function double (src/_helpers.uxdsl:2) is not visible here, so Dart Sass leaves double() in the CSS as written; @use that file as * here, or call it through its namespace (helpers.double())";
 
-test('MIG-B9-17: under a @use entry, another file\'s @function that Dart Sass leaves as written warns UXD_MODULE_ISOLATION once, located at the call, with the CSS unchanged, in a file of its own and under a namespaced @use', async (t) => {
+test('MIG-B9-17: under a @use entry, another file\'s @function left as written, a project @function named like a token that no call reaches, and a bare call under a namespaced @use each warn UXD_MODULE_ISOLATION once, located, with the CSS unchanged', async (t) => {
   const fn = await isolated(t, B5.function.files, useEntry(B5.function.names));
   assert.equal(fn.css, '.w { width: double(4px); }');
   assert.deepEqual(fn.warnings, [C4_WIDGET]);
 
+  const shadow = await isolated(t, B5.shadow.files, useEntry(B5.shadow.names));
+  assert.equal(shadow.css, '.p { padding: var(--uxdsl__space__2); }');
+  assert.deepEqual(shadow.warnings, [C5_SHADOW]);
+
   const namespaced = await isolated(t, B5.namespaced.files, useEntry(B5.namespaced.names));
   assert.equal(namespaced.css, '.p { padding: var(--uxdsl__space__2); height: double(4px); }');
-  assert.deepEqual(isolationOf(namespaced.warnings), [C4_PAD]);
+  assert.deepEqual(namespaced.warnings, [C5_HELPERS, C4_PAD]);
 });
 
 test('MIG-B9-17: an @import entry, the reading file\'s own @use … as *, calls through the namespace, a function no file defines, a known CSS function, and a call Dart Sass leaves as written where even a visible function stays (a custom property, an at-rule prelude, progid:, a CSS @function body) warn nothing new (negative control)', async (t) => {
@@ -356,6 +362,18 @@ test('MIG-B9-17: an @import entry, the reading file\'s own @use … as *, calls 
   const qualified = await isolated(t, { ...B5.namespaced.files, 'src/pad.uxdsl': "@use './helpers';\n.p { padding: helpers.space(2); height: helpers.double(4px); }\n" }, useEntry(B5.namespaced.names));
   assert.equal(qualified.css, '.p { padding: 8px; height: 8px; }');
   assert.deepEqual(qualified.warnings, []);
+  // The shadowing case under an @import entry and with its own @use … as *: BASE's UXD_FUNCTION_SHADOWED only.
+  const SHADOWED = "src/_shadow.uxdsl:1:11 UXD_FUNCTION_SHADOWED: @function space (src/_shadow.uxdsl:1) replaces UXDSL's space() in this build; rename it to use the token";
+  const shadowImported = await isolated(t, B5.shadow.files, importEntry(B5.shadow.names));
+  assert.equal(shadowImported.css, '.p { padding: 8px; }');
+  assert.deepEqual(shadowImported.warnings.filter((w) => !/ UXD_SASS_WARNING: \[import\]/.test(w)), [SHADOWED]);
+  const shadowOwn = await isolated(t, { ...B5.shadow.files, 'src/pad.uxdsl': "@use './shadow' as *;\n.p { padding: space(2); }\n" }, useEntry(B5.shadow.names));
+  assert.equal(shadowOwn.css, '.p { padding: 8px; }');
+  assert.deepEqual(shadowOwn.warnings, [SHADOWED]);
+  // SPACE(2) is not the function's name, so it is UXDSL's token and nothing else: Sass resolves names by case.
+  const otherCase = await isolated(t, { ...B5.shadow.files, 'src/pad.uxdsl': "@use './shadow' as *;\n.p { padding: SPACE(2); }\n" }, useEntry(B5.shadow.names));
+  assert.equal(otherCase.css, '.p { padding: var(--uxdsl__space__2); }');
+  assert.deepEqual(otherCase.warnings, []);
 
   const helpers = { 'src/_helpers.uxdsl': '@function double($x) { @return $x * 2; }\n@function translate($x) { @return $x; }\n' };
   for (const [label, widget, css] of [
@@ -418,6 +436,35 @@ test('MIG-B9-17: a call Dart Sass leaves as written is reported once per declara
   assert.equal(withCandidate.message.split(path.sep).slice(-2).join('/'), withoutCandidate.message.split(path.sep).slice(-2).join('/'));
   assert.deepEqual([withCandidate.line, withCandidate.column], [withoutCandidate.line, withoutCandidate.column]);
   assert.deepEqual(withCandidate.warnings, withoutCandidate.warnings);
+});
+
+test('MIG-B9-17: a project function named like a token warns only when no call reaches its definition, through a namespace or from another function of its module (decision 10)', async (t) => {
+  const helpers = '@function space($n) { @return $n * 4px; }\n@function twice($n) { @return space($n) * 2; }\n';
+  // Reached through the namespace, or from twice() in a .scss module, whose bare calls are Sass's
+  // alone: the bare space(2) is the token, by DEC-17, and nothing warns.
+  for (const [label, helper, pad, css] of [
+    ['a call through the namespace', 'src/_helpers.uxdsl', "@use './helpers';\n.p { padding: space(2); margin: helpers.space(1); }\n", '.p { padding: var(--uxdsl__space__2); margin: 4px; }'],
+    ['another function of its module', 'src/_helpers.scss', "@use './helpers';\n.p { padding: space(2); margin: helpers.twice(1); }\n", '.p { padding: var(--uxdsl__space__2); margin: 8px; }'],
+  ]) {
+    const run = await isolated(t, { [helper]: helpers, 'src/pad.uxdsl': pad }, "@use './helpers' as helpers;\n@use './pad.uxdsl' as pad;\n");
+    assert.equal(run.css, css, label);
+    assert.deepEqual(run.warnings, [], label);
+  }
+  // No call reaches it (negative control: the same files without the namespace call).
+  const none = await isolated(t, { 'src/_helpers.uxdsl': helpers, 'src/pad.uxdsl': "@use './helpers';\n.p { padding: space(2); }\n" }, useEntry(['helpers', 'pad']));
+  assert.deepEqual(none.warnings, [C5_HELPERS]);
+
+  // A breakpoint's function under a namespaced @use, called bare: the call a line at the end of the file reads.
+  const breakpoint = await isolated(t, { 'src/_bp.uxdsl': '@function md($v) { @return $v * 2; }\n', 'src/pad.uxdsl': "@use './bp';\n.p {\n  padding: xs(1px) md(2px);\n}\n" }, useEntry(['bp', 'pad']));
+  assert.deepEqual(breakpoint.warnings, ["src/_bp.uxdsl:1:11 UXD_MODULE_ISOLATION: @function md (src/_bp.uxdsl:1) is reached by no call, and in src/pad.uxdsl:3 the bare md() is UXDSL's token, because the function is not visible there; @use that file as * there or call it through its namespace (bp.md()) to use it, or remove or rename it to keep the token"]);
+
+  // A directive's parameter is not evaluated by Sass: no call there keeps or loses the token.
+  const directive = await isolated(t, { 'src/_shapes.uxdsl': '@function radius($k) { @return $k * 1px; }\n', 'src/card.uxdsl': '.c { @ds-surface(contained radius(2)); }\n' }, useEntry(['shapes', 'card']));
+  assert.deepEqual(isolationOf(directive.warnings), []);
+
+  // A build that defines get-function: the probe may keep a token Sass would replace, so it never claims none reached.
+  const meta = await isolated(t, { ...B5.shadow.files, 'src/_meta.uxdsl': '@function get-function($n) { @return null; }\n' }, useEntry(['meta', ...B5.shadow.names]));
+  assert.deepEqual(isolationOf(meta.warnings), []);
 });
 
 const SASS_ID = require.resolve('sass', { paths: [path.join(__dirname, '..', '..', 'dist', 'sass')] });
