@@ -828,3 +828,61 @@ Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-10). 
   - §3's start gate for MIG-B9-26, whose comment reads "both parts' files, if the owner splits it", also needs MIG-B9-17 merged: `! command grep -qx "To be filled in the delivering PR." docs/features/FEAT-010/MIG-B9-17-module-isolation-warnings.md` exits 0 before the story starts.
 
   The header's Depends on, Base and Blocks follow.
+
+### Stale lines corrected on BASE `f254b24` (2026-11-16, before implementation)
+
+README §1, items 4 and 5: the base moved, so §3, its five start gates and §4
+were run again, and a line that only went stale is recorded here with its old
+and new value. The contract is unchanged; §2 cites `f855765` and stays as
+written, read with these lines.
+
+1. **Header (Base) and §3's intro.** Old: "§3 and §4 were recorded on
+   `f855765`, before all of them; they are re-run when the story starts
+   (§3)". New: re-run on `f254b24` (`feat/beta9` after MIG-B9-20, 21, 25, 26
+   and 17), 2026-11-16, Node 20.19.0, npm 11.21.1, PostCSS 8.5.31: every §3
+   line and the five start gates (the MIG-B9-17 one included) exit 0, and
+   §4's three commands print the recorded output byte for byte
+   (`postcss-nested@latest` is still 9.0.1). No finding.
+2. **§2, `plugin.ts`'s header, lines 31–35.** Old: "handed through
+   `rejectSassSyntax`, `emitTheme`, `expandDirectives`, `expandResponsive`,
+   `rejectLeftoverDirectives` and `checkReferences`, in that order." New:
+   "… `rejectLeftoverDirectives`, `checkReferences` and
+   `reportThemeEmission`, in that order." (still lines 31–35; lines 3–8 are
+   unchanged). MIG-B9-20 added the step and its `uxdsl-theme` result message.
+3. **§2, `rejectSassSyntax`'s comment.** Old: "lines 470–476". New: lines
+   453–459 (the function on line 460); the text is unchanged.
+4. **§2, the factory.** Old: "lines 960–973: one `Once(root, { result })`
+   listener that calls `validateOptions`, `rejectSassSyntax`, `emitTheme`,
+   `expandDirectives`, `expandResponsive`, `rejectLeftoverDirectives` and
+   `checkReferences`, in that order." New: lines 949–963, one `Once` listener
+   (952–961) that calls `validateOptions`, `rejectSassSyntax`, `emitTheme`,
+   `expandDirectives`, `expandResponsive`, `rejectLeftoverDirectives`,
+   `checkReferences` and `reportThemeEmission`, in that order;
+   `validateOptions` also runs `findThemeMarker`, which can throw
+   `UXD_THEME_MARKER` before the Sass check. §5's list of the steps that stay
+   in `Once` reads with `reportThemeEmission` added, last.
+5. **§2 and §11, the package README.** Old: "lines 1500–1507, in the
+   paragraph that starts at line 1486". New: lines 1612–1619, in the
+   paragraph that starts at line 1597; the text is unchanged.
+6. **§2 and §11, `compile.md`.** Old: "lines 538–541, under "The PostCSS
+   plugin on its own" (line 514)". New: lines 619–622, under
+   "### The PostCSS plugin on its own" (line 595). `migration.md` is not
+   stale: item 4 is still lines 118–138, its chain sentences 128–133.
+7. **§2, §11 and Q3, the CHANGELOG.** Old: "lines 440–446, in MIG-B9-13's
+   `### Breaking` (line 409)". New: lines 947–953, in MIG-B9-13's
+   `### Breaking` (line 916) of its subsection (line 804), under
+   `## 0.5.0-beta.9 — unreleased` (line 12).
+8. **§2, `AGENTS.md`.** Old: "lines 894–896". New: lines 911–913;
+   `command grep -n -i chain AGENTS.md` still finds only "fallback chain",
+   line 577.
+9. **§10 and §11, the CHANGELOG subsection's form.** Old: "one subsection,
+   `### Visual changes`: none". New: one subsection
+   `### uxdsl/postcss in a PostCSS chain (MIG-B9-27)`, first under the
+   unreleased intro (above MIG-B9-17's), with `#### Changed` and
+   `#### Visual changes` (None), as MIG-B9-17's and MIG-B9-26's are written.
+10. **§7, the suite counts** (non-normative). Old: "The package's top-level
+    suite gave 723 tests, 720 passing … The core suite gave 342 tests, 341
+    passing and 1 skipped". New, on `f254b24`, in a copy outside the
+    repository: top-level 710 tests; an unedited copy passes 702, the 8
+    failures needing the repository around the package; core 365 tests, 364
+    passing, 1 skipped; cli, vite and webpack 337 of 337.
