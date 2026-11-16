@@ -753,3 +753,14 @@ new test run against the built package of the previous commit (BASE
   `near-miss-functions.test.js`, `sass-stage-diagnostics.test.js`) pass
   unchanged. `npm test` exit 0 (5:13); corpus 276,926 bytes,
   `byte-identical: true`, 21 warnings (15:13, load 5.80); parity PASS.
+- **Owner flag F1, the cascade and the work pins** (T12, T11, T14). Red on
+  the previous commit: T12 failed, the plugin alone compiling a responsive
+  value in a nested `@media (--lg)` (`null` error) into the selector-less
+  root clone. T11 and T14 pin behavior the change must keep, so they pass
+  on the previous commit as well: T11's four outputs equal the literal
+  query's, and T14's fifty literal blocks parse no value and compile as
+  written, while one `(--lg)` changes exactly that prelude and parses no
+  value either. Green: T12 at `x.css:4:5` (the declaration), with
+  `compile()` giving valid nested media and the literal nested form its
+  BASE bytes. `npm test` exit 0 (5:14); corpus 276,926 bytes,
+  `byte-identical: true`, 21 warnings (15:21, load 9.08); parity PASS.

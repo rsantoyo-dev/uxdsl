@@ -449,6 +449,15 @@ resolves the stylesheet's custom media may be listed before or after
 @media (--lgg) { .nav { display: flex; } }  /* UXD_BREAKPOINT_UNKNOWN: did you mean "(--lg)"? */
 ```
 
+With `uxdsl/postcss` alone, CSS nesting keeps an `@media (--lg)` block
+nested in a rule where it is written, so a responsive value directly inside
+such a block fails with `UXD_BREAKPOINT_CONTEXT`: write the value on the
+rule, put the rule inside a top-level `@media (--lg)`, or compile the file
+with `compile()`, where Dart Sass moves the block out of the rule. On the
+same property, the cascade between a block and `lg()` is CSS's: through
+`compile()` the one written later wins; with the plugin alone `lg()`'s
+`@media` follows the rule, so it wins over a nested block.
+
 <p align="center">
   <a href="https://uxdsl.vercel.app/docs/home">
     <strong>Explore the Full Docs &rarr;</strong>

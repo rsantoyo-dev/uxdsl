@@ -303,3 +303,22 @@ test('MIG-B9-24: nothing outlives one compilation: one plugin instance with an e
   })());
   assert.throws(() => assertOwnTheme(stale, 'a planted cache'), assert.AssertionError);
 });
+
+// --- breakpoint media queries -------------------------------------------------
+
+test('MIG-B9-30: a compilation whose @media preludes hold no -- does no new work and compiles byte-identically', async () => {
+  const blocks = Array.from({ length: 50 }, (_, index) => `@media (min-width: ${index + 1}px) { .card { padding: ${index}px; } }`);
+  const literal = `.card{padding:4px}\n${blocks.join('\n')}`;
+  const plain = await measure(() => viaPlugin('.card{padding:4px}'));
+  const many = await measure(() => viaPlugin(literal));
+  assert.equal(many.error, null);
+  assert.equal(many.value.css, literal, 'the literal queries compile as written');
+  assert.equal(many.parses, plain.parses, 'fifty literal @media blocks parse no value');
+  assert.deepEqual(many.engines, eachEngine(1));
+  assert.equal(many.inspections, 0);
+
+  // Negative control: one (--lg) changes exactly that prelude, and the rewrite parses no value either.
+  const one = await measure(() => viaPlugin(literal.replace('@media (min-width: 25px)', '@media (--lg)')));
+  assert.equal(one.value.css, literal.replace('@media (min-width: 25px)', '@media (min-width: 1024px)'));
+  assert.equal(one.parses, plain.parses, 'the prelude rewrite parses no value');
+});

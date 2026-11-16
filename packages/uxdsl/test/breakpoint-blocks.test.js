@@ -429,3 +429,53 @@ test('MIG-B9-30: in a PostCSS chain a custom media another plugin resolves is no
   assert.equal((await failure(postcss([uxdsl()]).process(undefinedName, { from: CSS_FROM }))).reason, unknownText('--narrow'));
   assert.equal((await failure(postcss([customMedia({ resolveNothing: true }), uxdsl()]).process(own, { from: CSS_FROM }))).reason, unknownText('--narrow'));
 });
+
+// --- T11 ----------------------------------------------------------------------
+
+test('MIG-B9-30: the cascade between an @media (--lg) block and lg() on the same property, on both paths', async () => {
+  const functionFirst = '.a { padding: xs(0) lg(1rem); @media (--lg) { padding: 2rem; } }';
+  const blockFirst = '.a { @media (--lg) { padding: 2rem; } padding: xs(0) lg(1rem); }';
+  const literal = (source) => source.replace('(--lg)', '(min-width: 1024px)');
+  /** Which value the last rule that applies from 1024px up gives: the one written later wins. */
+  const winner = (css) => (css.lastIndexOf('padding: 1rem') > css.lastIndexOf('padding: 2rem') ? 'lg()' : 'block');
+
+  // compile(): source order decides; Dart Sass emits what follows a nested block in a new rule after it.
+  const compiledA = (await viaCompile(functionFirst)).css;
+  const compiledB = (await viaCompile(blockFirst)).css;
+  assert.equal(flat(compiledA), '.a { padding: 0; }@media (min-width: 1024px) {.a { padding: 1rem; } } @media (min-width: 1024px) { .a { padding: 2rem; } }');
+  assert.equal(winner(compiledA), 'block');
+  assert.equal(flat(compiledB), '@media (min-width: 1024px) { .a { padding: 2rem; } } .a { padding: 0; } @media (min-width: 1024px) { .a { padding: 1rem; } }');
+  assert.equal(winner(compiledB), 'lg()');
+
+  // The plugin alone: the block stays nested in its rule and lg()'s @media follows the rule, so lg() wins in both orders.
+  const aloneA = (await viaPlugin(functionFirst)).css;
+  const aloneB = (await viaPlugin(blockFirst)).css;
+  assert.equal(aloneA, '.a { padding: 0; @media (min-width: 1024px) { padding: 2rem; } } @media (min-width: 1024px) {.a { padding: 1rem } }');
+  assert.equal(aloneB, '.a { @media (min-width: 1024px) { padding: 2rem; } padding: 0; } @media (min-width: 1024px) {.a { padding: 1rem; } }');
+  assert.equal(winner(aloneA), 'lg()');
+  assert.equal(winner(aloneB), 'lg()');
+
+  // Negative control: the literal query gives the same four outputs, so the cascade is the one CSS already had.
+  assert.equal((await viaCompile(literal(functionFirst))).css, compiledA);
+  assert.equal((await viaCompile(literal(blockFirst))).css, compiledB);
+  assert.equal((await viaPlugin(literal(functionFirst))).css, aloneA);
+  assert.equal((await viaPlugin(literal(blockFirst))).css, aloneB);
+});
+
+// --- T12 ----------------------------------------------------------------------
+
+test('MIG-B9-30: with uxdsl/postcss alone a responsive value directly in an @media (--lg) block nested in a rule is UXD_BREAKPOINT_CONTEXT', async () => {
+  const source = '.a {\n  color: red;\n  @media (--lg) {\n    padding: xs(1rem) xl(2rem);\n  }\n}';
+  const error = await failure(viaPlugin(source));
+  assert.equal(error.reason, 'UXD_BREAKPOINT_CONTEXT: a responsive value cannot sit in @media (--lg) nested in a rule with uxdsl/postcss alone: CSS nesting cannot move the block out of the rule. Write the value on the rule (padding: xs(…) lg(…)), put the rule inside a top-level @media (--lg), or compile the file with compile() (a .uxdsl file).');
+  assert.deepEqual([error.line, error.column], [4, 5]);
+  // The message shows the prelude as the author wrote it.
+  assert.match((await failure(viaPlugin('.a { @media print and (--MD) { padding: xs(1rem) xl(2rem); } }'))).reason, /cannot sit in @media print and \(--MD\) nested in a rule .* \(padding: xs\(…\) md\(…\)\), put the rule inside a top-level @media print and \(--MD\),/);
+
+  // Negative controls: through compile() Dart Sass moved the block out of the rule, so the value compiles to valid nested media;
+  // a block at the top level, or a value on the rule, compiles with the plugin alone; and the literal nested form keeps its bytes.
+  assert.equal(flat((await viaCompile(source)).css), '.a { color: red; } @media (min-width: 1024px) { .a { padding: 1rem; } @media (min-width: 1280px) { .a { padding: 2rem; } } }');
+  assert.equal((await viaPlugin('@media (--lg) { .a { padding: xs(1rem) xl(2rem); } }')).css, '@media (min-width: 1024px) { .a { padding: 1rem; } @media (min-width: 1280px) { .a { padding: 2rem; } } }');
+  const literal = '.a { color: red; @media (min-width: 1024px) { padding: xs(1rem) xl(2rem); } }';
+  assert.equal((await viaPlugin(literal)).css, '@media (min-width: 1280px) { @media (min-width: 1024px) { padding: 2rem; } }.a { color: red; @media (min-width: 1024px) { padding: 1rem; } }');
+});

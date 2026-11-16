@@ -58,6 +58,17 @@ them. See `docs/releases/0.5.0-beta.9.md`.
   `@custom-media` for a breakpoint the stylesheet uses written inside a rule
   or an at-rule. A `@custom-media` for any other name is left as written,
   with its uses.
+- **`UXD_BREAKPOINT_CONTEXT` for a responsive value directly in an
+  `@media (--bp)` block nested in a rule, with `uxdsl/postcss` alone.** CSS
+  nesting keeps such a block inside its rule, and the media block each
+  breakpoint of the value would get has no selector to carry. The message
+  shows the prelude as written and the three forms that work (the value on
+  the rule, the rule inside a top-level block, or `compile()`, where Dart
+  Sass moves the block out of the rule). A literal nested `@media` with a
+  responsive value compiles to the same bytes as before. The cascade
+  between a block and `<bp>()` on the same property is pinned by a test:
+  through `compile()` the one written later wins; with the plugin alone
+  `<bp>()`'s `@media` follows the rule and wins.
 
 #### Changed
 

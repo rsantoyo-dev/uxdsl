@@ -1121,6 +1121,27 @@ function assignValue(decl: Declaration, next: string, rewriteRaw?: (raw: string)
 const holdsNoFunction = (value: string) => !value.includes('(');
 
 /**
+ * A responsive value directly in an `@media (--bp)` block nested in a rule:
+ * with uxdsl/postcss alone, CSS nesting keeps the block inside the rule, and
+ * the media block each breakpoint would get could not carry the rule's
+ * selector. It is UXD_BREAKPOINT_CONTEXT, naming the prelude as written.
+ * Through compile(), Dart Sass has already moved such a block out of its rule.
+ */
+function rejectValueInRewrittenBlock(c: Compilation, decl: Declaration) {
+  let block: AtRule | undefined;
+  for (let ancestor: any = decl.parent; ancestor && ancestor.type !== 'root'; ancestor = ancestor.parent) {
+    if (ancestor.type === 'rule') {
+      if (!block) return;
+      const prelude = c.originalPrelude.get(block)!;
+      const names = Array.from(prelude.matchAll(BREAKPOINT_FEATURE), (match) => match[1].toLowerCase()).filter((name) => c.bpNames.has(name));
+      const bp = names[0] ?? c.ordered[c.ordered.length - 1].name;
+      throw diagnostic(`UXD_BREAKPOINT_CONTEXT: a responsive value cannot sit in @media ${prelude} nested in a rule with uxdsl/postcss alone: CSS nesting cannot move the block out of the rule. Write the value on the rule (${decl.prop}: ${c.ordered[0].name}(…) ${bp}(…)), put the rule inside a top-level @media ${prelude}, or compile the file with compile() (a .uxdsl file).`);
+    }
+    if (!block && ancestor.type === 'atrule' && c.rewrittenMedia.has(ancestor)) block = ancestor;
+  }
+}
+
+/**
  * Rewrites the token functions of every author declaration and splits a
  * responsive value into its base value plus one `@media (min-width)` clone of
  * the rule per breakpoint whose value differs from the previous one. A clone
@@ -1166,6 +1187,7 @@ function expandResponsive(c: Compilation) {
       const parent = decl.parent;
       const clone = (text: string) => ({ prop: decl.prop, value: text, important: decl.important, source: decl.source, raws: { ...decl.raws } });
       if (!parent || parent.type !== 'rule') {
+        rejectValueInRewrittenBlock(c, decl);
         // A declaration directly under an at-rule (or the root): each
         // breakpoint gets a media block holding a clone of the parent.
         const container: any = parent;
