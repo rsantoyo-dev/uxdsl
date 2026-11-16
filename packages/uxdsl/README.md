@@ -1700,7 +1700,12 @@ changes only what it names:
    is `@ds-surface(contained)` again.
 4. **The UXDSL plugin**, on Dart Sass's output with PostCSS's default parser:
    the theme, the directives, responsive values, token functions and the
-   reference check; nothing else in Sass's output changes. A rule nested after
+   reference check; nothing else in Sass's output changes. It runs the theme's
+   engines once, inside `validateTheme`, and serializes the theme from their
+   outputs; its reference check inspects nothing when there is nothing to
+   check (no theme emitted, no token used, no `references.css` or
+   `references.externalTokens` entry), and its responsive pass does not parse
+   a value with no `(`. A rule nested after
    `@ds-button` or `@ds-input` therefore follows the directive's generated
    state rules. `compile()` also removes a top-level comment whose text starts
    with `# sourceMappingURL=` (Dart Sass keeps `/* # sourceMappingURL=… */`),
