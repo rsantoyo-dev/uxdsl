@@ -245,6 +245,75 @@ function assertIsolationWarned(built) {
   return 'double() at src/widget.uxdsl:1:6';
 }
 
+/** S-8's three sources of src/a.uxdsl, built by the installed CLI. */
+const S8_BLOCK_SOURCE = '@uxdsl theme;\n.nav {\n  color: red;\n  @media (--lg) {\n    display: flex;\n    @ds-surface(flat);\n  }\n}\n';
+const S8_SHADOWED_SOURCE = '@custom-media --lg (min-width: 900px);\n@media (--lg) {\n  .a { color: red; }\n}\n';
+const S8_UNKNOWN_SOURCE = '.a {\n  color: red;\n}\n@media (--lgg) {\n  .a { color: blue; }\n}\n';
+
+/** The rules S-8 expects after the theme for S8_BLOCK_SOURCE: Dart Sass moved the block out, (--lg) is the theme's query, the flat role expanded. */
+const S8_BLOCK_RULES = [
+  '.nav {', '  color: red;', '}', '@media (min-width: 1024px) {', '  .nav {', '    display: flex;',
+  ...['padding', 'border-radius', 'background', 'color', 'border', 'box-shadow'].map((prop) => `    ${prop}: var(--uxdsl__surface__flat-${{ 'border-radius': 'radius', background: 'bg', 'box-shadow': 'shadow' }[prop] || prop});`),
+  '  }', '}',
+].join('\n');
+
+const builtOutput = (built) => {
+  const stderr = built.stderr || '';
+  if (built.status !== 0) throw new Error(`exited ${built.status}: ${stderr.trim().split('\n')[0] || '(no stderr)'}`);
+  if (!/^\[uxdsl\] (built|unchanged) out\/a\.css/m.test(built.stdout || '')) throw new Error(`stdout: ${(built.stdout || '').trim().split('\n')[0] || '(empty)'}`);
+  return stderr;
+};
+
+/**
+ * S-8's verdict on `uxdsl build` of S8_BLOCK_SOURCE, with `css` the out/a.css it
+ * wrote: exit 0, nothing on stderr, and the rules S8_BLOCK_RULES with no `(--`
+ * left in any @media prelude of the CSS.
+ */
+function assertBreakpointBlock(built) {
+  const stderr = builtOutput(built);
+  if (stderr.trim()) throw new Error(`stderr: ${stderr.trim().split('\n')[0]}`);
+  const css = built.css || '';
+  if (!css.includes(S8_BLOCK_RULES)) throw new Error('the CSS does not hold .nav { color: red } then @media (min-width: 1024px) { .nav { display: flex; <the flat role> } }');
+  if (/@media[^{;]*\(\s*--/.test(css)) throw new Error('an @media prelude of the CSS still holds (--');
+  return '@media (--lg) compiled to @media (min-width: 1024px) with the flat role';
+}
+
+/** The one warning S-8 expects for S8_SHADOWED_SOURCE. */
+const S8_SHADOWED_LINE = "[uxdsl] Warning: src/a.uxdsl:1:1: UXD_BREAKPOINT_SHADOWED: @custom-media --lg (min-width: 900px) replaces the theme's lg, (min-width: 1024px), in this stylesheet: (--lg) compiles to (min-width: 900px) here, while lg() and stylesheets compiled apart keep the theme's. Remove it to use the theme's lg, or change breakpoints.lg in the theme to move it everywhere.";
+
+/**
+ * S-8's verdict on `uxdsl build` of S8_SHADOWED_SOURCE: exit 0, exactly one
+ * UXD_BREAKPOINT_SHADOWED warning, at the @custom-media (src/a.uxdsl:1:1), and
+ * the CSS keeps the definition and compiles (--lg) to the project's query.
+ */
+function assertBreakpointShadowed(built) {
+  const stderr = builtOutput(built);
+  const warnings = stderr.split('\n').filter((line) => line.includes('UXD_BREAKPOINT_SHADOWED'));
+  if (warnings.length !== 1) throw new Error(`${warnings.length} UXD_BREAKPOINT_SHADOWED warnings, expected 1`);
+  if (warnings[0] !== S8_SHADOWED_LINE) throw new Error(`the warning is not located at src/a.uxdsl:1:1: ${warnings[0]}`);
+  const css = built.css || '';
+  if (!css.includes('@custom-media --lg (min-width: 900px);')) throw new Error('the CSS does not keep @custom-media --lg (min-width: 900px);');
+  if (!css.includes('@media (min-width: 900px) {') || /@media[^{;]*\(\s*--/.test(css)) throw new Error('the CSS does not hold @media (min-width: 900px) in place of (--lg)');
+  return 'UXD_BREAKPOINT_SHADOWED at src/a.uxdsl:1:1, (--lg) compiled to (min-width: 900px)';
+}
+
+/** The line S-8 expects first on stderr for S8_UNKNOWN_SOURCE. */
+const S8_UNKNOWN_HEAD = '[uxdsl] Error: uxdsl: src/a.uxdsl:4:1: UXD_BREAKPOINT_UNKNOWN: (--lgg) is not a breakpoint of the theme or a @custom-media of this stylesheet; breakpoints usable in @media: (--sm), (--md), (--lg), (--xl). Did you mean "(--lg)"?';
+
+/**
+ * S-8's verdict on `uxdsl build` of S8_UNKNOWN_SOURCE: exit 1, the head line is
+ * UXD_BREAKPOINT_UNKNOWN at the @media rule (src/a.uxdsl:4:1) with the usable
+ * breakpoints and the suggestion, followed by a frame of the author's line.
+ */
+function assertBreakpointUnknown(built) {
+  const stderr = built.stderr || '';
+  if (built.status !== 1) throw new Error(`exited ${built.status}: ${stderr.trim().split('\n')[0] || '(no stderr)'}`);
+  const [head, ...frame] = stderr.replace(/\n+$/, '').split('\n');
+  if (head !== S8_UNKNOWN_HEAD) throw new Error(`head line: ${head}`);
+  if (!frame.some((line) => line.includes('@media (--lgg)'))) throw new Error('no frame line shows the author\'s @media (--lgg)');
+  return 'src/a.uxdsl:4:1 UXD_BREAKPOINT_UNKNOWN, did you mean "(--lg)"';
+}
+
 /**
  * The project S-5 and S-6 build: styles/panel.uxdsl @uses styles/_partial.uxdsl,
  * which @imports styles/_legacy.uxdsl, so Dart Sass loads the three files and
@@ -1099,6 +1168,22 @@ async function main() {
     return `${nearMiss}; ${debug}; ${isolation}`;
   });
 
+  // --- beta.9: breakpoint media queries ---------------------------------------
+  console.log('\nBreakpoint media queries (FEAT-010, MIG-B9-30):');
+  await check('S-8', '[tarball] a `@media (--lg)` block with a directive compiles through the installed CLI to `@media (min-width: 1024px)` with the role\'s declarations; a project `@custom-media --lg` is one located UXD_BREAKPOINT_SHADOWED warning and its query; `(--lgg)` is UXD_BREAKPOINT_UNKNOWN with its suggestion (exit 1)', () => {
+    const p = project('cli-breakpoint-blocks');
+    p.write('uxdsl.config.cjs', "module.exports = { entry: './src/a.uxdsl', outFile: './out/a.css' };\n");
+    const build = (source) => {
+      p.write('src/a.uxdsl', source);
+      const built = p.spawn('build');
+      return { ...built, css: built.status === 0 ? p.read('out/a.css') : '' };
+    };
+    const block = assertBreakpointBlock(build(S8_BLOCK_SOURCE));
+    const shadowed = assertBreakpointShadowed(build(S8_SHADOWED_SOURCE));
+    const unknown = assertBreakpointUnknown(build(S8_UNKNOWN_SOURCE));
+    return `${block}; ${shadowed}; ${unknown}`;
+  });
+
   // --- beta.7: init, editor support, fonts, contrast -----------------------
   console.log('\nInit, editor support, fonts and contrast (from verify:beta7):');
   {
@@ -1310,4 +1395,4 @@ async function main() {
 
 if (require.main === module) main().catch((error) => { console.error(error); process.exitCode = 1; });
 
-module.exports = { contrastSignature, exceptedSignature, contrastBaselineOf, assertContrastBaseline, auditLockfile, assertAuthorLocated, assertSassFramed, assertLocatedWarning, assertNearMissSuggested, assertDebugWarned, assertIsolationWarned, S7_ISOLATION_LINE, webpackAdapterRecord, assertWebpackAdapter, viteAdapterRecord, assertViteAdapter, assertMissingImport, mapIntegrityProblems, DROPPED };
+module.exports = { contrastSignature, exceptedSignature, contrastBaselineOf, assertContrastBaseline, auditLockfile, assertAuthorLocated, assertSassFramed, assertLocatedWarning, assertNearMissSuggested, assertDebugWarned, assertIsolationWarned, S7_ISOLATION_LINE, webpackAdapterRecord, assertWebpackAdapter, viteAdapterRecord, assertViteAdapter, assertMissingImport, mapIntegrityProblems, DROPPED, S8_BLOCK_SOURCE, S8_SHADOWED_SOURCE, S8_UNKNOWN_SOURCE, assertBreakpointBlock, assertBreakpointShadowed, assertBreakpointUnknown };

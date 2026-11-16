@@ -10,6 +10,7 @@ const { createRequire } = require('node:module');
 const { pathToFileURL } = require('node:url');
 const {
   assertAuthorLocated, assertSassFramed, assertLocatedWarning, assertNearMissSuggested, assertDebugWarned, assertIsolationWarned, S7_ISOLATION_LINE, webpackAdapterRecord, assertWebpackAdapter, viteAdapterRecord, assertViteAdapter, assertMissingImport,
+  S8_BLOCK_SOURCE, S8_SHADOWED_SOURCE, S8_UNKNOWN_SOURCE, assertBreakpointBlock, assertBreakpointShadowed, assertBreakpointUnknown,
 } = require('./run');
 const { PACKAGE_DIR } = require('../lib/tarball-consumer');
 
@@ -274,5 +275,63 @@ test('MIG-B9-13: N-02 rejects a compile that succeeds, an error with another cod
     [like({ file: path.join(path.dirname(error.file), 'nope.uxdsl') }), /^located at nope\.uxdsl:1:9$/],
   ]) {
     assert.throws(() => assertMissingImport(candidate), { message: reason });
+  }
+});
+
+/** `uxdsl build` of src/a.uxdsl, as S-8 runs it, with the CSS it wrote (when it wrote one). */
+function buildBreakpointBlock(source) {
+  const dir = temporaryDirectory();
+  fs.mkdirSync(path.join(dir, 'src'));
+  fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), S7_CONFIG);
+  fs.writeFileSync(path.join(dir, 'src/a.uxdsl'), source);
+  const built = spawnSync(process.execPath, [path.join(PACKAGE_DIR, 'bin/uxdsl.js'), 'build'], { cwd: dir, encoding: 'utf8' });
+  const out = path.join(dir, 'out/a.css');
+  return { ...built, css: fs.existsSync(out) ? fs.readFileSync(out, 'utf8') : '' };
+}
+
+test('MIG-B9-30: S-8 accepts the CLI\'s @media (--lg) block with a directive as @media (min-width: 1024px) with the flat role, a project @custom-media --lg as one located UXD_BREAKPOINT_SHADOWED and 900px, and (--lgg) as UXD_BREAKPOINT_UNKNOWN with its suggestion', () => {
+  const block = buildBreakpointBlock(S8_BLOCK_SOURCE);
+  assert.equal(assertBreakpointBlock(block), '@media (--lg) compiled to @media (min-width: 1024px) with the flat role', block.stderr);
+  const shadowed = buildBreakpointBlock(S8_SHADOWED_SOURCE);
+  assert.equal(assertBreakpointShadowed(shadowed), 'UXD_BREAKPOINT_SHADOWED at src/a.uxdsl:1:1, (--lg) compiled to (min-width: 900px)', shadowed.stderr);
+  const unknown = buildBreakpointBlock(S8_UNKNOWN_SOURCE);
+  assert.equal(assertBreakpointUnknown(unknown), 'src/a.uxdsl:4:1 UXD_BREAKPOINT_UNKNOWN, did you mean "(--lg)"', unknown.stderr);
+});
+
+test('MIG-B9-30: S-8 rejects BASE\'s pass-through of (--lg), a missing, doubled or misplaced warning, and an error without the suggestion (negative control)', () => {
+  const block = buildBreakpointBlock(S8_BLOCK_SOURCE);
+  for (const [built, reason] of [
+    // BASE: (--lg) left in the CSS as written, a block no browser applies.
+    [{ ...block, css: block.css.replace('@media (min-width: 1024px) {\n  .nav {', '@media (--lg) {\n  .nav {') }, /does not hold/],
+    [{ ...block, css: `${block.css}\n@media (--lg) {}\n` }, /still holds \(--/],
+    [{ ...block, css: block.css.replace('padding: var(--uxdsl__surface__flat-padding);', '@ds-surface (flat);') }, /does not hold/],
+    [{ ...block, stderr: '[uxdsl] Warning: UXD_THEME_MARKER: x\n' }, /^stderr/],
+    [{ ...block, status: 1 }, /^exited 1/],
+  ]) {
+    assert.throws(() => assertBreakpointBlock(built), { message: reason }, built.css);
+  }
+
+  const shadowed = buildBreakpointBlock(S8_SHADOWED_SOURCE);
+  const line = shadowed.stderr.split('\n').find((l) => l.includes('UXD_BREAKPOINT_SHADOWED'));
+  for (const [built, reason] of [
+    // BASE: no warning, and the definition left for a browser that ignores it.
+    [{ ...shadowed, stderr: '', css: shadowed.css.replace('@media (min-width: 900px)', '@media (--lg)') }, /^0 UXD_BREAKPOINT_SHADOWED warnings, expected 1$/],
+    [{ ...shadowed, stderr: `${line}\n${line}\n` }, /^2 UXD_BREAKPOINT_SHADOWED warnings, expected 1$/],
+    [{ ...shadowed, stderr: `${line.replace('src/a.uxdsl:1:1', 'src/a.uxdsl:2:1')}\n` }, /not located at src\/a\.uxdsl:1:1/],
+    [{ ...shadowed, css: shadowed.css.replace('(min-width: 900px) {', '(min-width: 1024px) {') }, /does not hold @media \(min-width: 900px\)/],
+  ]) {
+    assert.throws(() => assertBreakpointShadowed(built), { message: reason }, built.stderr);
+  }
+
+  const unknown = buildBreakpointBlock(S8_UNKNOWN_SOURCE);
+  const [head, ...frame] = unknown.stderr.split('\n');
+  for (const [built, reason] of [
+    // BASE: (--lgg) compiled as written, exit 0.
+    [{ status: 0, stderr: '' }, /^exited 0/],
+    [{ status: 1, stderr: `${head.replace(' Did you mean "(--lg)"?', '')}\n${frame.join('\n')}` }, /^head line/],
+    [{ status: 1, stderr: `${head.replace('src/a.uxdsl:4:1', 'src/a.uxdsl:1:1')}\n${frame.join('\n')}` }, /^head line/],
+    [{ status: 1, stderr: `${head}\n` }, /no frame line/],
+  ]) {
+    assert.throws(() => assertBreakpointUnknown(built), { message: reason }, built.stderr);
   }
 });
