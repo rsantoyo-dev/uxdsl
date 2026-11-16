@@ -1160,6 +1160,59 @@ saved so that it loads an existing file beside it, builds once …` saw two
 `unchanged out/b.css`: 2 builds where it expects 1), and passed in the
 package suites. The next run, on the following commit, is their re-run.
 
+### Open for the owner: one save, two builds on Windows (2026-11-16)
+
+Run 43954805492 (`3bd00d8`) is the re-run C6g asks for. The atomic-replace
+test passes there with G3's win32 branch (1 of 5 rebuilds refused in the
+package suites, 2 of 5 in the loop), and `test/*.test.js` (767, `# fail 0`)
+and `test/core` (370, `# fail 0`, 4 skipped: the corpus, MIG-B9-12's I/O
+error, MIG-B9-23's execute-only directory, T7) pass. `test/cli` fails 3:
+
+- In the package suites: `watch retargets the entry and source globs
+  without restarting the CLI, and keeps following the theme file` and `watch
+  mode reloads when the build config (not the theme file) delegates to a
+  nested require()` time out (`waitFor timed out`, no output captured), and
+  `MIG-B9-14: an entry whose first build failed, saved so that it loads an
+  existing file beside it, …` sees `change src/_x.scss` twice for one edit
+  (`built out/b.css`, then `unchanged out/b.css`).
+- In the per-file loop: `MIG-B9-14: an entry that starts loading an existing
+  file beside the file just saved builds once …` and the "first build
+  failed" twin each see `change src/b.uxdsl` twice for one save (2 builds of
+  b, 2 warnings, where they expect 1), and `MIG-B9-20: build --watch counts
+  the theme over the last result of every entry` times out on a
+  `built(…) === 1` wait, which a doubled event would step over (not shown:
+  that wait prints no output).
+
+Across runs 43950837496 and 43954805492 the two MIG-B9-14 tests ran 8
+times (each in the package suites and in the loop, twice) and saw a doubled
+event 4 times (the "first build failed" one 3 times in 4), so it is not a
+one-off: on Windows
+one `fs.writeFileSync` reaches `build --watch` as two `change` events, and
+`bin/uxdsl.js` builds once for each (the second writes nothing). That is a
+product difference in `bin`, decision 19's stop, and it reaches every
+watch test that counts builds or waits for an exact count. The timeouts of
+the two config-reload tests are not explained by it (their waits read the
+CSS, not a count) and print no output.
+
+Options:
+
+- (a) Allow a `bin` change here: an event whose file keeps the stats the
+  last build of it read is dropped for every followed file, as it already
+  is for a newly followed one (`watchSelection`'s `unchanged` map), so a
+  doubled event builds nothing. C7 and AC6 are amended for `bin/uxdsl.js`;
+  the story becomes an engine change (full flow).
+- (b) Keep `bin` untouched and pin the difference on win32 in each watch
+  test that counts builds (`built` once, an extra `unchanged` accepted,
+  waits on `>= 1`), with a follow-up to coalesce the events (as G1 and G3);
+  the config-reload timeouts stay MIG-B9-19's class and are re-run.
+- (c) Keep `test/cli/watch-mode.test.js` out of the Windows job's gate
+  until MIG-B9-19 or MIG-B9-06 fixes the class (C3 amended: a named
+  exclusion instead of a skip).
+
+No option is clearly the one to take: (a) changes `bin` against C7, (b)
+weakens a dozen assertions on win32, and (c) removes the file C6g names.
+The story stops here.
+
 ### Follow-ups (proposed)
 
 - **MIG-B9-102 — win32: a file Dart Sass loads itself through `pkg:` is
