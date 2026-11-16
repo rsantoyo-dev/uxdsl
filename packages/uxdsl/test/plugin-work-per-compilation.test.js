@@ -200,6 +200,17 @@ test('MIG-B9-24: one token, one references.css entry or one externalTokens entry
     assert.equal(unclosed.error.reason, 'Unclosed block');
     const invalid = await measure(() => run('.card{padding:4px}', { references: { externalTokens: ['bad token'] } }));
     assert.match(String(invalid.error?.message), /UXD_REFERENCE_CONTEXT: Invalid external token bad token\./, `${label}: an invalid external token fails`);
+    // The rendered theme is parsed before externalTokens is read, so a theme
+    // PostCSS cannot parse is the error reported even beside an externalTokens
+    // value that is not a list.
+    const both = await measure(() => run('.card{padding:4px}', {
+      theme: { palette: { primary: { main: 'red /* oops' } } },
+      references: { externalTokens: 5 },
+    }));
+    assert.equal(both.error?.name, 'CssSyntaxError', `${label}: the theme's parse error comes first`);
+    assert.equal(both.error.message.split('\n')[0], 'uxdsl: <css input>:2:45: Unclosed comment', `${label}: the base's message and position`);
+    const notAList = await measure(() => run('.card{padding:4px}', { references: { externalTokens: 5 } }));
+    assert.match(String(notAList.error?.message), /is not iterable/, `${label}: an externalTokens value that is not a list fails as on the base`);
   }
 });
 

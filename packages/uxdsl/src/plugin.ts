@@ -1013,11 +1013,13 @@ function checkReferences(c: Compilation) {
     if (!c.originalSources.has(node.source) || c.dslSources.has(node.source)) consumers.push(node);
   });
   const css = [...(c.references.css || [])];
-  const nothingToReport = c.references.mode !== 'off' && !consumers.length && !css.length && !new Set(c.references.externalTokens || []).size;
+  const nothingToCheck = c.references.mode !== 'off' && !consumers.length && !css.length;
   if (!c.themeEmitted && c.references.mode !== 'off') css.push(c.themeCss());
-  if (nothingToReport) {
+  if (nothingToCheck) {
+    // The rendered theme is parsed before `externalTokens` is read, as the
+    // inspection reads them.
     for (const text of css) postcss.parse(text);
-    return;
+    if (!new Set(c.references.externalTokens || []).size) return;
   }
   enforceReferences(c.root, consumers, {
     ...c.references, css,
