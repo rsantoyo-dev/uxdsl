@@ -484,10 +484,27 @@ test('MIG-B6-23: an output file is never observed empty or truncated while a reb
   })();
 
   const colors = ['blue', 'green', 'purple', 'orange', 'red'];
+  // On win32 a rename onto a file another process holds open fails with
+  // EPERM, so a rebuild that meets the reader fails and keeps the previous
+  // output whole; elsewhere every rebuild lands.
+  const renameRefused = /^\[uxdsl\] build failed: EPERM: operation not permitted, rename '[^']*' -> 'src\/uxdsl\.css'$/m;
+  let refused = 0;
   try {
+    let previous = 'red';
     for (const color of colors) {
+      const mark = output.length;
       fs.writeFileSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl'), `.a { color: ${color}; }`);
-      await waitFor(() => fs.readFileSync(cssPath, 'utf8').includes(`color: ${color}`));
+      if (process.platform === 'win32') {
+        await waitFor(() => fs.readFileSync(cssPath, 'utf8').includes(`color: ${color}`) || renameRefused.test(output.slice(mark)));
+        if (!fs.readFileSync(cssPath, 'utf8').includes(`color: ${color}`)) {
+          refused += 1;
+          assert.match(fs.readFileSync(cssPath, 'utf8'), new RegExp(`color: ${previous}`), 'the refused rename keeps the previous output');
+          continue;
+        }
+      } else {
+        await waitFor(() => fs.readFileSync(cssPath, 'utf8').includes(`color: ${color}`));
+      }
+      previous = color;
     }
   } catch (error) {
     error.message += `\n${output}`;
@@ -499,6 +516,12 @@ test('MIG-B6-23: an output file is never observed empty or truncated while a reb
     await pollLoop;
   }
   assert.equal(sawBadRead, null, sawBadRead || '');
+  if (process.platform === 'win32') {
+    t.diagnostic(`${refused} of ${colors.length} rebuilds met the reader and failed with EPERM`);
+    // With no reader, the next change builds again.
+    fs.writeFileSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl'), '.a { color: teal; }');
+    await waitFor(() => fs.readFileSync(cssPath, 'utf8').includes('color: teal'));
+  }
 });
 
 test('MIG-B6-23: creating a previously-missing partial recovers the build (unknown-to-the-graph file falls back to a full rebuild)', async (t) => {

@@ -49,6 +49,11 @@ them. See `docs/releases/0.5.0-beta.9.md`.
   observed on the hosted runner, whose administrator lists the directory
   through the deny: the README's statement for that case (the name keeps
   the spelling it is written in) stands as written, unobserved on Windows.
+  In `build --watch`, a rename onto an output file another process is
+  reading at that moment is refused with `EPERM` on Windows: that build
+  fails as `build failed: EPERM: operation not permitted, rename …`, the
+  previous output stays whole and the next change builds again; MIG-B9-103
+  is to retry such a rename.
 
 #### Visual changes
 

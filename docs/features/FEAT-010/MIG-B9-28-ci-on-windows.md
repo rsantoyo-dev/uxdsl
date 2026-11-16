@@ -1028,10 +1028,12 @@ amendments rule):
 
 ### Owner decisions taken under the standing instruction (2026-11-16, second batch)
 
-The Windows job raised two flags that decision 19 of 2026-11-10 stops on.
-Each was put to the owner's session, which answered it with its recommended
-option under the standing instruction of 2026-11-10; the owner may override
-either.
+The Windows job raised three flags that decision 19 of 2026-11-10 stops on.
+G1 and G2 were put to the owner's session, which answered each with its
+recommended option under the standing instruction of 2026-11-10; G3 came up
+after that and is answered here the same way, with its recommended option.
+They were not put to the owner one by one, and the owner may override any
+of them.
 
 - **G1: a file Dart Sass loads itself through `pkg:` is spelled in lower
   case on win32.** Evidence: on `windows-latest`,
@@ -1071,6 +1073,27 @@ either.
   the written case where the deny holds, and the file's header no longer
   states outcome B. On `windows-latest` T7 is the one `MIG-B9-28:` test
   with `# SKIP`.
+
+- **G3: on win32 `build --watch`'s atomic replace is refused while a reader
+  holds the output file.** Evidence: run 43950837496 (`0488249`), in the
+  package suites and in the per-file loop alike, `MIG-B6-23: an output file
+  is never observed empty or truncated while a rebuild is writing it (atomic
+  replace)` times out after `[uxdsl] build failed: EPERM: operation not
+  permitted, rename 'src/.uxdsl.css.<pid>-<time>-<id>.tmp' -> 'src/uxdsl.css'`:
+  the test reads the file continuously, and Windows refuses a rename onto a
+  file another process has open (`bin/uxdsl.js`'s `commitFileIfChanged`,
+  which does not retry). No read saw an empty or truncated file. Options:
+  (a) retry the rename in `bin` here; (b) record it as a win32 difference,
+  as G1: on win32 the test accepts, for each rebuild, either the new output
+  or that `EPERM` line with the previous output whole, prints how many
+  rebuilds were refused, and checks that a change with no reader then
+  builds; every other platform keeps the test as it is; the CLI guide, the
+  package README and the CHANGELOG say so; the retry is a follow-up; (c)
+  skip the test on win32. **Answer: (b)**, recommended under the same
+  standing instruction (C7 keeps `bin` unchanged, C3 rules out (c), and G1
+  set the precedent); `bin` untouched. MIG-B9-06, which decision 28 of
+  2026-11-15 gives the atomic-replace failure seen on ubuntu, may take the
+  follow-up instead.
 
 What changes in the acceptance criteria (the C-n and AC text above stays as
 written; these rule):
@@ -1124,9 +1147,27 @@ load-path case). README §7's row `test/vite/index.test.js,
 test/webpack/loader.test.js` gets 28 before 06 (`test/vite/index.test.js`
 is edited; `test/webpack/loader.test.js` is not).
 
+### Watch tests that failed once on Windows (C6g)
+
+Both are the extra-build and missed-event class MIG-B9-19 and MIG-B9-06 own;
+neither is fixed here. Run 43950837496 (`0488249`): in the package suites,
+`changing outFile via a config reload does not resurrect the self-triggered
+rebuild loop under the new path` timed out waiting for the new output
+(`waitFor timed out`, `watch-mode.test.js:289`), and passed alone in the
+per-file loop; in the loop, `MIG-B9-14: an entry whose first build failed,
+saved so that it loads an existing file beside it, builds once …` saw two
+`change src/b.uxdsl` events for one save (`built out/b.css`, then
+`unchanged out/b.css`: 2 builds where it expects 1), and passed in the
+package suites. The next run, on the following commit, is their re-run.
+
 ### Follow-ups (proposed)
 
 - **MIG-B9-102 — win32: a file Dart Sass loads itself through `pkg:` is
   spelled in its on-disk case.** S, for `0.5.0-beta.10` with MIG-B9-66; it
   does not block MIG-B9-91. G1 above is its evidence; its regression is the
   G1 test, which then asserts the on-disk case.
+- **MIG-B9-103 — win32: `build --watch` retries a rename onto an output
+  file a reader holds open.** S, for `0.5.0-beta.10` with MIG-B9-66 (or
+  within MIG-B9-06, if the owner prefers); it does not block MIG-B9-91. G3
+  above is its evidence; its regression is the atomic-replace test's win32
+  branch, which then expects every rebuild to land.
