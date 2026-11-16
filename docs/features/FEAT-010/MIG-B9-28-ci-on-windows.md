@@ -1281,6 +1281,34 @@ it was not put to the owner on its own, and the owner may override it.
     reason, the same rule applies: the story stops and reports it; a cause
     in a test is fixed in the test.
 
+### Run 43960109820 (`fc8d628`), G4 applied (2026-11-16)
+
+All three jobs pass: `npm test (uxdsl, Windows)` (job 133625076636, 16 min
+45 s), `npm test` (job 133625077133) and `verify:1.0 (one tarball, real
+Chrome)` (job 133628775038). On `windows-latest` the image's
+`core.autocrlf` is `true` from `file:C:/Program Files/Git/etc/gitconfig`;
+the job prints `files checked out with CRLF: 0`. Step 8, up to its
+exclusion line: six `# fail 0`; `# tests` 767, 370, 239, 32, 29, 1 against
+ubuntu's 767, 370, 276, 32, 29, 1 on the same commit (239 + the excluded
+file's 37 = 276); `# SKIP` 6 (C3's five and T7); `ok N - MIG-B9-28:` 8, one
+with `# SKIP` (T7); the NFD line once; no `tmpdir-guard:` line (the gated
+suites left nothing). After it, `watch-mode.test.js: # tests 37`, `# pass
+36`, `# fail 1`, `exit 1, left 38`: the failing test is `MIG-B9-14: an entry
+that starts loading an existing file beside the file just saved builds once
+…` (`change src/b.uxdsl` twice, `2 !== 1`). Step 9: every gated file
+passes and leaves nothing (`fail=0`); the excluded file prints `exit 1`
+(the "first build failed" twin, `2 !== 1`) and `left 38 in
+C:\Users\RUNNER~1\AppData\Local\Temp\uxdsl-loop.1mXky2\excluded.kKYi8z`.
+
+- **`watch-mode.test.js` leaves 38 entries on Windows.** In this run's
+  step 8 and step 9, and in run 43954805492's loop (`left 38`), the file
+  leaves 38 entries in its temporary directory when it runs on win32, with
+  1 to 3 tests failing; on macOS and ubuntu it leaves none. Whether a
+  watcher process still holding its directory or the test's own removal
+  causes it was not determined. It is outside the gate under G4 and goes
+  with the file to MIG-B9-06: returning the file to the gate means it
+  passes and leaves nothing there.
+
 ### Follow-ups (proposed)
 
 - **MIG-B9-06 (registered; wave 3, `0.5.0-beta.9`, after MIG-B9-19; story
@@ -1289,7 +1317,9 @@ it was not put to the owner on its own, and the owner may override it.
   the two config-reload watch tests that time out on Windows with no
   output. One of its acceptance criteria returns
   `test/cli/watch-mode.test.js` to the Windows job's gate (step 8's
-  exclusion and step 9's `excluded` branch removed).
+  exclusion and step 9's `excluded` branch removed), where it then passes
+  and leaves nothing in its temporary directory (it leaves 38 entries there
+  on Windows today).
 
 - **MIG-B9-102 — win32: a file Dart Sass loads itself through `pkg:` is
   spelled in its on-disk case.** S, for `0.5.0-beta.10` with MIG-B9-66; it
