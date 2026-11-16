@@ -452,6 +452,23 @@ test('MIG-B9-17: a call Dart Sass leaves as written is reported once per declara
   const visible = await run("@use './helpers' as *;\n.w { --x: double(4px); content: \"double(4px)\"; /* double(1px) */ }\n@foo double(4px);\n");
   assert.equal(visible.css, '.w { --x: double(4px); content: "double(4px)"; /* double(1px) */ } @foo double(4px);');
   assert.deepEqual(visible.warnings, []);
+  // Nor in the arguments of expression() or a vendor-prefixed calc(), or in a progid: value, where
+  // the call is an argument of its own.
+  const raw = await run("@use './helpers' as *;\n.w { a: expression(double(4px)); b: -webkit-calc(double(4px)); e: progid:X.Y(a, double(4px)); }\n");
+  assert.equal(raw.css, '.w { a: expression(double(4px)); b: -webkit-calc(double(4px)); e: progid:X.Y(a, double(4px)); }');
+  assert.deepEqual(raw.warnings, []);
+
+  // An unquoted url() whose argument holds a call is one Sass evaluates: url(8px) where the
+  // function is visible, and the call left as written, located, where it is not.
+  const urlVisible = await run("@use './helpers' as *;\n.w { d: url(double(4px)); }\n");
+  assert.equal(urlVisible.css, '.w { d: url(8px); }');
+  assert.deepEqual(urlVisible.warnings, []);
+  const url = await run('.w { d: url(double(4px)); }\n.v {\n  e: x url( my_fn(3px) ) url("double(1px)");\n}\n');
+  assert.equal(url.css, '.w { d: url(double(4px)); } .v { e: x url(my_fn(3px)) url("double(1px)"); }');
+  assert.deepEqual(url.warnings, [
+    C4_WIDGET.replace('_helpers.uxdsl:1', '_helpers.uxdsl:2'),
+    'src/widget.uxdsl:3:3 UXD_MODULE_ISOLATION: @function my_fn (src/_helpers.uxdsl:1) is not visible here, so Dart Sass leaves my_fn() in the CSS as written; @use that file as * here, or call it through its namespace (helpers.my_fn())',
+  ]);
 
   // Output PostCSS cannot parse, with a call left as written: the same located parse error as
   // where no file defines the function.
@@ -519,7 +536,7 @@ test('MIG-B9-17: a !default warns only when an earlier file that emits no CSS se
     ['the entry sets it after the module applied its default', { 'src/b-button.uxdsl': button }, "@use './b-button.uxdsl' as b-button;\n$tone: red;\n", '.btn { color: blue; }'],
     ['the earlier file emits CSS', { ...B5.default.files, 'src/_a-config.uxdsl': '$tone: red;\n.a { color: $tone; }\n' }, useEntry(B5.default.names), '.a { color: red; } .btn { color: blue; }'],
     ['the earlier file keeps a loud comment', { ...B5.default.files, 'src/_a-config.uxdsl': '/* settings */\n$tone: red;\n' }, useEntry(B5.default.names), '/* settings */ .btn { color: blue; }'],
-    ['the module loads its settings file itself, under a namespace', { 'src/_a-config.uxdsl': '$tone: red;\n', 'src/b-button.uxdsl': `@use './a-config' as cfg;\n${button}` }, useEntry(['b-button']), '.btn { color: blue; }'],
+    ['the module @uses the settings file under a namespace, so Sass loads the module before it', { 'src/_a-config.uxdsl': '$tone: red;\n', 'src/b-button.uxdsl': `@use './a-config' as cfg;\n${button}` }, useEntry(['b-button']), '.btn { color: blue; }'],
   ]) {
     const run = await isolated(t, files, entry);
     assert.equal(run.css, css, label);
@@ -572,9 +589,83 @@ test('MIG-B9-17: a build with no project @function named like a UXDSL function a
   assert.deepEqual(candidate.result.warnings, [C6_BUTTON]);
   const probed = await compilesOf(() => isolated(t, B5.shadow.files, useEntry(B5.shadow.names)));
   assert.ok(probed.count > 1, `the probe runs (${probed.count})`);
-  // Both at once: the !default candidates ride on that probe, with no compile of their own.
+  // Both at once: the !default candidates' compile comes on top of that probe, never inside it.
   const both = await compilesOf(() => isolated(t, { ...B5.default.files, ...B5.shadow.files }, useEntry([...B5.default.names, ...B5.shadow.names])));
-  assert.equal(both.count, probed.count, 'the !default records come from the probe the build runs anyway');
+  assert.equal(both.count, probed.count + 1, 'the !default records come from a compile of their own');
   assert.deepEqual(both.result.warnings, [C6_BUTTON, C5_SHADOW]);
   assert.equal(both.result.css, '.btn { color: blue; } .p { padding: var(--uxdsl__space__2); }');
+});
+
+test('MIG-B9-17: a !default candidate in a build that also runs the shadowing probe compiles as on BASE, whatever a file reads of the variable\'s existence: the candidates\' check reaches no pass the build uses', async (t) => {
+  const settings = "@use 'sass:meta';\n$tone: if(meta.variable-exists(tone), $tone, red);\n";
+  const button = B5.default.files['src/b-button.uxdsl'];
+  const entry = useEntry([...B5.default.names, ...B5.shadow.names]);
+  const own = (warnings) => warnings.filter((w) => !/ UXD_SASS_WARNING: /.test(w));
+  const SHADOWED = "src/_shadow.uxdsl:1:11 UXD_FUNCTION_SHADOWED: @function space (src/_shadow.uxdsl:1) replaces UXDSL's space() in this build; rename it to use the token";
+
+  // The settings file sets $tone unless it is set, and a color function reads it.
+  const read = await isolated(t, { 'src/_a-config.uxdsl': `@use 'sass:color';\n${settings}$tone-light: color.adjust($tone, $lightness: 10%);\n`, 'src/b-button.uxdsl': button, ...B5.shadow.files }, entry);
+  assert.equal(read.css, '.btn { color: blue; } .p { padding: var(--uxdsl__space__2); }');
+  assert.deepEqual(own(read.warnings), [C5_SHADOW]);
+
+  // A file decides whether to call the project's function by whether that $tone is set.
+  const decided = await isolated(t, {
+    'src/_a-config.uxdsl': settings,
+    'src/b-button.uxdsl': button,
+    'src/_shadow.uxdsl': B5.shadow.files['src/_shadow.uxdsl'],
+    'src/pad.uxdsl': "@use './shadow' as *;\n@use './a-config' as cfg;\n.p { @if cfg.$tone != null { padding: space(2); } }\n",
+  }, entry);
+  assert.equal(decided.css, '.btn { color: blue; } .p { padding: 8px; }');
+  assert.deepEqual(own(decided.warnings), [SHADOWED]);
+
+  // The module's own default reads whether the variable exists, and fails when it is null.
+  const guarded = await isolated(t, { ...B5.default.files, 'src/b-button.uxdsl': '$tone: if(variable-exists(tone), $tone, blue) !default;\n@if $tone == null { @error "null"; }\n.btn { color: $tone; }\n', ...B5.shadow.files }, entry);
+  assert.equal(guarded.css, '.btn { color: blue; } .p { padding: var(--uxdsl__space__2); }');
+  assert.deepEqual(own(guarded.warnings), [C5_SHADOW]);
+});
+
+test('MIG-B9-17: the fix a UXD_MODULE_ISOLATION warning names for a private member (a name starting with - or _) makes it public first, and the fixed build warns nothing', async (t) => {
+  const helpers = { 'src/_h.uxdsl': '@function -x-foo($x) { @return $x; }\n@function _bar($x) { @return $x; }\n' };
+  const called = await isolated(t, { ...helpers, 'src/widget.uxdsl': '.w { a: -x-foo(1px); b: _bar(2px); }\n' }, useEntry(['h', 'widget']));
+  assert.equal(called.css, '.w { a: -x-foo(1px); b: _bar(2px); }');
+  assert.deepEqual(called.warnings, [
+    'src/widget.uxdsl:1:6 UXD_MODULE_ISOLATION: @function -x-foo (src/_h.uxdsl:1) is not visible here, so Dart Sass leaves -x-foo() in the CSS as written; -x-foo is private to its file, as its name starts with -: rename it without the leading -, then @use that file as * here, or call it through its namespace (h.x-foo())',
+    'src/widget.uxdsl:1:22 UXD_MODULE_ISOLATION: @function _bar (src/_h.uxdsl:2) is not visible here, so Dart Sass leaves _bar() in the CSS as written; _bar is private to its file, as its name starts with _: rename it without the leading _, then @use that file as * here, or call it through its namespace (h.bar())',
+  ]);
+  // The @use … as * alone shows no private member: the same warnings.
+  const star = await isolated(t, { ...helpers, 'src/widget.uxdsl': "@use './h' as *;\n.w { a: -x-foo(1px); b: _bar(2px); }\n" }, useEntry(['h', 'widget']));
+  assert.equal(star.css, '.w { a: -x-foo(1px); b: _bar(2px); }');
+  assert.deepEqual(star.warnings.map((w) => w.split(' ')[0]), ['src/widget.uxdsl:2:6', 'src/widget.uxdsl:2:22']);
+  // Renamed, then through @use … as * or the namespace: nothing.
+  const renamed = { 'src/_h.uxdsl': '@function x-foo($x) { @return $x; }\n@function bar($x) { @return $x; }\n' };
+  for (const widget of ["@use './h' as *;\n.w { a: x-foo(1px); b: bar(2px); }\n", "@use './h';\n.w { a: h.x-foo(1px); b: h.bar(2px); }\n"]) {
+    const fixed = await isolated(t, { ...renamed, 'src/widget.uxdsl': widget }, useEntry(['h', 'widget']));
+    assert.equal(fixed.css, '.w { a: 1px; b: 2px; }');
+    assert.deepEqual(fixed.warnings, []);
+  }
+
+  const settings = { 'src/_a-config.uxdsl': '$_tone: red;\n', 'src/b-button.uxdsl': '$_tone: blue !default;\n.btn { color: $_tone; }\n' };
+  const defaulted = await isolated(t, settings, useEntry(B5.default.names));
+  assert.equal(defaulted.css, '.btn { color: blue; }');
+  assert.deepEqual(defaulted.warnings, ['src/b-button.uxdsl:1:1 UXD_MODULE_ISOLATION: $_tone: … !default applies its default here, because the $_tone that src/_a-config.uxdsl:1 sets is not visible in this module; $_tone is private to its file, as its name starts with _: rename it without the leading _, then @use that file as * here, or configure this module with @use … with ($tone: …)']);
+  const publicTone = await isolated(t, { 'src/_a-config.uxdsl': '$tone: red;\n', 'src/b-button.uxdsl': "@use './a-config' as *;\n$tone: blue !default;\n.btn { color: $tone; }\n" }, useEntry(B5.default.names));
+  assert.equal(publicTone.css, '.btn { color: red; }');
+  assert.deepEqual(publicTone.warnings, []);
+});
+
+test('MIG-B9-17: a compile that fails after the Sass stage carries its UXD_MODULE_ISOLATION warnings on the error, and a Sass failure carries none', async (t) => {
+  const located = (error) => error.warnings.map((w) => `${path.relative(error.dir, w.file)}:${w.line}:${w.column} ${w.text.split(`${error.dir}${path.sep}`).join('')}`);
+  const fails = async (widget) => {
+    const dir = project(t, { ...B5.function.files, 'src/widget.uxdsl': widget, 'src/uxdsl-entry.uxdsl': useEntry(B5.function.names) });
+    const error = await failure(core.compile({ entry: path.join(dir, 'src', 'uxdsl-entry.uxdsl') }, OPTIONS));
+    assert.ok(error, `${widget} fails`);
+    error.dir = dir;
+    return error;
+  };
+  const plugin = await fails('.w { width: double(4px); }\n.z { padding: space(999); }\n');
+  assert.match(plugin.reason, /^UXD_SPACE_REFERENCE: /);
+  assert.deepEqual(located(plugin), [C4_WIDGET]);
+  const sassFailure = await fails('.w { width: double(4px); }\n.z { padding: $nope; }\n');
+  assert.equal(sassFailure.code, 'UXD_SASS');
+  assert.deepEqual(sassFailure.warnings, []);
 });

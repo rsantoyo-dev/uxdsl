@@ -155,7 +155,8 @@ declaration's value names the function meant, as it does through the PostCSS plu
 includes. Where a file loaded with `@use` does not see another file's
 `@function`, the call Dart Sass leaves in the CSS as written warns
 `UXD_MODULE_ISOLATION` at the call; `@use` that file `as *` there, or call the
-function through its namespace. So does, at its definition, a function named
+function through its namespace (a private one, whose name starts with `-` or
+`_`, renamed first). So does, at its definition, a function named
 like a UXDSL function that no call of the build reaches, while a file that
 does not see it calls its bare name and gets the token, and, at the
 declaration, a module's `!default` that applies although an earlier file of

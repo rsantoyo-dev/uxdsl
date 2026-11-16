@@ -13,9 +13,9 @@
 //    project renamed to `.uxdsl` compiles to Dart Sass's CSS. A Sass failure is
 //    `UXD_SASS`, a Sass warning `UXD_SASS_WARNING`, a project `@function`
 //    that replaces a UXDSL function `UXD_FUNCTION_SHADOWED`, and a member
-//    `@use`'s module isolation hides without an error
-//    `UXD_MODULE_ISOLATION`. The stage always produces a source map, which
-//    locates everything after it.
+//    another file defines that a module loaded with `@use` cannot see,
+//    compiling without an error, `UXD_MODULE_ISOLATION`. The stage always
+//    produces a source map, which locates everything after it.
 // 3. restore (./sass/protect.ts): `@ds-x (…)`, as Dart Sass writes an unknown
 //    at-rule, becomes `@ds-x(…)` again.
 // 4. The UXDSL plugin (./plugin.ts) runs on Dart Sass's output, parsed by

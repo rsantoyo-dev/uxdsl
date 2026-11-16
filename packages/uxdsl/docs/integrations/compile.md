@@ -555,13 +555,17 @@ outside a string and a `url()`, is read as a `//` comment:
   that Dart Sass leaves in the CSS as written, at the call's declaration
   (where `compile()` locates any other diagnostic in it; a call Sass leaves
   as written even when the function is visible — in a custom property, an
-  at-rule's prelude, `url()` — is never read); a project `@function` named
+  at-rule's prelude, `expression()` — is never read, while an unquoted
+  `url()` whose argument holds a call is one Sass evaluates and is read; for
+  a private function, whose name starts with `-` or `_`, the fix renames it
+  first); a project `@function` named
   like a UXDSL function that no call of the build reaches while a bare call
   in a file that does not see it keeps the token, at the definition; and a
   module's top-level `!default` that applies although a file evaluated
   earlier, which emits no CSS of its own, sets the variable, at the
   declaration (a module configured with `@use … with (…)` or
-  `@forward … with (…)` never warns). They follow `UXD_FUNCTION_SHADOWED`,
+  `@forward … with (…)` never warns, unless its value is `null`, which
+  configures nothing). They follow `UXD_FUNCTION_SHADOWED`,
   by load order, line and column, and only a Sass stage that succeeds
   reports them. A build with a `!default` candidate runs Dart Sass once
   more; any other build compiles as often as without them.

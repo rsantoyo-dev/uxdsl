@@ -218,10 +218,11 @@ warning: a call to another file's `@function` stays in the CSS as written
 variable that another file declares `!default` no longer applies (warned at
 the `!default` declaration when the earlier file emits no CSS of its own, as
 a settings file does; a module configured with `@use … with (…)` never
-warns); and a project `@function` named like a UXDSL function (`space()`)
-replaces the token only in a file that `@use`s its file `as *` (or
-`@import`s it), and in a call through the namespace (`helpers.space(2)`)
-(warned at the definition when no call of the build reaches the function).
+warns, unless the value is `null`); and a project `@function` named like a
+UXDSL function (`space()`), warned at its definition when no call of the
+build reaches it, replaces the token only in a file that `@use`s its file
+`as *` (or `@import`s it), and in a call through the namespace
+(`helpers.space(2)`).
 The CSS is Dart Sass's either way. Give each file its own `@use` for what it
 reads:
 
