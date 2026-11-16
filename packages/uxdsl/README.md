@@ -458,6 +458,17 @@ same property, the cascade between a block and `lg()` is CSS's: through
 `compile()` the one written later wins; with the plugin alone `lg()`'s
 `@media` follows the rule, so it wins over a nested block.
 
+A directive styles a whole rule, so a role from a breakpoint up is the rule
+inside the block, which works on both paths; in a `.uxdsl` file compiled by
+`compile()` the block may also be nested in the rule. With `uxdsl/postcss`
+alone, a directive in a block nested in its rule is `UXD_DIRECTIVE_CONTEXT`,
+whose message shows the form to write.
+
+```css
+@media (--md) { .card { @ds-surface(contained); } }
+.panel { @media (--md) { @ds-surface(contained); } }  /* UXD_DIRECTIVE_CONTEXT: with uxdsl/postcss alone, put the rule inside the block */
+```
+
 <p align="center">
   <a href="https://uxdsl.vercel.app/docs/home">
     <strong>Explore the Full Docs &rarr;</strong>

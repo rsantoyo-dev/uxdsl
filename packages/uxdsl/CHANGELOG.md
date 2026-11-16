@@ -83,6 +83,14 @@ them. See `docs/releases/0.5.0-beta.9.md`.
   `uxdsl/postcss` alone each file is compiled on its own: a custom media
   defined in another file is unknown there. The function form's message is
   unchanged.
+- **`UXD_DIRECTIVE_CONTEXT`'s message, meaning and fix.** The message said
+  directives "are not responsive"; it now names the directive, says it must
+  be a direct child of the rule it styles, and shows the form that applies
+  a role from a breakpoint up on both paths,
+  `@media (--md) { .card { @ds-surface(…); } }` (in a `.uxdsl` file compiled
+  by `compile()` the block may also be nested in the rule), next to a
+  responsive value for one property. The code and when it is raised are
+  unchanged.
 
 ### The plugin's fixed per-build costs (MIG-B9-24)
 

@@ -156,10 +156,10 @@ test('MIG-B9-30: Sass\'s merge of nested breakpoint media queries is pinned', as
 
 // --- T5 -----------------------------------------------------------------------
 
-test('MIG-B9-30: with uxdsl/postcss alone a directive inside a nested @media (--lg) is UXD_DIRECTIVE_CONTEXT, located', async () => {
+test('MIG-B9-30: with uxdsl/postcss alone a directive inside a nested @media (--lg) is UXD_DIRECTIVE_CONTEXT, located, and the message names the rule-inside form', async () => {
   const error = await failure(viaPlugin('.nav {\n  color: red;\n  @media (--lg) {\n    @ds-surface(flat);\n  }\n}'));
   assert.ok(error, 'the plugin alone rejects it');
-  assert.match(error.reason, /^UXD_DIRECTIVE_CONTEXT: /);
+  assert.equal(error.reason, 'UXD_DIRECTIVE_CONTEXT: @ds-surface must be a direct child of the rule it styles. To apply a role from a breakpoint up, put the rule inside the block, @media (--md) { .card { @ds-surface(…); } }, which works on both paths (in a .uxdsl file compiled by compile() the block may also be nested in the rule); to change one property, use a responsive value, padding: xs(…) md(…).');
   assert.deepEqual([error.file, error.line, error.column], [CSS_FROM, 4, 5]);
 
   // Negative control: the rule inside the block compiles on both paths.

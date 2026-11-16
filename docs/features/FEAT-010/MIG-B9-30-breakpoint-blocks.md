@@ -764,3 +764,38 @@ new test run against the built package of the previous commit (BASE
   `compile()` giving valid nested media and the literal nested form its
   BASE bytes. `npm test` exit 0 (5:14); corpus 276,926 bytes,
   `byte-identical: true`, 21 warnings (15:21, load 9.08); parity PASS.
+- **`UXD_DIRECTIVE_CONTEXT` reworded** (T5's message; the capture). Red on
+  the previous commit: T5 got `Directives apply to a whole rule and are not
+  responsive; …`. Green with the message of §7, the catalog's meaning and
+  fix of decision Q15; `node packages/playground-nextjs/scripts/capture-capabilities.js`
+  rewrote one line of `src/generated/compiler-captures.json` (the case's
+  stderr; its source is unchanged), and `--check` then exits 0. `npm test`
+  exit 0 (5:14).
+
+**Measurements of the engine half (2026-11-16).** BASE is a build of
+`6b8e3a9`'s `packages/uxdsl` in the run's scratch directory (`git archive`,
+the worktree's `node_modules`, `tsc`).
+
+- `node fixtures/sass-corpus/run.js --no-timing-budget`, alternating BASE
+  and the branch (`--uxdsl`), twice each: BASE 1.30x (15:30:05, load 6.46)
+  and 1.31x (15:30:18, load 7.58); branch 1.32x (15:30:13, load 6.58) and
+  1.32x (15:30:24, load 7.53). Every run 276,926 bytes,
+  `byte-identical: true`, 21 warnings.
+- `uxdsl/postcss` alone on Bootstrap 5.3.8's compiled CSS (280,308 bytes,
+  no `--` in any `@media` prelude), 15 warm runs each, alternated: BASE
+  45.19 ms and 44.90 ms, branch 44.66 ms and 44.71 ms (medians; 15:30:41,
+  load 7.08); outputs identical. The traversal `validateOptions` already
+  made collects the at-rules, so no walk was added.
+- `node fixtures/mig-b9-23-compile-budget/run.js --base <BASE build>`,
+  last and alone (15:30:51, load 6.75): exit 0, "All checks ok"; the
+  corpus equals BASE's css, map, dependencies and warnings in the three
+  `sourceMap` modes (276,926 bytes, 87 dependencies, 21 warnings), and the
+  large-directory check moved -1.2 ms.
+- `fixtures/parity/run.js` PASS (10 cases) without `--update` at every
+  commit; `$TMPDIR` empty after every run.
+
+**Left for the second implementer and the closure.** T18 to T23
+(completions, grammar, capability matrix, S-8, the playground walk), the
+playground and documentation changes of decisions Q16, Q17/Q19 and the
+chain caveat in AGENTS.md (whose test, T9, is in place), and the CHANGELOG
+subsection's last lines (no package visual change).

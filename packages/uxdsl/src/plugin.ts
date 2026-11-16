@@ -39,7 +39,8 @@
 // handed through the Sass check (`holdSassSyntax`), `rewriteBreakpointMedia`,
 // `emitTheme`, `expandDirectives`, `expandResponsive`,
 // `rejectLeftoverDirectives`, `checkReferences` and `reportThemeEmission`, in
-// that order, all in the plugin's `Once`. A Sass construct none of the steps read or changed is held,
+// that order, all in the plugin's `Once`. A Sass construct none of the steps
+// read or changed, or an unknown `(--name)` in an @media prelude, is held,
 // with what the steps report, in a map `prepare()` creates for each PostCSS
 // run, and checked again in `OnceExit` (`releaseSassSyntax`). The theme's
 // engines run once per compilation, inside `validateTheme`: the Compilation
@@ -1246,8 +1247,9 @@ function expandResponsive(c: Compilation) {
  * Every reserved-namespace at-rule (`ds` or `ds-*`) still in the tree is
  * either misspelled (UXD_DIRECTIVE_UNKNOWN) or a real directive used where it
  * cannot apply — the document root, or under @media/@supports
- * (UXD_DIRECTIVE_CONTEXT: directives style a whole rule and are not
- * responsive). A browser would otherwise silently discard it.
+ * (UXD_DIRECTIVE_CONTEXT: a directive styles a whole rule, so a role from a
+ * breakpoint up is the rule inside `@media (--bp)`). A browser would
+ * otherwise silently discard it.
  */
 function rejectLeftoverDirectives(c: Compilation) {
   c.root.walkAtRules((at) => {
@@ -1255,7 +1257,7 @@ function rejectLeftoverDirectives(c: Compilation) {
     if (name !== 'ds' && !name.startsWith('ds-')) return;
     if (DIRECTIVE_NAMES.includes(name)) {
       throw locateError(diagnostic(
-        'UXD_DIRECTIVE_CONTEXT: Directives apply to a whole rule and are not responsive; use responsive values on the properties instead, e.g. padding: xs(…) md(…).'
+        `UXD_DIRECTIVE_CONTEXT: @${at.name} must be a direct child of the rule it styles. To apply a role from a breakpoint up, put the rule inside the block, @media (--md) { .card { @${at.name}(…); } }, which works on both paths (in a .uxdsl file compiled by compile() the block may also be nested in the rule); to change one property, use a responsive value, padding: xs(…) md(…).`
       ), at);
     }
     const suggestion = closestKey(name, DIRECTIVE_NAMES);
