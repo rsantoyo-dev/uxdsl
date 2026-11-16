@@ -11,7 +11,7 @@ export function SurfaceRules() {
       <ul>
         <li>A surface role composes six fields — {fields.map((field, i) => <span key={field}>{i ? ', ' : ''}<code>{field}</code></span>)} — from the other families. The base roles are {roles.map((role, i) => <span key={role}>{i ? ', ' : ''}<code>{role}</code></span>)}; a project adds its own in <code>surfaces</code>, inheriting <code>contained</code>’s fields.</li>
         <li><code>@ds-surface(role [tone] [size] [radius(k)] [shadow(k)])</code>: a tone (a Palette family with <code>main</code>, <code>dark</code>, <code>contrast</code>) swaps the colors; a size <code>n</code> picks <code>density(n)</code> and <code>radius(n)</code>; <code>radius()</code> and <code>shadow()</code> override one field.</li>
-        <li>The directive is a direct child of the rule it styles (<code>UXD_DIRECTIVE_CONTEXT</code> otherwise) and is not itself responsive: put a responsive value on a property, or in the role’s field in the theme.</li>
+        <li>The directive is a direct child of the rule it styles (<code>UXD_DIRECTIVE_CONTEXT</code> otherwise) and applies to the whole rule: to take a role from a breakpoint up, put the rule inside <code>@media (--md)</code>; to change one property, put a responsive value on it, or in the role’s field in the theme.</li>
         <li>A declaration after the directive wins; that is the way to make one component an exception. Changing a field of a role changes every component that names it.</li>
         <li><code>surface</code>, <code>light</code> and <code>dark</code> are canvas colors: use them as a tone only on <code>contained</code> (see <Link href="/docs/accessibility">Accessibility</Link>).</li>
       </ul>

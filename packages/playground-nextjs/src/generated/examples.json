@@ -59,6 +59,25 @@
       },
       "bytes": 150
     },
+    "breakpoint-blocks": {
+      "id": "breakpoint-blocks",
+      "themePath": "uxdsl.theme.json",
+      "theme": "{\n  \"breakpoints\": {\n    \"md\": 800\n  }\n}",
+      "sourcePath": "example.uxdsl",
+      "source": ".nav {\n  display: none;\n  @media (--md) {\n    display: block;\n    @ds-surface(flat);\n  }\n}\n@media print and (--md) {\n  .nav { display: none; }\n}",
+      "output": ":root { --uxdsl__surface__flat-padding: var(--uxdsl__density__2); }\n.nav { display: none; }\n@media (min-width: 800px) {\n  .nav {\n    display: block;\n    padding: var(--uxdsl__surface__flat-padding);\n    border-radius: var(--uxdsl__surface__flat-radius);\n    background: var(--uxdsl__surface__flat-bg);\n    color: var(--uxdsl__surface__flat-color);\n    border: var(--uxdsl__surface__flat-border);\n    box-shadow: var(--uxdsl__surface__flat-shadow);\n  }\n}\n@media print and (min-width: 800px) { .nav { display: none; } }",
+      "tokens": [
+        "--uxdsl__surface__flat-padding"
+      ],
+      "breakpoints": {
+        "xs": 0,
+        "sm": 480,
+        "md": 800,
+        "lg": 1024,
+        "xl": 1280
+      },
+      "bytes": 460
+    },
     "spacing": {
       "id": "spacing",
       "themePath": "uxdsl.theme.json",
