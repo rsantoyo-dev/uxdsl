@@ -8,9 +8,9 @@ import { compileButtonRules } from '../buttons';
 import { compileSurfaceRules } from '../surfaces';
 import { compileShadowRules } from '../shadows';
 import { compileEdgeRules } from '../edges';
-import { compileTypographyRules, generateTypographyCss } from '../typography';
-import { generateFoundationCss } from '../foundations';
-import { renderTheme } from './theme-generator';
+import { compileTypographyRules, typographyBlocks } from '../typography';
+import { foundationBlocks } from '../foundations';
+import { renderTheme, THEME_ENGINE_OUTPUTS, ThemeEngineOutputs } from './theme-generator';
 import { resolveTheme } from '../default-theme';
 import { diagnosticCode, themeError } from '../diagnostics';
 import { enforceDeclarationReferences, ReferenceIntegrityError, ReferenceOptions } from '../reference-core';
@@ -341,7 +341,9 @@ export function validateTheme<TTheme extends Record<string, any>>(
 
   // --- 3. engines ---------------------------------------------------------------
   // Only once the map is valid: every engine would otherwise repeat the same
-  // breakpoint complaint under its own family.
+  // breakpoint complaint under its own family. Each engine's output is kept:
+  // a caller that passes THEME_ENGINE_OUTPUTS receives them for a valid theme.
+  const outputs = { typography: [] } as unknown as ThemeEngineOutputs;
   if (breakpointsValid) {
     const engine = (family: string, run: () => void) => {
       try { run(); }
@@ -349,15 +351,15 @@ export function validateTheme<TTheme extends Record<string, any>>(
         errors.push({ code: diagnosticCode(cause), path: (cause as any)?.keyPath || family, message: cause instanceof Error ? cause.message : String(cause) });
       }
     };
-    engine('theme', () => { generateFoundationCss(theme); });
-    engine('fonts', () => { generateTypographyCss({ ...theme, typography_details: undefined }, bps); });
-    if (theme.typography_details) engine('typography_details', () => { compileTypographyRules(theme.typography_details, bps, theme); });
-    engine('densities', () => { compileDensityRules(getDensityTokens(theme), bps, (value) => tokenValueToCss(value, theme)); });
-    engine('inputs', () => { compileInputRules(theme, bps); });
-    engine('buttons', () => { compileButtonRules(theme, bps); });
-    engine('surfaces', () => { compileSurfaceRules(theme, bps); });
-    engine('shadows', () => { compileShadowRules(theme, bps); });
-    engine('borders/radii', () => { compileEdgeRules(theme, bps); });
+    engine('theme', () => { outputs.foundation = foundationBlocks(theme); });
+    engine('fonts', () => { outputs.fonts = typographyBlocks({ ...theme, typography_details: undefined }, bps); });
+    if (theme.typography_details) engine('typography_details', () => { outputs.typography = compileTypographyRules(theme.typography_details, bps, theme); });
+    engine('densities', () => { outputs.densities = compileDensityRules(getDensityTokens(theme), bps, (value) => tokenValueToCss(value, theme)); });
+    engine('inputs', () => { outputs.inputs = compileInputRules(theme, bps); });
+    engine('buttons', () => { outputs.buttons = compileButtonRules(theme, bps); });
+    engine('surfaces', () => { outputs.surfaces = compileSurfaceRules(theme, bps); });
+    engine('shadows', () => { outputs.shadows = compileShadowRules(theme, bps); });
+    engine('borders/radii', () => { outputs.edges = compileEdgeRules(theme, bps); });
   }
 
   if (!errors.length && opts.references !== false) {
@@ -374,6 +376,9 @@ export function validateTheme<TTheme extends Record<string, any>>(
       } else errors.push({ code: diagnosticCode(cause), path: (cause as any)?.keyPath || 'theme', message: cause instanceof Error ? cause.message : String(cause) });
     }
   }
+
+  const receive = (opts as { [THEME_ENGINE_OUTPUTS]?: unknown })[THEME_ENGINE_OUTPUTS];
+  if (!errors.length && typeof receive === 'function') receive(outputs);
 
   return { ok: errors.length === 0, theme: theme as TTheme, errors, warnings };
 }

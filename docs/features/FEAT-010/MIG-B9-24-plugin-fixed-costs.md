@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 2 |
 | Decision gate | None (registered by decision D3 of 2026-11-04, as proposed in MIG-B9-23 §15). Four questions for the owner are open in §15 and are answered before implementing; the contract states what it assumes until then |
-| Status | Ready |
+| Status | In review (PR #102) |
 | Size | S |
 | Depends on | MIG-B9-20, MIG-B9-21 |
 | Blocks | — (under §7, MIG-B9-30 to 35 and MIG-B9-37 wait for it) |
@@ -174,7 +174,11 @@ grep -q "implementation.enforceReferences = (root, consumers, options) => {" pac
 test -f fixtures/mig-b9-23-compile-budget/run.js                                                            # the base comparison of §9's AC7
 ```
 
-All nine exit 0 on `f855765`, run while drafting on 2026-11-10.
+All nine exit 0 on `f855765`, run while drafting on 2026-11-10, and on BASE
+`dec40b1` on 2026-11-16, where both dependency-gate lines also exit 0
+(MIG-B9-20 and MIG-B9-21 merged). On `dec40b1` the cited lines are
+plugin.ts:134, 590, 871, 947, 988 and 991, theme-validate.ts:352-360 and
+theme-generator.ts:25-32.
 
 The dependency gate. Both lines exit 1 on `f855765`, by design, and exit 0
 once MIG-B9-20 and MIG-B9-21 are merged:
@@ -247,7 +251,9 @@ name.
 
 Recorded on `f855765` on 2026-11-10 at 09:10:11, 09:10:12 and 09:21:12 EST
 (three runs, the last one of the block above as extracted from this file;
-the same output, exit 0 each, `$TMPDIR` left empty):
+the same output, exit 0 each, `$TMPDIR` left empty), and re-run on BASE
+`dec40b1` on 2026-11-16 at 12:35:48 EST (load 7.94; two runs, exit 0 each,
+`$TMPDIR` left empty) with the same five lines:
 
 ```text
 a token, no marker: bytes 46, validateTheme 1, theme renders 1, engine runs 12, reference inspections 1, value parses 23001
@@ -429,7 +435,7 @@ story starts (§4); those below are `f855765`'s:
 
 - the corpus through `compile()`: 276,926 bytes, equal to Dart Sass's, in
   the three `sourceMap` modes, with BASE's external map, `dependencies` and
-  warnings (21 on `f855765`), by `fixtures/mig-b9-23-compile-budget/run.js`'s
+  warnings (21 on `f855765` and on `dec40b1`), by `fixtures/mig-b9-23-compile-budget/run.js`'s
   T4 against a build of BASE;
 - every parity oracle (`fixtures/parity/expected/**`), without `--update`;
 - the playground's `src/app/uxdsl.css`, `src/generated/examples.json`, and
@@ -441,7 +447,7 @@ story starts (§4); those below are `f855765`'s:
   results;
 - every existing test's assertion: `packages/uxdsl/test` differs from BASE
   only by the new test file;
-- `DIAGNOSTIC_CATALOG`: BASE's codes (106 on `f855765`), none added;
+- `DIAGNOSTIC_CATALOG`: BASE's codes (106 on `f855765`, 107 on `dec40b1`), none added;
 - the gate's verdicts.
 
 ## 6. Out of scope
@@ -501,7 +507,7 @@ Non-normative.
      surfaces, buttons, inputs, densities) fixes the CSS.
    - `validateTheme` validates a deep copy (`cloneThemeValue`), and the
      plugin renders `c.theme`. Both have the same content.
-   - AGENTS.md (lines 782 to 786) says that the plugin calls `validateTheme`
+   - AGENTS.md (lines 801 to 802 on `dec40b1`; 782 to 786 on `f855765`) says that the plugin calls `validateTheme`
      "on the effective theme before any engine runs". Keep that true. If the
      wording becomes inexact, update it and regenerate the agent guide;
      AGENTS.md then joins Shares (§10).
@@ -519,12 +525,12 @@ Traps:
 
 - **`test/performance/reference-performance.test.js`** captures
   `enforceReferences`'s arguments from a compilation with
-  `references: { mode: 'off' }` that emits the theme (lines 57 and 62). Its
+  `references: { mode: 'off' }` that emits the theme (lines 58 and 63 on
+  `dec40b1`; its `source()` writes `@uxdsl theme;`, as MIG-B9-20 rewrote it). Its
   consumers are the theme's declarations, so C2 never applies there. An
   implementation that also stops calling `enforceReferences` for
   `mode: 'off'` breaks its capture (`the compilation never reached reference
-  validation`). MIG-B9-20 rewrites that test's `includeTheme: true` before
-  this story starts.
+  validation`).
 - **`test/core/sass-source-maps.test.js:316` to `326`** pins the
   unparsable-theme `CssSyntaxError` at `<css input>`, with PostCSS's own
   position. Under Q4 (a) it stays as it is.
@@ -637,7 +643,7 @@ Owner checks, never marked PASS by the agent:
 | package README | yes (the guard): one sentence |
 | `verify-docs-update.js` classification | no (no file added under `src`; yes if the implementation adds one) |
 | `npm run generate:language` | no |
-| `AGENTS.md` + agent guide | no, unless the sentence at lines 782 to 786 becomes inexact (§7, item 1); then yes, and AGENTS.md joins Shares |
+| `AGENTS.md` + agent guide | no, unless the sentence at lines 801 to 802 on `dec40b1` (782 to 786 on `f855765`) becomes inexact (§7, item 1); then yes, and AGENTS.md joins Shares |
 | `DIAGNOSTIC_CATALOG` | no |
 | `npm run generate:capabilities` | no |
 | playground `uxdsl:build` + captures | run, with no change expected (`unchanged src/app/uxdsl.css`; `npm test` checks the captures) |
@@ -693,7 +699,134 @@ body:
 
 ## 14. Closure record
 
-To be filled in the delivering PR.
+- **PR:** #102, `feat/b9-24-plugin-fixed-costs` → `feat/beta9`. BASE `dec40b1`
+  (the merge of PR #100); `origin/feat/beta9` had not moved when the PR
+  was opened. Machine: macOS, Node v20.19.0, npm 11.21.1, Chrome at the
+  default path. MIG-B9-28's workflow ran on the same machine throughout,
+  so each load average below is recorded with its figure.
+- **Commits:** `b6b9a17` (§3, §4, §5, §7 and §10's stale lines, recorded in
+  §15), `bb11d5f` (C1 to C3, the test, the CHANGELOG and the README),
+  `79c8196` (the review's R1 and R3), and the closure commit that adds this
+  record.
+- **Criterion to test:**
+  - C1 → T1, "MIG-B9-24: each theme engine runs once per compilation …",
+    plus the verdict test "MIG-B9-24: the plugin's verdict and CSS are
+    validateTheme's and renderThemeCss's". Negative control: "validateTheme
+    then renderThemeCss … count two runs".
+  - C2 → T2, "MIG-B9-24: the reference pass inspects no declaration when it
+    can report nothing …". Negative control: "one token, one references.css
+    entry or one externalTokens entry brings the inspection back …", which
+    since `79c8196` also pins BASE's error for an unparsable theme beside an
+    `externalTokens` value that is not a list.
+  - C3 → T3, "MIG-B9-24: a declaration whose value has no "(" is parsed by
+    neither walk …". Negative control: "100 declarations whose values hold
+    a "(" add value parses".
+  - C4 → AC2 to AC7, below.
+  - C5 → T4, "MIG-B9-24: nothing outlives one compilation …", with its
+    planted wrapper.
+- **Failing first** (on BASE's build, `scout/base-uxdsl`, 2026-11-16
+  13:00:29 EST, load 5.85): pass 5, fail 3, skipped 0. T1 counted each
+  engine at 2, not 1. T2 counted 1 inspection, not 0. T3 counted 400 parses,
+  not 0. T4, the verdict test and the controls passed. R3's assertions
+  failed on `bb11d5f` (`TypeError`, not `CssSyntaxError`) and pass on
+  `79c8196`.
+- **AC1:** `node --test packages/uxdsl/test/plugin-work-per-compilation.test.js`
+  on `79c8196` (13:25:15 EST, load 8.21): exit 0, pass 8, fail 0, skipped
+  0. The AC1 mutations were applied by hand to copies of the built
+  `plugin.js`, by the implementer and again by the reviewer. Each one fails
+  the test:
+  - `renderThemeCss` called again: T1 counts 2.
+  - The inspection run anyway: T2 counts 1.
+  - The `(` guard removed from the first walk: T3 counts 300; from the
+    second: 100; from both: 400.
+  - A render kept at module level fails T4 (and T2). A render kept on the
+    instance's options fails T4.
+
+  The reviewer killed 16 of 17 mutations. The survivor, outputs handed to
+  the sink on an invalid theme too, is equivalent: the plugin throws before
+  it reads them.
+- **AC2:** `node fixtures/parity/run.js` reports
+  `PASS: 10 parity case(s)`, and
+  `git diff --exit-code dec40b1 -- fixtures/parity/expected` exits 0 (13:25).
+- **AC3:** `npm test` on `79c8196`, `TMPDIR` an empty directory, ran
+  13:25:09–13:30:32 EST at load 6.40 → 5.80. Exit 0: 1682 tests, 1681 pass,
+  0 fail, 1 skipped (MIG-B9-11's corpus test, which needs
+  `UXDSL_SASS_CORPUS`, as on BASE). 16 lines of the log name `MIG-B9-24:`,
+  and `TMPDIR` has 0 entries left. `git diff --exit-code dec40b1 --
+  packages/uxdsl/test ':(exclude)packages/uxdsl/test/plugin-work-per-compilation.test.js'`
+  exits 0.
+- **AC4:** `npm run verify:1.0 -- --skip-playground-walk`, 13:30:45–13:32:47
+  EST, load 5.02 → 8.67. Exit 0: "72/72 automated checks passed. PASS: the
+  1.0 gate (automated portion) for uxdsl@0.5.0-beta.9." It left five
+  directories in `TMPDIR` (Delivery block, fact 4), which were removed.
+- **`npm run verify:playground-browser`** (real Chrome), 13:32:53–13:36:57
+  EST, load 8.14 → 5.37. Exit 0: "PASS: no console errors, no UXDSL
+  warnings, no unresolved var(), visible keyboard focus, contrast page =
+  Node." 380 pages were loaded and 2234 focusable elements checked.
+- **AC5:** `npm --prefix packages/playground-nextjs run uxdsl:build` exits 0
+  and prints `[uxdsl] unchanged src/app/uxdsl.css (compiled output
+  identical to the file on disk; not rewritten)`. `git status` stays clean.
+- **AC6:** `node fixtures/sass-corpus/run.js --no-timing-budget` started
+  Mon Nov 16 13:37:10 EST 2026, load 4.78 6.31 6.26. Exit 0: 276926 bytes,
+  `byte-identical: true`, 21 warnings, the five checks ok. Dart Sass median
+  329 ms, `compile()` median 428 ms, ratio 1.30x. The implementer's run on
+  `bb11d5f` (13:11:08, load 6.00) gave 1.31x; BASE gave 1.39x (12:43:21,
+  load 6.51).
+- **AC7:** `node fixtures/mig-b9-23-compile-budget/run.js --base
+  scout/base-uxdsl` (BASE_SHA `dec40b1f141d7d72b82694c4f0d7a9acf23cc011`)
+  ran last and alone, 13:38:49–13:41:24 EST, load 7.93 → 9.61. Exit 0,
+  "All checks ok.", 15 ok and 0 not ok. In each of the three `sourceMap`
+  modes, T4 is equal to BASE: 276926 bytes in `false` and `external`,
+  791918 in `inline`, with 87 dependencies and 21 warnings. The location
+  check moved +0.1 ms (small 410.1, large 410.2), and its planted control
+  +141.7 ms. The implementer's run on `bb11d5f` (13:11:53–13:14:27) was
+  also all ok. 0 entries left in `TMPDIR`.
+- **`npm run verify:doc-examples`:** "All documentation examples hold."
+  (71 examples, 24 theme excerpts).
+- **`node scripts/generate-agent-guide.js --check`:** exit 0.
+- **§4 on the head** (`79c8196`, 13:25:43 EST, load 13.74; the implementer
+  ran it twice on `bb11d5f` at 13:03:32, load 8.15, and the reviewer once
+  at 13:19:24, load 2.94, with the same lines):
+
+  ```text
+  a token, no marker: bytes 46, validateTheme 1, theme renders 0, engine runs 6, reference inspections 1, value parses 11513
+  no token, no marker: bytes 25, validateTheme 1, theme renders 0, engine runs 6, reference inspections 0, value parses 11506
+  a token, the marker: bytes 47275, validateTheme 1, theme renders 0, engine runs 6, reference inspections 1, value parses 11758
+  value parses for 100 more declarations with no "(": 0
+  an unclosed comment in a theme value, no token, no marker: CssSyntaxError: uxdsl: <css input>:2:45: Unclosed comment
+  ```
+
+  On BASE these lines read: theme renders 1, engine runs 12, reference
+  inspections 1 on every line, value parses 23001, 22998 and 23246, and
+  400. `theme renders 0` and `validateTheme 1` are owner flag 2's (a).
+- **Timings (Q3: recorded, not asserted).** Method: the scout's runner,
+  BASE's build against the head's, alternated and rotated within each
+  round, warm-up rounds left out. One-rule cases run 61 rounds (+5
+  warm-up); corpus cases run 21 (+3) on the stage output and the corpus
+  root of `fixtures/sass-corpus`, outside `os.tmpdir()`. Each cell gives
+  BASE median → head median in ms, then the difference of medians / the
+  median of per-round differences.
+
+  | Case | Implementer 1, `bb11d5f`, 13:01:18, load 4.67 | Implementer 2, `bb11d5f`, 13:02:00, load 6.38 | Deliverer 1, `79c8196`, 13:37:27, load 4.38 (15.95 at the corpus) | Deliverer 2, `79c8196`, 13:38:05, load 13.95 → 9.19 |
+  | --- | --- | --- | --- | --- |
+  | one-rule `compile()`, a token | 21.21 → 12.19 (9.02 / 8.98) | 21.08 → 12.17 (8.90 / 8.93) | 21.22 → 12.12 (9.11 / 9.09) | 21.23 → 15.33 (5.90 / 5.96) |
+  | one-rule, no token | 21.00 → 11.25 (9.74 / 9.71) | 20.83 → 11.32 (9.52 / 9.53) | 20.82 → 11.12 (9.70 / 9.74) | 21.03 → 14.62 (6.41 / 6.22) |
+  | one-rule, the marker | 26.86 → 17.77 (9.09 / 9.24) | 27.22 → 18.14 (9.07 / 9.04) | 26.81 → 17.61 (9.20 / 9.17) | 26.71 → 17.83 (8.88 / 8.88) |
+  | PostCSS pass alone, one rule | 19.86 → 10.79 (9.07 / 9.16) | 20.16 → 11.08 (9.09 / 9.17) | 19.65 → 10.73 (8.93 / 8.95) | 19.92 → 10.85 (9.06 / 9.14) |
+  | PostCSS pass alone, the corpus | 68.41 → 44.96 (23.45 / 23.66) | 69.52 → 45.35 (24.18 / 23.83) | 80.04 → 51.04 (29.00 / 27.17) | 68.48 → 44.09 (24.39 / 24.05) |
+  | corpus `compile()` | 453.07 → 435.86 (17.21 / 18.78) | 457.75 → 436.31 (21.44 / 22.80) | 456.67 → 435.68 (20.99 / 24.85) | 451.82 → 417.19 (34.62 / 33.20) |
+
+  The deliverer's run 2 started at load 13.95, so its first two head rows
+  (15.33, 14.62) are high. Its other rows, and the reviewer's two runs on
+  `bb11d5f` (41 + 15 rounds; 13:20:14 at load 5.72 and 13:20:40 at load
+  5.01: a token 21.08 → 12.13 and 21.05 → 12.06, PostCSS on the corpus
+  68.5 → 44.5 and 68.2 → 44.2, corpus `compile()` 447 → 423 and 449 →
+  421), agree with the others. R3's change touches only a compilation with
+  no consumer and an `externalTokens` entry, a path none of these rows
+  takes. The scout's prototypes gave the same figures (§15).
+- **Unverified limits:** Windows (MIG-B9-28's story) was not run. The
+  timings are indicative, on a loaded machine; the contract asserts none
+  (Q3).
 
 ## 15. Findings and follow-ups
 
@@ -886,3 +1019,160 @@ Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-10). 
 - **Q3, a timing criterion (decision 28): (a)**, as the contract assumed: none. C1 to C3's deterministic counts are the contract; timings are indicative and go in §14, with MIG-B9-23's runner discipline. No change.
 - **Q4, a theme value PostCSS cannot parse, though `validateTheme` accepts it (decision 29): (a)**, as the contract assumed: every error is kept as on BASE, and C2 skips only the inspection. No change.
 - **New fact 6, `compile()` from standard input (decision 30, from PR #80's notes).** The fact proposed no story. The owner put the fix in MIG-B9-26: when `process.argv[1]` is not a file path, the Sass stage gives `NodePackageImporter` the current working directory as its entry-point directory, with a test run from `node -`. Nothing changes here; §4 runs from a file.
+
+### Stale lines corrected when the story started (2026-11-16)
+
+The scout re-ran §3 and §4 on BASE `dec40b1` (the merge of PR #100). Every
+precondition, both dependency-gate lines and §4's five lines hold; only
+these lines were stale (README §1.4), and were corrected in place:
+
+- §3. Old: "All nine exit 0 on `f855765`, run while drafting on 2026-11-10."
+  New: the same, followed by "and on BASE `dec40b1` on 2026-11-16, where both
+  dependency-gate lines also exit 0 (MIG-B9-20 and MIG-B9-21 merged). On
+  `dec40b1` the cited lines are plugin.ts:134, 590, 871, 947, 988 and 991,
+  theme-validate.ts:352-360 and theme-generator.ts:25-32." Each grep still
+  matches; only the line numbers moved.
+- §4. Old: "Recorded on `f855765` on 2026-11-10 at 09:10:11, 09:10:12 and
+  09:21:12 EST (three runs, …)". New: the same, followed by "and re-run on
+  BASE `dec40b1` on 2026-11-16 at 12:35:48 EST (load 7.94; two runs, exit 0
+  each, `$TMPDIR` left empty) with the same five lines". The lines match,
+  so there is no finding.
+- §5. Old: "`DIAGNOSTIC_CATALOG`: BASE's codes (106 on `f855765`), none
+  added;". New: "(106 on `f855765`, 107 on `dec40b1`)": MIG-B9-17, merged
+  before BASE, added a code.
+- §5. Old: "warnings (21 on `f855765`), by". New: "warnings (21 on
+  `f855765` and on `dec40b1`), by": `fixtures/sass-corpus/run.js
+  --no-timing-budget` on `dec40b1` reports 276,926 bytes,
+  `byte-identical: true`, 21 warnings and the five checks ok.
+- §7 item 1 and §10's AGENTS.md row. Old: "AGENTS.md (lines 782 to 786)"
+  and "the sentence at lines 782 to 786". New: "lines 801 to 802 on
+  `dec40b1`; 782 to 786 on `f855765`": the same sentence ("The PostCSS
+  plugin calls it on the effective theme before any engine runs") moved.
+- §7 Traps. Old: "`references: { mode: 'off' }` that emits the theme (lines
+  57 and 62). […] MIG-B9-20 rewrites that test's `includeTheme: true` before
+  this story starts." New: "(lines 58 and 63 on `dec40b1`; its `source()`
+  writes `@uxdsl theme;`, as MIG-B9-20 rewrote it)", and the sentence in the
+  future tense removed: MIG-B9-20 has merged.
+
+### Scout and owner flags of 2026-11-16, under the standing instruction
+
+The scout raised three flags on BASE `dec40b1`. Each was answered with its
+recommended option under the owner's standing instruction of 2026-11-10
+("fusiona todo.. y preguntas como recomendadas, y sgeuimos"). These are
+owner decisions taken that way, and the owner may override them. None
+rewrites the contract text; flags 1 and 3 record a finding about it.
+
+1. **Where the shared engine pass lives.** §7 item 1 suggests a function in
+   `theme-validate.ts` "not exported from any entry". That cannot be done
+   there: `src/entries/engine.ts` does
+   `export * from '../ds-runtime/theme-validate'`, and `test/entries.test.js`
+   ("MIG-B9-21: uxdsl/engine exports exactly the kept list") pins its 110
+   names.
+   - (a) A module-only Symbol key (`THEME_ENGINE_OUTPUTS`), the
+     `ThemeEngineOutputs` type and the serializer
+     (`renderThemeCssFromOutputs`) live in `theme-generator.ts`, which
+     `uxdsl/engine` re-exports by name only. `validateTheme`'s engine pass
+     hands each engine's output to a function passed under that key when it
+     found no error. The plugin calls the public `validateTheme` with it.
+   - (b) Turn `engine.ts`'s `export *` into the explicit list of 110 names
+     and export an internal function from `theme-validate.ts`. This adds
+     `engine.ts` to Shares and likely AGENTS.md and the agent guide.
+   - (c) Add a public name, which changes an existing assertion (AC3, C4).
+   - **Taken: (a).** Every file stays within Shares. The public `.d.ts` of
+     `validateTheme`, its results and AGENTS.md's sentence ("calls it on the
+     effective theme before any engine runs") are unchanged. The only built
+     `.d.ts` that differs from BASE is `ds-runtime/theme-generator.d.ts`.
+2. **What §4 reads on the head for the columns §12 does not name.**
+   - (a) Record "theme renders 0", "validateTheme 1" and about 11.5k value
+     parses. C1 ties the CSS to `renderThemeCss`'s bytes, not to calls of
+     it, and T1 and the verdict test assert those bytes.
+   - (b) Keep calling `renderThemeCss`, which is impossible without a second
+     engine run.
+   - **Taken: (a).** §14 records the lines.
+3. **C1 per `compile()` or per plugin run.** MIG-B9-26 added
+   `nearMissError` (`compile.ts:290`) after this story was drafted. On a
+   near-miss Sass left in an unincluded mixin, it runs the plugin a second
+   time. There, each engine runs 3 times per `compile()` on BASE and 2 on
+   the head.
+   - (a) Read C1 per plugin run, that is, per Compilation, as its title
+     says. T1 asserts 2 on that path, equal to its plugin runs, and the
+     contract text is not rewritten.
+   - (b) Add `compile.ts` to Shares and carry the render across the two
+     runs through an option.
+   - (c) Blocked.
+   - **Taken: (a).** It is an error path, and its engine work still goes
+     down.
+
+### Delivery of 2026-11-16
+
+PR #102 (`feat/b9-24-plugin-fixed-costs` → `feat/beta9`), opened on
+`79c8196`. `origin/feat/beta9` was still `dec40b1`, so nothing was merged
+in. §14 has the commands and figures.
+
+The review's findings:
+
+- **R1 (docs):** fixed in `79c8196`. The package README's list of what
+  leaves nothing to check also named only tokens; it now names directives
+  too. A stylesheet that only uses `@ds-surface`, `@ds-typo` or
+  `@ds-button` is inspected once, as the code and the CHANGELOG said.
+- **R2 (record):** fixed in the closure commit. The CHANGELOG cites §14,
+  which was still empty and now holds the runs. The flags above and the
+  facts below are recorded.
+- **R3 (nit, C4):** fixed in `79c8196` with a test. The skip built the
+  `externalTokens` Set before it parsed the rendered theme. A theme
+  PostCSS cannot parse, beside an `externalTokens` value that is not a
+  list (outside `ReferenceOptions`' type), therefore threw
+  `TypeError: number 5 is not iterable` where BASE throws the theme's
+  `CssSyntaxError` at `<css input>:2:45`. The skip now parses first. The
+  new assertions fail on `bb11d5f` and pass on `79c8196`, and the
+  reviewer's BASE-against-head differential (doc examples, playground
+  themes, 30 edge cases on three paths) is identical on `79c8196`.
+
+New facts:
+
+1. **The pre-commit hook was not active in the new worktree.**
+   `core.hooksPath` is `.husky/_` (the shared git config), but a fresh
+   worktree has only `.husky/pre-commit`, so `git commit` ran no hook until
+   `npm run prepare` wrote `.husky/_`. Every commit of this story ran the
+   docs guard and the playground build.
+2. **`postcss-value-parser` does not round-trip an unclosed `/*`** (it
+   prints `/**/`). No value PostCSS parses can carry one: the implementer
+   round-tripped 222,157 PostCSS-parsed values with no `(` exactly, and the
+   reviewer found an earlier chain plugin setting such a value identical on
+   BASE and the head. The no-`(` skip therefore changes no output.
+3. **T3's negative control uses `translateX(<n>px)`, not `calc()`** as §8
+   wrote. Through `compile()`, Dart Sass reduces `calc(1px + 2px)` to `3px`
+   before the plugin runs, so the `calc()` control added 0 parses there. A
+   comment in the test says why.
+4. **`npm run verify:1.0 -- --skip-playground-walk` leaves five
+   directories in `TMPDIR`** (`uxdsl-1.0-gate-*`,
+   `uxdsl-1.0-upgrade-before-*`, two `uxdsl-vite-adapter-*`,
+   `uxdsl-webpack-adapter-*`) even when it exits 0. The implementer and the
+   deliverer each saw this and removed them. MIG-B9-27's delivery saw the
+   same.
+5. **The near-miss error in `compile()`** carries
+   `UXD_FUNCTION_UNKNOWN: palete() …` in a `CssSyntaxError`'s message with
+   no `.code`, as on BASE. T1 matches the message. MIG-B9-96 (registered)
+   is about that code.
+6. **The validator's foundation and fonts checks** now call
+   `foundationBlocks` and `typographyBlocks` directly, without the
+   `generateFoundationCss` and `generateTypographyCss` wrappers. Those
+   wrappers only added `serializeBlocks`, which cannot throw. The error
+   order, paths and messages are unchanged (C4).
+7. **README §5 still lists MIG-B9-17 and MIG-B9-27 as "In review"**,
+   although `dec40b1` merged both. This story updates only its own row.
+
+Follow-ups, each with a proposed story id:
+
+1. **MIG-B9-100 (proposed by MIG-B9-27's delivery; the owner gives the
+   id):** the five directories `verify:1.0` leaves in `TMPDIR` (fact 4).
+   This story adds a second sighting and nothing else.
+2. **MIG-B9-102 (proposed; the owner gives the id), optional:**
+   `compile()`'s near-miss path runs the plugin twice (flag 3). The second
+   run could reuse the first run's engine outputs only through a new option
+   or a cache, so the gain is on an error path. Recommendation: do not
+   register it unless the error path's time matters.
+3. **No new id; drafting fact 5 stands:** `applyTheme` and
+   `generateThemeCss` still run the engines more than once per call. The
+   plugin's `THEME_ENGINE_OUTPUTS` hook is the means if the owner wants
+   that later; whether the runtime's cost matters is the owner's call.

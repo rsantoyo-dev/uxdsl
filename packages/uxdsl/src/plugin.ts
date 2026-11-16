@@ -39,15 +39,18 @@
 // `checkReferences` and `reportThemeEmission`, in that order, all in the
 // plugin's `Once`. A Sass construct none of the steps read or changed is held,
 // with what the steps report, in a map `prepare()` creates for each PostCSS
-// run, and checked again in `OnceExit` (`releaseSassSyntax`). Nothing is
-// stored on the PostCSS root or on the plugin instance.
+// run, and checked again in `OnceExit` (`releaseSassSyntax`). The theme's
+// engines run once per compilation, inside `validateTheme`: the Compilation
+// keeps their outputs and serializes the theme stylesheet from them when a
+// step first needs it. Nothing is stored on the PostCSS root or on the plugin
+// instance.
 
 import type { AtRule, ChildNode, Declaration, Node as PostcssNode, Result, Root, Rule } from 'postcss';
 import postcss from 'postcss';
 import valueParser from 'postcss-value-parser';
 import { enforceReferences, ReferenceOptions } from './reference-integrity';
-import { renderThemeCss } from './ds-runtime/theme-generator';
-import { validateTheme, themeValidationError } from './ds-runtime/theme-validate';
+import { renderThemeCssFromOutputs, THEME_ENGINE_OUTPUTS, ThemeEngineOutputs } from './ds-runtime/theme-generator';
+import { validateTheme, themeValidationError, ValidateThemeOptions } from './ds-runtime/theme-validate';
 import { inputComponentCss, parseInputArguments } from './inputs';
 import { buttonComponentCss, parseButtonArguments } from './buttons';
 import { surfaceDeclarations, parseSurfaceArguments } from './surfaces';
@@ -82,6 +85,9 @@ interface Compilation {
   themeEmitted: boolean;
   /** The effective theme: DEFAULT_THEME with the override deep-merged on top, validated. */
   theme: Record<string, any>;
+  /** The theme stylesheet, the bytes `renderThemeCss` returns for `theme`,
+   * serialized on the first call from the outputs of the validator's engines. */
+  themeCss: () => string;
   references: ReferenceOptions;
   bps: Record<string, number>;
   ordered: Array<{ name: string; px: number }>;
@@ -130,9 +136,18 @@ function validateOptions(root: Root, result: Result, opts: UxdslOptions): Compil
   const theme = resolveTheme(opts.theme ?? discovered?.theme);
   // The one validator, on the effective theme, before any engine reads it —
   // the same call `generateThemeCss` and `applyTheme` make. References are
-  // checked once, at the end, on the stylesheet actually emitted.
-  const validated = validateTheme(theme, { references: false });
+  // checked once, at the end, on the stylesheet actually emitted. The
+  // validator's engine run is the compilation's only one: it hands over each
+  // engine's output, and the theme stylesheet is serialized from them.
+  let outputs: ThemeEngineOutputs | undefined;
+  const options = { references: false, [THEME_ENGINE_OUTPUTS]: (kept: ThemeEngineOutputs) => { outputs = kept; } };
+  const validated = validateTheme(theme, options as ValidateThemeOptions);
   if (!validated.ok) throw themeValidationError(validated.errors);
+  let rendered: string | undefined;
+  const themeCss = () => {
+    if (rendered === undefined) rendered = renderThemeCssFromOutputs(theme, outputs!);
+    return rendered;
+  };
   for (const warning of validated.warnings) result.warn(warning.message, { plugin: PLUGIN });
   // A removed option is reported and ignored, never thrown on.
   for (const text of removedOptionWarnings(opts)) result.warn(text, { plugin: PLUGIN });
@@ -148,7 +163,7 @@ function validateOptions(root: Root, result: Result, opts: UxdslOptions): Compil
   const colors = { ...theme.colors, gray: { ...DEFAULT_BORDER_COLORS.gray, ...theme.colors?.gray } };
   const palette = theme.palette || {};
   return {
-    root, result, theme, bps, ordered, originalSources, dslSources,
+    root, result, theme, themeCss, bps, ordered, originalSources, dslSources,
     themeMarker: findThemeMarker(root),
     themeEmitted: false,
     references: (opts.references ?? {}) as ReferenceOptions,
@@ -575,8 +590,8 @@ function inheritSource<T extends { source?: unknown; nodes?: any[] }>(node: T, s
 }
 
 /**
- * Inserts the whole theme — `renderThemeCss`, the exact bytes `generateThemeCss`
- * returns — where `@uxdsl theme;` is written, and nowhere when it is not: its
+ * Inserts the whole theme — the bytes `renderThemeCss` and `generateThemeCss`
+ * return — where `@uxdsl theme;` is written, and nowhere when it is not: its
  * `@import`s right after the author's `@charset` and leading comments, since
  * CSS honors an `@import` only before every other rule and `@charset` only
  * first, and every other block in the marker's place. An author's own
@@ -587,7 +602,7 @@ function emitTheme(c: Compilation) {
   const marker = c.themeMarker;
   if (!marker) return;
   c.themeEmitted = true;
-  const parsed = inheritSource(postcss.parse(renderThemeCss(c.theme, c.bps)), undefined);
+  const parsed = inheritSource(postcss.parse(c.themeCss()), undefined);
   for (const node of parsed.nodes) { c.generated.add(node); (node as any).walk?.((child: ChildNode) => { c.generated.add(child); }); }
   const nodes = [...parsed.nodes];
   const imports = nodes.filter((node) => node.type === 'atrule' && node.name === 'import');
@@ -854,12 +869,18 @@ function assignValue(decl: Declaration, next: string, rewriteRaw?: (raw: string)
   }
 }
 
+/** A value with no `(` holds no function: no token, breakpoint group or
+ * near-miss for the responsive pass to read, so neither of its walks parses it
+ * and its bytes stay as written. */
+const holdsNoFunction = (value: string) => !value.includes('(');
+
 /**
  * Rewrites the token functions of every author declaration and splits a
  * responsive value into its base value plus one `@media (min-width)` clone of
  * the rule per breakpoint whose value differs from the previous one. A clone
  * keeps the author's `!important` and formatting (`raws`). A rule the split
- * emptied is removed: an empty `.a {}` is not what the author wrote.
+ * emptied is removed: an empty `.a {}` is not what the author wrote. A value
+ * with no `(` is left as it is (`holdsNoFunction`).
  */
 function expandResponsive(c: Compilation) {
   const { root, bps, ordered, bpNames } = c;
@@ -868,7 +889,7 @@ function expandResponsive(c: Compilation) {
   const emptied = new Set<Rule>();
   root.walkDecls((decl) => {
     try {
-      if (typeof decl.value !== 'string' || c.generated.has(decl)) return;
+      if (typeof decl.value !== 'string' || c.generated.has(decl) || holdsNoFunction(decl.value)) return;
       checkResponsiveStructure(c, decl);
       const rewritten = rewriteTokens(c, decl.value);
       const parsed = valueParser(rewritten);
@@ -944,7 +965,7 @@ function expandResponsive(c: Compilation) {
   // its clones; the generated theme is already resolved.
   root.walkDecls((decl) => {
     try {
-      if (typeof decl.value === 'string' && !c.generated.has(decl)) assignValue(decl, rewriteTokens(c, decl.value), (raw) => rewriteTokens(c, raw));
+      if (typeof decl.value === 'string' && !c.generated.has(decl) && !holdsNoFunction(decl.value)) assignValue(decl, rewriteTokens(c, decl.value), (raw) => rewriteTokens(c, raw));
     } catch (error) {
       throw locateError(error, decl);
     }
@@ -981,6 +1002,10 @@ function rejectLeftoverDirectives(c: Compilation) {
  * declaration the theme generated, and every author declaration that used a
  * token function. A compilation without the marker validates against the
  * rendered theme without emitting it; dependency CSS stays validation-only.
+ * With no such declaration, no `references.css` entry and no
+ * `references.externalTokens` entry, the check could report nothing, and no
+ * declaration is inspected; the rendered theme is still parsed, so a theme
+ * value PostCSS cannot parse fails here either way.
  */
 function checkReferences(c: Compilation) {
   const consumers: Declaration[] = [];
@@ -988,7 +1013,14 @@ function checkReferences(c: Compilation) {
     if (!c.originalSources.has(node.source) || c.dslSources.has(node.source)) consumers.push(node);
   });
   const css = [...(c.references.css || [])];
-  if (!c.themeEmitted && c.references.mode !== 'off') css.push(renderThemeCss(c.theme, c.bps));
+  const nothingToCheck = c.references.mode !== 'off' && !consumers.length && !css.length;
+  if (!c.themeEmitted && c.references.mode !== 'off') css.push(c.themeCss());
+  if (nothingToCheck) {
+    // The rendered theme is parsed before `externalTokens` is read, as the
+    // inspection reads them.
+    for (const text of css) postcss.parse(text);
+    if (!new Set(c.references.externalTokens || []).size) return;
+  }
   enforceReferences(c.root, consumers, {
     ...c.references, css,
     onWarning: (issue) => report(c, () => { c.result.warn(issue.message, { node: (issue as any).node, plugin: PLUGIN }); c.references.onWarning?.(issue); }),

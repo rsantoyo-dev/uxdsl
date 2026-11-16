@@ -16,11 +16,22 @@ import { resolveTheme } from '../default-theme';
 import { googleFontsImportUrls } from '../fonts';
 import { validateTheme, themeValidationError } from './theme-validate';
 
+type ResponsiveRules = Parameters<typeof responsiveBlocks>[0];
+
 /** The generated theme, as blocks: the `@import`s, the foundations (one line),
  * then one run of blocks per family, in the order the stylesheet lists them. */
-function themeParts(theme: Record<string, any>, breakpoints: BreakpointMap) {
+interface ThemeParts {
+  imports: string[];
+  foundation: CssBlock[];
+  families: CssBlock[][];
+}
+
+const themeImports = (theme: Record<string, any>) => googleFontsImportUrls(theme.fonts?.google).map((url) => `@import url('${url}');`);
+
+/** The theme's parts, each engine run here, in the stylesheet's order. */
+function themeParts(theme: Record<string, any>, breakpoints: BreakpointMap): ThemeParts {
   return {
-    imports: googleFontsImportUrls(theme.fonts?.google).map((url) => `@import url('${url}');`),
+    imports: themeImports(theme),
     foundation: foundationBlocks(theme),
     families: [
       typographyBlocks(theme, breakpoints),
@@ -30,30 +41,82 @@ function themeParts(theme: Record<string, any>, breakpoints: BreakpointMap) {
       responsiveBlocks(compileButtonRules(theme, breakpoints)),
       responsiveBlocks(compileInputRules(theme, breakpoints)),
       responsiveBlocks(compileDensityRules(getDensityTokens(theme), breakpoints, (value) => tokenValueToCss(value, theme))),
-    ] as CssBlock[][],
+    ],
   };
+}
+
+/** The parts as CSS: every `@import` first (CSS honors one only before every
+ * other rule), then the foundations and one run per family. */
+function themeCss(parts: ThemeParts): string {
+  let css = parts.imports.join('\n');
+  if (css) css += '\n';
+  css += serializeBlocks(parts.foundation, ' ');
+  for (const family of parts.families) css += '\n' + serializeBlocks(family);
+  return css;
 }
 
 /**
  * The theme stylesheet of an *effective* theme, and its declarations as the
  * reference check reads them — both from the same blocks, so what is checked
- * is exactly what is written. Every `@import` comes first (CSS honors one only
- * before every other rule), then the foundations and one run per family.
+ * is exactly what is written.
  */
 export function renderTheme(theme: Record<string, any>, breakpoints: BreakpointMap = { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints }): { css: string; declarations: ReferenceDeclaration[] } {
   const parts = themeParts(theme, breakpoints);
-  let css = parts.imports.join('\n');
-  if (css) css += '\n';
-  css += serializeBlocks(parts.foundation, ' ');
-  for (const family of parts.families) css += '\n' + serializeBlocks(family);
-  return { css, declarations: blockDeclarations([parts.foundation, ...parts.families].reduce((all, blocks) => all.concat(blocks), [] as CssBlock[])) };
+  return { css: themeCss(parts), declarations: blockDeclarations([parts.foundation, ...parts.families].reduce((all, blocks) => all.concat(blocks), [] as CssBlock[])) };
+}
+
+/** What `validateTheme`'s engine pass computes for a valid theme: each
+ * engine's output, from which the theme stylesheet is serialized without
+ * running an engine again. */
+export interface ThemeEngineOutputs {
+  foundation: CssBlock[];
+  /** The font families' block: `typographyBlocks` without `typography_details`. */
+  fonts: CssBlock[];
+  typography: ResponsiveRules;
+  densities: ResponsiveRules;
+  inputs: ResponsiveRules;
+  buttons: ResponsiveRules;
+  surfaces: ResponsiveRules;
+  shadows: ResponsiveRules;
+  edges: ResponsiveRules;
+}
+
+/**
+ * The key of `validateTheme`'s options under which a caller may pass a
+ * function that receives the engines' outputs when the theme is valid. No
+ * entry exports it: the PostCSS plugin passes it, so that a compilation
+ * validates and renders its theme with one run of each engine.
+ */
+export const THEME_ENGINE_OUTPUTS: unique symbol = Symbol('uxdsl.themeEngineOutputs');
+
+/**
+ * The theme stylesheet serialized from the engines' outputs for `theme`, the
+ * theme they were computed for: the same bytes `renderThemeCss` returns for
+ * it, in the same order, the typography rules after the font families as
+ * `typographyBlocks` puts them.
+ */
+export function renderThemeCssFromOutputs(theme: Record<string, any>, outputs: ThemeEngineOutputs): string {
+  return themeCss({
+    imports: themeImports(theme),
+    foundation: outputs.foundation,
+    families: [
+      outputs.fonts.concat(responsiveBlocks(outputs.typography)),
+      responsiveBlocks(outputs.edges),
+      responsiveBlocks(outputs.shadows),
+      responsiveBlocks(outputs.surfaces),
+      responsiveBlocks(outputs.buttons),
+      responsiveBlocks(outputs.inputs),
+      responsiveBlocks(outputs.densities),
+    ],
+  });
 }
 
 /**
  * The theme stylesheet for an *effective* theme, as a string. Pure and
  * unvalidated — the PostCSS plugin and `generateThemeCss` both emit exactly
- * this, after validating the theme through `validateTheme`. Callers that
- * already validated may call this directly; anything else goes through
+ * these bytes, after validating the theme through `validateTheme` (the plugin
+ * serializes them from the validator's engine outputs). Callers that already
+ * validated may call this directly; anything else goes through
  * `generateThemeCss`.
  */
 export function renderThemeCss(theme: Record<string, any>, breakpoints: BreakpointMap = { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints }): string {
