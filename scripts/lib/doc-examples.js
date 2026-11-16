@@ -55,7 +55,9 @@ const PKG = (name) => path.join(ROOT, 'packages', name);
 const postcss = require(require.resolve('postcss', { paths: [PKG('uxdsl')] }));
 const load = (rel) => require(path.join(ROOT, rel));
 
-const UXDSL_SYNTAX = /@ds-|@theme\b|\b(?:palette|density|space|color|radius|rounded|border|shadow|elevation)\(|\b(?:xs|sm|md|lg|xl)\(/; // the removed spellings stay listed so an example showing one is compiled (and must document its error)
+// The removed spellings stay listed so an example showing one is compiled (and must document its error);
+// `@media (--name)` is UXDSL too, so an example whose only UXDSL is a breakpoint media query is compiled.
+const UXDSL_SYNTAX = /@ds-|@theme\b|\b(?:palette|density|space|color|radius|rounded|border|shadow|elevation)\(|\b(?:xs|sm|md|lg|xl)\(|@media[^{;]*\(\s*--/;
 // A Sass-only construct: it sends an example whose fence is neither css nor scss through compile().
 const SASS_ONLY = /@(?:use|forward|mixin|include|function|return|each|for|if|else|while|extend|at-root|content|debug|warn|error)\b|^\s*\$[\w-]+\s*:|#\{|&/m;
 const CODE = /\bUXD_[A-Z0-9_]+/;

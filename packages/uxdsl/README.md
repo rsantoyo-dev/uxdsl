@@ -394,6 +394,30 @@ gone.) To ask what a responsive value resolves to at a given width without a
 document — an editor, an inspector — use `inspectResponsiveValue` from
 `uxdsl/language`.
 
+### Breakpoint blocks: `@media (--<breakpoint>)`
+
+A block that applies from a breakpoint up names the breakpoint in its
+`@media` prelude, in the CSS custom-media syntax. `(--lg)` compiles to the
+query `lg()` emits, read from the effective theme, so the block moves when
+the theme's `lg` moves; only that token changes, and the rest of the prelude
+stays as written. It works anywhere an `@media` may be written, on both paths
+(`compile()` and `uxdsl/postcss` alone), and combines with other conditions.
+
+```css
+@media (--lg) { .nav { display: flex; } }
+@media print and (--md) { .nav { display: none; } }
+@media (--xs) { .nav { color: red; } }  /* UXD_BREAKPOINT_CONTEXT: the base breakpoint has no query */
+```
+
+Theme names match in any case (`(--LG)` is `lg`). A literal query such as
+`@media (min-width: 1024px)` is plain CSS and is never rewritten. The base
+breakpoint (`xs`) has no query, so `(--xs)` fails; so does `@media (--lg)`
+under `@keyframes` (or `@font-face`, `@page`, `@counter-style`), and a
+breakpoint name outside parentheses (`@media --lg`, what Sass prints for an
+unquoted `$query: (--lg)`; quote it). Only `@media` preludes are rewritten:
+`(--lg)` in an `@import` media list or an `@container` prelude is left as
+written.
+
 <p align="center">
   <a href="https://uxdsl.vercel.app/docs/home">
     <strong>Explore the Full Docs &rarr;</strong>

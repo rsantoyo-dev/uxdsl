@@ -13,7 +13,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const {
-  ROOT, discoverSurfaces, extractMarkdown, extractJsx, statementsOf, runExample, verifySurfaces, validateThemes,
+  ROOT, discoverSurfaces, extractMarkdown, extractJsx, collectExamples, statementsOf, runExample, verifySurfaces, validateThemes,
 } = require('./lib/doc-examples');
 
 const blocks = (events) => events.filter((event) => event.type === 'block');
@@ -87,6 +87,24 @@ test('a claimed output (`/* var(--…) */`) must appear in the compiled CSS', as
   const bad = '.a { color: color(gray.300); }  /* var(--uxdsl__color__gray-999) */\n.b { padding: xs(1rem) xxl(2rem); }  /* UXD_BREAKPOINT_UNKNOWN */';
   const [problem] = await runExample({ code: bad, theme: null });
   assert.match(problem, /documented as producing var\(--uxdsl__color__gray-999\) but does not/);
+});
+
+test('MIG-B9-30: an example whose only UXDSL is @media (--lg) is compiled by the doc-example harness', async (t) => {
+  const dir = fs.mkdtempSync(path.join(require('node:os').tmpdir(), 'uxdsl-doc-examples-'));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  const file = path.join(dir, 'page.md');
+  fs.writeFileSync(file, [
+    '```css', '@media (--lg) { .a { color: red; } }', '```', '',
+    '```css', '@media (--xs) { .a { color: red } }  /* UXD_DIRECTIVE_CONTEXT: wrong */', '```', '',
+    '```css', '@media (min-width: 1024px) { .a { color: red; } }', '```',
+  ].join('\n'));
+  const { examples } = collectExamples(path.relative(ROOT, file));
+  // The literal query is plain CSS and is not an example; both breakpoint media queries are.
+  assert.deepEqual(examples.map((example) => example.line), [2, 6]);
+  assert.deepEqual(await runExample(examples[0]), []);
+  // Negative control: an example documented with the wrong code is reported with the code it really fails with.
+  const [wrong] = await runExample(examples[1]);
+  assert.match(wrong, /documented as UXD_DIRECTIVE_CONTEXT but fails with UXD_BREAKPOINT_CONTEXT$/);
 });
 
 test('statementsOf makes every top-level node a statement (a @theme block too) and reads only same-line trailing comments', () => {

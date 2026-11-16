@@ -707,3 +707,27 @@ rewritten contract above.
    - **Taken: (a).** The owner's decision is about SideNav (no visual change
      at 1024); the docs addition is the live example the story already
      requires. AC3.
+
+### Implementation, engine half (I1, 2026-11-16)
+
+Failing first, then green, on the branch with Node 20.19.0. "Red" is the
+new test run against the built package of the previous commit (BASE
+`6b8e3a9` for the first); "green" is the same run after the change, then
+`npm test` from the repository root under `scripts/tmpdir-guard.js`
+(`TMPDIR` in the run's scratch directory, left empty).
+
+- **Theme names in an `@media` prelude** (`rewriteBreakpointMedia`, the
+  base, `@keyframes`, a bare name; T1 to T5, T7's first half, T10, T13,
+  T15, T17). Red on BASE: `node --test test/breakpoint-blocks.test.js
+  test/compiler-structure.test.js` failed 9 of 12; T1's first case gave
+  `'@media (--md) { .a { color: red } }'` for
+  `'@media (min-width: 768px) { .a { color: red } }'`, T3 kept
+  `@media (--lg) {` around the expanded flat role, and the pinned `runSteps`
+  list lacked `rewriteBreakpointMedia`. T17 against BASE's harness found no
+  example (`[]` for `[2, 6]`). Green: 12 of 12 and T17; one test
+  correction before green: T7's "a theme whose zero-width breakpoint is
+  `base`" cannot be built, because the base theme's own values use `xs()`
+  as their base (`UXD_TYPO_BASE`, `UXD_DENSITY_BASE`, `UXD_EDGE_BASE`), so
+  it asserts `(--XS)` instead. `npm test` exit 0 (5:03); the Bootstrap
+  corpus 276,926 bytes, `byte-identical: true`, 21 warnings (14:58, load
+  4.90); `fixtures/parity/run.js` PASS without `--update`.

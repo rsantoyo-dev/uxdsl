@@ -22,6 +22,29 @@ the entries of FEAT-009's beta.7 stories (marked "FEAT-009, MIG-B7-…"), which
 reached npm first in `0.5.0-beta.8` under the former names; MIG-B9-52 moves
 them. See `docs/releases/0.5.0-beta.9.md`.
 
+### Breakpoint media queries: @media (--<breakpoint>) (MIG-B9-30)
+
+#### Added
+
+- **`@media (--<breakpoint>)`.** In an `@media` prelude, `(--<bp>)` names a
+  breakpoint of the effective theme and compiles to the query `<bp>()` emits,
+  `(min-width: <px>px)`, on both paths: `@media (--lg) { … }` applies from
+  `lg` up and moves with the theme. Only that token changes; the rest of the
+  prelude (media types, `and`/`not`/`only`, other features, lists, comments)
+  stays as written, at any depth. Names match in any case, as the functions
+  do. Through `compile()`, Dart Sass bubbles a nested
+  `.nav { @media (--lg) { @ds-surface(flat); } }` out of its rule, so the
+  directive applies from `lg` up; Sass's merge of nested queries
+  (`@media print { .a { @media (--lg) {…} } }` → `print and (min-width: 1024px)`)
+  is pinned by a test. A literal query is never rewritten, and every
+  stylesheet whose `@media` preludes hold no `(--name)` compiles to the same
+  bytes as before.
+- **`UXD_BREAKPOINT_CONTEXT` for a breakpoint where it cannot apply:**
+  `(--xs)`, the base breakpoint, which has no query; `@media (--bp)` under
+  `@keyframes`, `@font-face`, `@page` or `@counter-style`; and a breakpoint
+  name outside parentheses in an `@media` prelude (`@media --lg`, what Dart
+  Sass prints for an unquoted `$q: (--lg); @media #{$q}`).
+
 ### The plugin's fixed per-build costs (MIG-B9-24)
 
 #### Changed

@@ -15,6 +15,8 @@
 //               radius(), border(), shadow(); responsive functions named after
 //               the theme's breakpoints (xs() md() …), `!important` preserved
 //               at every breakpoint.
+//   Media       `(--<bp>)` in an @media prelude is the query <bp>() emits:
+//               `@media (--lg) { … }` applies from the theme's lg up.
 //   Directives  @ds-surface, @ds-button, @ds-input, @ds-typo — each expanding
 //               to the declarations its role defines, states and
 //               pseudo-elements included. A directive is a direct child of the
@@ -34,10 +36,10 @@
 //               actually wrote.
 //
 // One compilation is one `Compilation` object, built by `validateOptions` and
-// handed through the Sass check (`holdSassSyntax`), `emitTheme`,
-// `expandDirectives`, `expandResponsive`, `rejectLeftoverDirectives`,
-// `checkReferences` and `reportThemeEmission`, in that order, all in the
-// plugin's `Once`. A Sass construct none of the steps read or changed is held,
+// handed through the Sass check (`holdSassSyntax`), `rewriteBreakpointMedia`,
+// `emitTheme`, `expandDirectives`, `expandResponsive`,
+// `rejectLeftoverDirectives`, `checkReferences` and `reportThemeEmission`, in
+// that order, all in the plugin's `Once`. A Sass construct none of the steps read or changed is held,
 // with what the steps report, in a map `prepare()` creates for each PostCSS
 // run, and checked again in `OnceExit` (`releaseSassSyntax`). The theme's
 // engines run once per compilation, inside `validateTheme`: the Compilation
@@ -107,8 +109,25 @@ interface Compilation {
   dslSources: Set<Declaration['source']>;
   /** Custom properties the host guarantees or another entry declares, read lazily. */
   externalNames?: Set<string>;
-  /** While a Sass construct is held for OnceExit, what the steps report (`report`), in order; null reports at once. */
+  /** While a Sass construct or an unknown `(--name)` is held for OnceExit, what the steps report (`report`), in order; null reports at once. */
   held: Array<() => void> | null;
+  /** The Sass constructs `holdSassSyntax` holds for OnceExit (none when the stylesheet has no Sass). */
+  constructs: SassConstruct[];
+  /** The `@media` and `@custom-media` at-rules whose prelude holds `--`, in document order: all `rewriteBreakpointMedia` reads. */
+  breakpointAtRules: AtRule[];
+  /** The `@media` at-rules whose prelude `rewriteBreakpointMedia` rewrote, with the prelude the author wrote. */
+  rewrittenMedia: WeakSet<AtRule>;
+  originalPrelude: WeakMap<AtRule, string>;
+  /** Each `(--name)` in an `@media` prelude that is neither a breakpoint of the theme nor a top-level `@custom-media`, judged at OnceExit. */
+  unknownMedia: UnknownMedia[];
+}
+
+/** A `(--name)` left for OnceExit: its at-rule, the token as written, the name with its dashes, and the "did you mean" computed when it was found. */
+interface UnknownMedia {
+  node: AtRule;
+  token: string;
+  name: string;
+  suggestion: string;
 }
 
 // --- validateOptions ---------------------------------------------------------
@@ -156,9 +175,18 @@ function validateOptions(root: Root, result: Result, opts: UxdslOptions): Compil
   const ordered = Object.entries(bps).map(([name, px]) => ({ name, px })).sort((a, b) => a.px - b.px);
   const originalSources = new Set<Declaration['source']>();
   const dslSources = new Set<Declaration['source']>();
-  root.walkDecls((node) => {
-    originalSources.add(node.source);
-    if (/\b(space|density|radius|border|shadow|palette|color)\(/.test(node.value)) dslSources.add(node.source);
+  const breakpointAtRules: AtRule[] = [];
+  // One traversal of the author's stylesheet: the declarations it wrote, and
+  // the at-rules whose prelude may name a breakpoint (`--` in an @media or a
+  // @custom-media prelude), the only ones `rewriteBreakpointMedia` reads.
+  root.walk((node) => {
+    if (node.type === 'decl') {
+      originalSources.add(node.source);
+      if (/\b(space|density|radius|border|shadow|palette|color)\(/.test(node.value)) dslSources.add(node.source);
+    } else if (node.type === 'atrule' && node.params.includes('--')) {
+      const name = node.name.toLowerCase();
+      if (name === 'media' || name === 'custom-media') breakpointAtRules.push(node);
+    }
   });
   const colors = { ...theme.colors, gray: { ...DEFAULT_BORDER_COLORS.gray, ...theme.colors?.gray } };
   const palette = theme.palette || {};
@@ -178,6 +206,11 @@ function validateOptions(root: Root, result: Result, opts: UxdslOptions): Compil
     tokenContext: { palette, colors, breakpoints: bps },
     generated: new WeakSet<ChildNode>(),
     held: null,
+    constructs: [],
+    breakpointAtRules,
+    rewrittenMedia: new WeakSet<AtRule>(),
+    originalPrelude: new WeakMap<AtRule, string>(),
+    unknownMedia: [],
   };
 }
 
@@ -541,6 +574,99 @@ function findSassConstructs(c: Compilation, skipGenerated: boolean): SassConstru
 
 /** A held construct is still there: its node is in `root`, with the text it was found with. */
 const stillThere = (construct: SassConstruct, root: Root) => construct.node.root() === root && ownText(construct.node) === construct.text;
+
+// --- rewriteBreakpointMedia --------------------------------------------------
+
+/** The media query `<bp>()` emits and `(--<bp>)` compiles to: the one form the reference pass reads as a min-width condition. */
+const minWidthQuery = (px: number) => `(min-width: ${px}px)`;
+
+/** A custom media feature in a media query, `(--name)`, with spaces allowed inside the parentheses; `(--lg: 1)` is not one. */
+const BREAKPOINT_FEATURE = /\(\s*--([A-Za-z0-9_-]+)\s*\)/g;
+/** A dashed name outside parentheses: not a media feature. */
+const BARE_DASHED_NAME = /(?<![\w-])--([\w-]+)(?![\w-])/g;
+
+/** `text` with every balanced parenthesized group blanked out, offsets kept. */
+function outsideParentheses(text: string): string {
+  let depth = 0;
+  let out = '';
+  for (const char of text) {
+    if (char === '(') depth++;
+    out += depth > 0 ? ' ' : char;
+    if (char === ')' && depth > 0) depth--;
+  }
+  return out;
+}
+
+/** The nearest ancestor of `node` that cannot hold a media query (@keyframes and the like, vendor prefix stripped), or undefined. */
+function unsplittableAncestor(node: PostcssNode): AtRule | undefined {
+  for (let ancestor: any = node.parent; ancestor; ancestor = ancestor.parent) {
+    if (ancestor.type === 'atrule' && UNSPLITTABLE_AT_RULES.includes(String(ancestor.name).toLowerCase().replace(/^-\w+-/, ''))) return ancestor;
+  }
+  return undefined;
+}
+
+/**
+ * `(--<bp>)` in an `@media` prelude names a breakpoint of the effective theme
+ * and compiles to the query `<bp>()` emits, wherever the at-rule sits and
+ * whatever else its prelude says: only that token changes, and the rest of
+ * the prelude, its comments and the at-rule's raws stay as written. Names
+ * compare case-insensitively, as the functions do. The base breakpoint has
+ * no query, a breakpoint under an at-rule that cannot hold a media query has
+ * nowhere to go, and a breakpoint name outside parentheses is not a media
+ * feature: each is UXD_BREAKPOINT_CONTEXT. Any other `(--name)`, and every
+ * other at-rule's prelude, is left as written. Only the at-rules
+ * `validateOptions` collected are read, so a stylesheet whose preludes hold
+ * no `--` costs nothing here. A held Sass construct in a rewritten prelude is
+ * judged on the prelude as rewritten.
+ */
+function rewriteBreakpointMedia(c: Compilation) {
+  if (!c.breakpointAtRules.length) return;
+  const base = c.ordered[0].name;
+  const breakpointOf = (name: string) => {
+    const lower = name.toLowerCase();
+    return c.bpNames.has(lower) ? lower : undefined;
+  };
+  for (const at of c.breakpointAtRules) {
+    if (at.name.toLowerCase() !== 'media') continue;
+    const params = at.params;
+    // `@media --lg` (what Sass prints for an unquoted `$q: (--lg)`) is not a media feature.
+    for (const bare of outsideParentheses(params).matchAll(BARE_DASHED_NAME)) {
+      const bp = breakpointOf(bare[1]);
+      if (!bp) continue;
+      throw locateError(diagnostic(`UXD_BREAKPOINT_CONTEXT: ${bare[0]} in @media ${params} is not in parentheses, so it is not a media feature and the block never applies; write (${bare[0]}). In Sass, quote a query held in a variable: $query: "(${bare[0]})".`, bare[0]), at);
+    }
+    const resolve = (token: string, name: string): string => {
+      const bp = breakpointOf(name);
+      if (!bp) return token;
+      const outer = unsplittableAncestor(at);
+      if (outer) {
+        throw diagnostic(`UXD_BREAKPOINT_CONTEXT: @media ${params} cannot live inside @${outer.name}: a media query cannot be nested there; write @media ${params} around the @${outer.name} instead.`, token);
+      }
+      if (bp === base) {
+        throw diagnostic(`UXD_BREAKPOINT_CONTEXT: (--${name}) is the base breakpoint: it has no media query, because its values apply at every width; write these rules outside @media, or remove (--${name}) from the condition.`, token);
+      }
+      return minWidthQuery(c.bps[bp]);
+    };
+    let next: string;
+    try {
+      next = params.replace(BREAKPOINT_FEATURE, (token: string, name: string) => resolve(token, name));
+    } catch (error) {
+      throw locateError(error, at);
+    }
+    if (next === params) continue;
+    c.originalPrelude.set(at, params);
+    c.rewrittenMedia.add(at);
+    // A comment inside the prelude keeps the author's raw text, given the same rewrite.
+    const raw = (at.raws as any).params;
+    at.params = next;
+    if (raw && typeof raw.raw === 'string' && raw.value === params) {
+      const rawNext = raw.raw.replace(BREAKPOINT_FEATURE, (token: string, name: string) => resolve(token, name));
+      if (commentsOf(rawNext) === commentsOf(raw.raw) && withoutComments(rawNext) === withoutComments(next)) (at.raws as any).params = { value: next, raw: rawNext };
+      else delete (at.raws as any).params;
+    }
+    for (const construct of c.constructs) if (construct.node === at) construct.text = ownText(at);
+  }
+}
 
 // --- emitTheme ---------------------------------------------------------------
 
@@ -925,7 +1051,7 @@ function expandResponsive(c: Compilation) {
         const container: any = parent;
         const target = typeof container?.root === 'function' ? container.root() : root;
         for (const { bp, text } of others) {
-          const at = postcss.atRule({ name: 'media', params: `(min-width: ${bps[bp]}px)` });
+          const at = postcss.atRule({ name: 'media', params: minWidthQuery(bps[bp]) });
           const cloned = container?.clone ? container.clone({ nodes: [] }) : postcss.rule();
           cloned.append(clone(text));
           at.append(cloned);
@@ -941,7 +1067,7 @@ function expandResponsive(c: Compilation) {
       for (const { bp, text } of others) {
         let target = bucket.get(bp);
         if (!target) {
-          const at = postcss.atRule({ name: 'media', params: `(min-width: ${bps[bp]}px)` });
+          const at = postcss.atRule({ name: 'media', params: minWidthQuery(bps[bp]) });
           target = rule.clone({ nodes: [] });
           at.append(target);
           const previous = lastMediaByRule.get(rule);
@@ -1053,6 +1179,7 @@ function holdSassSyntax(c: Compilation): SassConstruct[] {
     return [];
   }
   const constructs = findSassConstructs(c, false);
+  c.constructs = constructs;
   if (constructs.length > 0) c.held = [];
   return constructs;
 }
@@ -1065,6 +1192,7 @@ function holdSassSyntax(c: Compilation): SassConstruct[] {
  */
 function runSteps(c: Compilation, constructs: SassConstruct[]) {
   try {
+    rewriteBreakpointMedia(c);
     emitTheme(c);
     expandDirectives(c);
     expandResponsive(c);

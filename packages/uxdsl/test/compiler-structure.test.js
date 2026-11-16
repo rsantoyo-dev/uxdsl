@@ -31,7 +31,7 @@ test('Once() is the sequence of named steps, over one Compilation object', () =>
   const steps = index.match(/^function runSteps\(c: Compilation, constructs: SassConstruct\[\]\) \{\n  try \{\n([\s\S]*?)\n  \} catch/m);
   assert.ok(steps, 'runSteps() is found');
   const calls = [...steps[1].matchAll(/\b(\w+)\(c\)/g)].map((match) => match[1]);
-  assert.deepEqual(calls, ['emitTheme', 'expandDirectives', 'expandResponsive', 'rejectLeftoverDirectives', 'checkReferences', 'reportThemeEmission']);
+  assert.deepEqual(calls, ['rewriteBreakpointMedia', 'emitTheme', 'expandDirectives', 'expandResponsive', 'rejectLeftoverDirectives', 'checkReferences', 'reportThemeEmission']);
   assert.equal(steps[1].trim().split('\n').length, calls.length, 'runSteps() only sequences the steps');
   for (const step of ['validateOptions', 'holdSassSyntax', 'runSteps', 'releaseSassSyntax', 'rejectSassSyntax', ...calls]) {
     assert.match(index, new RegExp(`^function ${step}\\(`, 'm'), `${step} is a top-level function`);
