@@ -76,7 +76,7 @@ test('createWatcher reports matching files only, and follows a glob whose base d
   await delay(300);
   fs.writeFileSync(path.join(dir, 'src/note.txt'), 'x');
   fs.writeFileSync(path.join(dir, 'src/a.uxdsl'), '.b {}');
-  await waitFor(() => events.includes('change src/a.uxdsl'));
+  await waitFor(() => events.includes(`change ${path.join('src', 'a.uxdsl')}`));
   fs.mkdirSync(path.join(dir, 'styles'));
   await delay(300);
   fs.writeFileSync(path.join(dir, 'styles/s.uxdsl'), '.s {}');

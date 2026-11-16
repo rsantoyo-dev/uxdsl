@@ -24,8 +24,11 @@ const TOKENS = '.a { padding: density(4); color: palette(primary.main); }\n';
 const NONE = themeEmissionWarning([{ label: 'a.uxdsl', themeEmitted: false, referencesTokens: true, canCarryTheme: true }], 'module').text;
 const many = (labels) => themeEmissionWarning(labels.map((label) => ({ label, themeEmitted: true, referencesTokens: true, canCarryTheme: true })), 'module').text;
 
+// fs.realpathSync.native spells a component of os.tmpdir() written as an 8.3
+// short name (C:\Users\RUNNER~1 on Windows) in its long form, as Vite, webpack
+// and Dart Sass name the files they load; elsewhere it is fs.realpathSync.
 function project(t, files) {
-  const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-vite-theme-')));
+  const dir = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-vite-theme-')));
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
   for (const [file, text] of Object.entries(files)) {
     fs.mkdirSync(path.dirname(path.join(dir, file)), { recursive: true });
@@ -184,17 +187,19 @@ test('MIG-B9-20: the Vite dev server warns once when more than one module emits 
     await server.transformRequest('/b.uxdsl?uxdsl&lang.css');
     assert.equal(theme().length, 1, JSON.stringify(theme()));
     assert.ok(theme()[0].includes(many(['a.uxdsl', 'b.uxdsl'])), theme()[0]);
-    // Transformed again, the same set: not repeated.
-    for (const file of ['a.uxdsl', 'b.uxdsl']) {
-      for (const module of server.moduleGraph.getModulesByFile(path.join(dir, file)) || []) server.moduleGraph.invalidateModule(module);
-      await server.transformRequest(`/${file}?uxdsl&lang.css`);
-    }
-    assert.equal(theme().length, 1, JSON.stringify(theme()));
-    // Back to one emitting module, then two again: the set changed, so it warns again.
+    // Vite keys its module graph by the file's path with '/' separators
+    // (vite.normalizePath), so a file is invalidated by that name, and a
+    // lookup that finds no module fails instead of leaving the cache in place.
     const retransform = async (file) => {
-      for (const module of server.moduleGraph.getModulesByFile(path.join(dir, file)) || []) server.moduleGraph.invalidateModule(module);
+      const modules = server.moduleGraph.getModulesByFile(vite.normalizePath(path.join(dir, file)));
+      assert.ok(modules && modules.size > 0, `the module graph holds ${file}`);
+      for (const module of modules) server.moduleGraph.invalidateModule(module);
       await server.transformRequest(`/${file}?uxdsl&lang.css`);
     };
+    // Transformed again, the same set: not repeated.
+    for (const file of ['a.uxdsl', 'b.uxdsl']) await retransform(file);
+    assert.equal(theme().length, 1, JSON.stringify(theme()));
+    // Back to one emitting module, then two again: the set changed, so it warns again.
     fs.writeFileSync(path.join(dir, 'b.uxdsl'), '.b { margin: space(2); }\n');
     await retransform('b.uxdsl');
     assert.equal(theme().length, 1, 'one emitting module again: nothing new');

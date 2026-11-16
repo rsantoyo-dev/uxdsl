@@ -145,19 +145,21 @@ test('MIG-B9-13: the final map names only the author\'s files, relative to `to`,
 
 test('MIG-B9-13: the final map names an author\'s file as PostCSS names it: relative to `to` (to the working directory without it) and URL-encoded', async () => {
   const dir = fs.realpathSync(temporaryDirectory('uxdsl-sass-maps-encoded-'));
-  const file = path.join(dir, 'my src #1', 'a?.uxdsl');
+  // Windows refuses a ? in a file name; % is a character PostCSS encodes there too.
+  const [odd, encoded] = process.platform === 'win32' ? ['%', '%25'] : ['?', '%3F'];
+  const file = path.join(dir, 'my src #1', `a${odd}.uxdsl`);
   const text = '.a {\n  color: red;\n}\n';
   fs.mkdirSync(path.dirname(file));
   fs.writeFileSync(file, text);
   const to = path.join(dir, 'out', 'a.css');
   const named = async (opts) => JSON.parse((await core.compile({ entry: file }, { sourceMap: 'external', ...opts })).map).sources;
   const postcssNames = (opts) => postcss([]).process(text, { from: file, map: { inline: false, annotation: false }, ...opts }).map.toJSON().sources;
-  assert.deepEqual(await named({ to }), ['../my%20src%20%231/a%3F.uxdsl']);
+  assert.deepEqual(await named({ to }), [`../my%20src%20%231/a${encoded}.uxdsl`]);
   assert.deepEqual(await named({ to }), postcssNames({ to }), 'the name PostCSS gives the same file for the same `to`');
   const original = process.cwd();
   process.chdir(dir);
   try {
-    assert.deepEqual(await named({}), ['my%20src%20%231/a%3F.uxdsl']);
+    assert.deepEqual(await named({}), [`my%20src%20%231/a${encoded}.uxdsl`]);
     assert.deepEqual(await named({}), postcssNames({}), 'without `to`, the name PostCSS gives it from the working directory');
   } finally {
     process.chdir(original);
@@ -427,7 +429,7 @@ test('MIG-B9-13: the final map keeps every author mapping when the stage names i
   const unconverted = await anonymous();
   stageModule.compileSassStage = (input, options) => {
     const stage = real(input, options);
-    if (stage.map) stage.map = { ...stage.map, sources: stage.map.sources.map((file) => `C:${file.split('/').join('\\')}`) };
+    if (stage.map) stage.map = { ...stage.map, sources: stage.map.sources.map((file) => (/^[A-Za-z]:/.test(file) ? file : `C:${file.split('/').join('\\')}`)) };
     return stage;
   };
   let emulated;

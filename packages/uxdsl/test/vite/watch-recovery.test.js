@@ -38,9 +38,12 @@ function cleanup(t, fn) {
   cleanups.get(t).push(fn);
 }
 
+// fs.realpathSync.native spells a component of os.tmpdir() written as an 8.3
+// short name (C:\Users\RUNNER~1 on Windows) in its long form, as Vite, webpack
+// and Dart Sass name the files they load; elsewhere it is fs.realpathSync.
 /** A project in its own temporary directory, removed when the test passes. Every file and directory is dated ten seconds back, so a watcher started next does not take them for edits. */
 function project(t, files) {
-  const dir = fs.realpathSync(temporaryDirectory('uxdsl-vite-recovery-'));
+  const dir = fs.realpathSync.native(temporaryDirectory('uxdsl-vite-recovery-'));
   // Removed once the watchers and servers registered after it are closed, when the test passes; kept, with its path printed, when it fails.
   cleanup(t, () => {
     if (t.passed) fs.rmSync(dir, { recursive: true, force: true });

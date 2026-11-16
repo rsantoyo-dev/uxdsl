@@ -1,3 +1,6 @@
+// fs.realpathSync.native spells a component of os.tmpdir() written as an 8.3
+// short name (C:\Users\RUNNER~1 on Windows) in its long form, as Vite, webpack
+// and Dart Sass name the files they load; elsewhere it is fs.realpathSync.
 'use strict';
 
 // MIG-B6-20 (FEAT-008): fast, in-process coverage of the plugin's own
@@ -19,7 +22,7 @@ const mod = require('../../dist/vite.js');
 const uxdsl = mod.default || mod;
 
 function mkTmpDir() {
-  return fs.realpathSync(temporaryDirectory('vite-plugin-uxdsl-test-'));
+  return fs.realpathSync.native(temporaryDirectory('vite-plugin-uxdsl-test-'));
 }
 
 function write(dir, relPath, content) {
