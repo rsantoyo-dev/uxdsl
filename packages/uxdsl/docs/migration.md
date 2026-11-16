@@ -317,6 +317,42 @@ with `includeTheme: false`.
    to remove `@uxdsl theme;` from that entry. A script that reads
    `compile()`'s result can use its new `themeEmitted` field.
 
+## beta.9 — breakpoint media queries: `@media (--<breakpoint>)`
+
+A block that applies from a breakpoint up can name the breakpoint instead of
+its width (FEAT-010, DEC-07, MIG-B9-30): `(--lg)` in an `@media` prelude
+compiles to the theme's query for `lg`, `(min-width: 1024px)` in the base
+theme, on both paths. A stylesheet whose `@media` preludes hold no `(--name)`
+compiles to the same bytes as before.
+
+1. **Replace a hand-written query that copies a breakpoint.** An
+   `@media (min-width: 1024px)` written to match the theme's `lg` becomes
+   `@media (--lg)`, and then follows the theme when `lg` moves. Keep a
+   literal query for a deliberate local threshold (a 600px that is no
+   breakpoint): it is compiled as written. In a `.uxdsl` file the block may
+   sit inside the rule, with a directive in it; with `uxdsl/postcss` alone,
+   put the rule inside the block.
+2. **An undefined `(--name)` now fails.** A `(--name)` in an `@media`
+   prelude that is neither a breakpoint of the theme nor a top-level
+   `@custom-media` of the stylesheet used to pass through as a block no
+   browser applies; it is now `UXD_BREAKPOINT_UNKNOWN`, with a suggestion.
+   `(--xs)` (the base, which has no query) is `UXD_BREAKPOINT_CONTEXT`. With
+   `uxdsl/postcss` alone each file is compiled on its own, so a custom media
+   defined in another file is unknown there: define it in the file, or run a
+   plugin that resolves it in the same PostCSS run.
+3. **A project `@custom-media` named like a breakpoint is now applied, with
+   a warning.** `@custom-media --lg (min-width: 900px);` at the top level of
+   a stylesheet replaces the theme's `lg` for `(--lg)` in that stylesheet
+   and warns `UXD_BREAKPOINT_SHADOWED` at the definition, which stays in the
+   output. Remove it (or rename it, e.g. `--nav-wide`) to use the theme's
+   `lg`; to move `lg` everywhere, change `breakpoints.lg` in the theme. With
+   `postcss-custom-media` or `postcss-preset-env` in the chain, list
+   `uxdsl/postcss` before them.
+4. **`UXD_DIRECTIVE_CONTEXT` reads differently.** Its text no longer says
+   directives "are not responsive": it shows
+   `@media (--md) { .card { @ds-surface(…); } }`. A filter on the code is
+   unaffected; one on the old text should match the code instead.
+
 ## Antes de actualizar (cualquier versión)
 
 Un cambio de versión puede cambiar defaults en familias que tu tema **nunca

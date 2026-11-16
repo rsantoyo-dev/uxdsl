@@ -103,6 +103,21 @@ them. See `docs/releases/0.5.0-beta.9.md`.
   by `compile()` the block may also be nested in the rule), next to a
   responsive value for one property. The code and when it is raised are
   unchanged.
+- **A project `@custom-media` named like a breakpoint is applied, with a
+  warning.** One that passed through as written (and that no browser
+  applies) now replaces the theme's breakpoint for `(--<bp>)` in that
+  stylesheet, with `UXD_BREAKPOINT_SHADOWED`. In a PostCSS chain with
+  `postcss-custom-media` or `postcss-preset-env`, list `uxdsl/postcss` before
+  them for that: in the other order they remove the definition first and
+  `(--<bp>)` gets the theme's query with no warning (pinned by a test).
+
+#### Visual changes
+
+- None in the package. Every stylesheet whose `@media` preludes hold no
+  `(--name)` compiles to the same bytes, and so do the Bootstrap corpus and
+  the theme CSS. In the playground, SideNav's `@media (min-width: 1024px)`
+  became `@media (--lg)` and compiles to the same query; `/docs/breakpoints`
+  gains a live block-form demo.
 
 ### The plugin's fixed per-build costs (MIG-B9-24)
 

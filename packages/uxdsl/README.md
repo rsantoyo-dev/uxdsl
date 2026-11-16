@@ -475,6 +475,26 @@ names come from `LANGUAGE_COMPLETIONS.customMedia` (`uxdsl/language`), the
 default breakpoints that have a query, so the base and a project's own
 breakpoint names are not highlighted.
 
+In a `.uxdsl` file the block may sit inside the rule it styles: Dart Sass
+moves it out around the rule, so a directive in it applies from the
+breakpoint up.
+
+```scss
+.nav {
+  display: none;
+  @media (--lg) {
+    display: block;
+    @ds-surface(flat);
+  }
+}
+```
+
+In a PostCSS chain that also runs `postcss-custom-media` or
+`postcss-preset-env`, list `uxdsl/postcss` before them when a project
+`@custom-media` redefines a breakpoint name: in the other order they remove
+the definition in their `Once`, before `uxdsl/postcss` can see it, and
+`(--lg)` compiles to the theme's query with no warning.
+
 <p align="center">
   <a href="https://uxdsl.vercel.app/docs/home">
     <strong>Explore the Full Docs &rarr;</strong>

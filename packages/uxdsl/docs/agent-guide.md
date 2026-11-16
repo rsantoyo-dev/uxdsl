@@ -270,6 +270,68 @@ Other CSS cascade rules still apply.
 - Omitted built-in breakpoint names can retain engine defaults. Inspect the
   effective map, not just the keys shown in a partial theme excerpt.
 
+A block that applies from a breakpoint up — several declarations, nested
+rules or a directive — is written `@media (--<breakpoint>) { … }`, the CSS
+custom-media syntax. UXDSL replaces `(--lg)` with the effective theme's query
+for `lg`, the one `lg()` produces, so the block moves when the theme's `lg`
+moves; the rest of the prelude stays as written and combines with it
+(`@media print and (--lg)`).
+
+```scss
+.nav {
+  display: none;
+  @media (--lg) {
+    display: block;
+    @ds-surface(flat);
+  }
+}
+@media print and (--md) { .nav { display: none; } }
+```
+
+```css
+@media (--lg) { .nav { @ds-surface(flat); } }
+.nav { @media (--lg) { @ds-surface(flat); } }  /* UXD_DIRECTIVE_CONTEXT: with uxdsl/postcss alone, put the rule inside the block */
+@media (--lgg) { .nav { display: block; } }  /* UXD_BREAKPOINT_UNKNOWN: did you mean "(--lg)"? */
+```
+
+- Prefer `@media (--<bp>)` to a hand-written `@media (min-width: …)` whose
+  width equals a theme breakpoint. Keep a literal query only for a deliberate
+  local threshold: it is compiled as written, never rewritten. For one
+  property, a responsive value is still the form.
+- Through `compile()` (a `.uxdsl` file) the block may sit inside the rule:
+  Dart Sass moves it out around the rule, so a directive in it applies from
+  the breakpoint up. With `uxdsl/postcss` alone CSS nesting keeps it in the
+  rule: a directive there is `UXD_DIRECTIVE_CONTEXT` and a responsive value
+  directly in it is `UXD_BREAKPOINT_CONTEXT`; put the rule inside the block,
+  which works on both paths.
+- The base breakpoint (`xs`, width 0) has no query: `(--xs)` is
+  `UXD_BREAKPOINT_CONTEXT`; write those rules outside `@media`. So is
+  `@media (--lg)` under `@keyframes`, `@font-face`, `@page` or
+  `@counter-style`, and a breakpoint name outside parentheses (`@media --lg`,
+  what Sass prints for an unquoted `$query: (--lg)`; quote it).
+- Only `@media` preludes are rewritten. `(--lg)` in an `@import` media list,
+  `@container`, `@supports` or a `@custom-media`'s own query is left as
+  written and never matches: do not write it there.
+- A `(--name)` in an `@media` prelude that is neither a theme breakpoint
+  (names match in any case) nor a top-level `@custom-media` of the
+  stylesheet is `UXD_BREAKPOINT_UNKNOWN`, with the usable breakpoints and a
+  suggestion. It is judged after every PostCSS plugin's visitors, so a
+  plugin that resolves custom media in the same run is not refused.
+- What is written by hand wins: a top-level `@custom-media --lg <query>;`
+  replaces the theme's `lg` for `(--lg)` in that stylesheet only, with one
+  `UXD_BREAKPOINT_SHADOWED` warning at the definition, which stays in the
+  output; `lg()` and stylesheets compiled apart keep the theme's query. To
+  move a breakpoint everywhere, change `breakpoints` in the theme; do not
+  shadow a breakpoint to make one component different.
+- With `uxdsl/postcss` alone each file is compiled on its own, so a
+  `@custom-media` written in another file is not seen there (an unknown
+  name fails; a breakpoint name gets the theme's query).
+- In a PostCSS chain with `postcss-custom-media` or `postcss-preset-env`,
+  list `uxdsl/postcss` before them when a project `@custom-media`
+  redefines a breakpoint name: in the other order they remove the
+  definition in their `Once`, and `(--lg)` gets the theme's query with no
+  warning.
+
 **Decision rule:** components define local behavior; breakpoints define when
 transitions occur; Density defines shared responsive spacing.
 
@@ -506,11 +568,16 @@ This excerpt assumes its referenced tokens and breakpoints exist.
 - Inspect `surfaces`, dependencies, breakpoints and legacy imports before use.
   Reuse a shared role instead of recreating its resolved properties locally.
 - `@ds-surface(...)` (and `@ds-button`/`@ds-input`/`@ds-typo`) must be a
-  direct child of the rule it styles — at the document root, or nested
-  inside `@media`/`@supports` under that rule, it fails as
-  `UXD_DIRECTIVE_CONTEXT` instead of compiling untouched. Directives style a
-  whole rule and are not themselves responsive; put a responsive expression
-  on the individual property instead (`padding: xs(1rem) md(2rem);`).
+  direct child of the rule it styles — at the document root, or directly
+  inside a top-level `@media`/`@supports`, it fails as
+  `UXD_DIRECTIVE_CONTEXT` instead of compiling untouched. Nested inside
+  `@media`/`@supports` under its rule, it fails only with `uxdsl/postcss`
+  alone; through `compile()` Dart Sass moves the at-rule out around the rule
+  and the directive applies to the rule inside it. A directive styles a
+  whole rule: to apply a role from a breakpoint up, put the rule inside
+  `@media (--<breakpoint>)` (see Breakpoints), which works on both paths; to
+  change one property, put a responsive expression on it instead
+  (`padding: xs(1rem) md(2rem);`).
 - Supported string fields: `padding`, `radius`, `bg`, `color`, `border`, `shadow`.
   Values can be CSS literals, token references or responsive expressions.
 - Default roles are contained, outlined and flat. Partial overrides inherit
