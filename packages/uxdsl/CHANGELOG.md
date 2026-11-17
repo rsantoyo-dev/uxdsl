@@ -37,8 +37,10 @@ them. See `docs/releases/0.5.0-beta.9.md`.
   directive applies from `lg` up; Sass's merge of nested queries
   (`@media print { .a { @media (--lg) {…} } }` → `print and (min-width: 1024px)`)
   is pinned by a test. A literal query is never rewritten, and every
-  stylesheet whose `@media` preludes hold no `(--name)` compiles to the same
-  bytes as before.
+  stylesheet whose `@media` preludes hold no `--` compiles to the same bytes
+  as before (a breakpoint name without its parentheses, `@media --lg`, is now
+  `UXD_BREAKPOINT_CONTEXT`; a dashed name inside a function, `var(--lg)`, is
+  left as written).
 - **`UXD_BREAKPOINT_CONTEXT` for a breakpoint where it cannot apply:**
   `(--xs)`, the base breakpoint, which has no query; `@media (--bp)` under
   `@keyframes`, `@font-face`, `@page` or `@counter-style`; and a breakpoint
@@ -114,7 +116,7 @@ them. See `docs/releases/0.5.0-beta.9.md`.
 #### Visual changes
 
 - None in the package. Every stylesheet whose `@media` preludes hold no
-  `(--name)` compiles to the same bytes, and so do the Bootstrap corpus and
+  `--` compiles to the same bytes, and so do the Bootstrap corpus and
   the theme CSS. In the playground, SideNav's `@media (min-width: 1024px)`
   became `@media (--lg)` and compiles to the same query; `/docs/breakpoints`
   gains a live block-form demo.

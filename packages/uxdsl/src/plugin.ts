@@ -581,8 +581,12 @@ const stillThere = (construct: SassConstruct, root: Root) => construct.node.root
 /** The media query `<bp>()` emits and `(--<bp>)` compiles to: the one form the reference pass reads as a min-width condition. */
 const minWidthQuery = (px: number) => `(min-width: ${px}px)`;
 
-/** A custom media feature in a media query, `(--name)`, with spaces allowed inside the parentheses; `(--lg: 1)` is not one. */
-const BREAKPOINT_FEATURE = /\(\s*--([A-Za-z0-9_-]+)\s*\)/g;
+/**
+ * A custom media feature in a media query, `(--name)`, with spaces allowed
+ * inside the parentheses; `(--lg: 1)` is not one, and neither are a
+ * function's parentheses, `var(--lg)` or `env(--lg)`, which a name precedes.
+ */
+const BREAKPOINT_FEATURE = /(?<![\w-])\(\s*--([A-Za-z0-9_-]+)\s*\)/g;
 /** A dashed name outside parentheses: not a media feature. */
 const BARE_DASHED_NAME = /(?<![\w-])--([\w-]+)(?![\w-])/g;
 
@@ -675,7 +679,7 @@ function rewriteBreakpointMedia(c: Compilation) {
   const defined = new Map<string, string>();
   const shadowing = new Map<string, { name: string; query: string }>();
   const nested = new Map<string, AtRule>();
-  const warnings: Array<() => void> = [];
+  const definitions: Array<{ at: AtRule; name: string; query: string; bp: string }> = [];
   for (const at of c.breakpointAtRules) {
     if (at.name.toLowerCase() !== 'custom-media') continue;
     const definition = CUSTOM_MEDIA_DEFINITION.exec(at.params);
@@ -689,10 +693,16 @@ function rewriteBreakpointMedia(c: Compilation) {
     defined.set(name, query);
     if (!bp) continue;
     shadowing.set(bp, { name, query });
-    const theirs = bp === base ? 'no media query (the base breakpoint)' : minWidthQuery(c.bps[bp]);
-    const text = diagnostic(`UXD_BREAKPOINT_SHADOWED: @custom-media ${name} ${query} replaces the theme's ${bp}, ${theirs}, in this stylesheet: (--${bp}) compiles to ${query} here, while ${bp}() and stylesheets compiled apart keep the theme's. Remove it to use the theme's ${bp}, or change breakpoints.${bp} in the theme to move it everywhere.`).message;
-    warnings.push(() => c.result.warn(text, { node: at, word: name, plugin: PLUGIN }));
+    definitions.push({ at, name, query, bp });
   }
+  // `true` and `false` compile to `all` and `not all`.
+  const keyword = (query: string) => (/^true$/i.test(query) ? 'all' : /^false$/i.test(query) ? 'not all' : query);
+  // One warning per definition, naming what (--<bp>) compiles to: the last definition's query.
+  const warnings = definitions.map(({ at, name, query, bp }) => {
+    const theirs = bp === base ? 'no media query (the base breakpoint)' : minWidthQuery(c.bps[bp]);
+    const text = diagnostic(`UXD_BREAKPOINT_SHADOWED: @custom-media ${name} ${query} replaces the theme's ${bp}, ${theirs}, in this stylesheet: (--${bp}) compiles to ${keyword(shadowing.get(bp)!.query)} here, while ${bp}() and stylesheets compiled apart keep the theme's. Remove it to use the theme's ${bp}, or change breakpoints.${bp} in the theme to move it everywhere.`).message;
+    return () => c.result.warn(text, { node: at, word: name, plugin: PLUGIN });
+  });
   const usable = c.ordered.filter(({ name }) => name !== base).map(({ name }) => name);
   for (const at of c.breakpointAtRules) {
     if (at.name.toLowerCase() !== 'media') continue;
@@ -720,7 +730,7 @@ function rewriteBreakpointMedia(c: Compilation) {
       const project = shadowing.get(bp);
       if (project) {
         const { query } = project;
-        if (standsAlone(params, offset, token.length)) return /^true$/i.test(query) ? 'all' : /^false$/i.test(query) ? 'not all' : query;
+        if (standsAlone(params, offset, token.length)) return keyword(query);
         if (isParenGroup(query)) return query;
         if (isMediaCondition(query)) return `(${query})`;
         throw diagnostic(`UXD_BREAKPOINT_CONTEXT: (--${name}) stands for ${query} in this stylesheet (@custom-media ${project.name}), a query with a media type, a list or a keyword, which cannot be combined inside @media ${params}; write the definition as a condition such as (min-width: 900px), or use (--${name}) on its own.`, token);
@@ -783,7 +793,7 @@ function unknownMediaError(c: Compilation, record: UnknownMedia): unknown {
 function rejectUnknownMedia(c: Compilation, root: Root) {
   for (const record of c.unknownMedia) {
     if (record.node.root() !== root) continue;
-    if (!new RegExp(`\\(\\s*${record.name}\\s*\\)`).test(record.node.params)) continue;
+    if (!new RegExp(`(?<![\\w-])\\(\\s*${record.name}\\s*\\)`).test(record.node.params)) continue;
     const definedNow = root.nodes.some((node) => node.type === 'atrule' && node.name.toLowerCase() === 'custom-media' && CUSTOM_MEDIA_DEFINITION.exec(node.params)?.[1] === record.name);
     if (!definedNow) throw unknownMediaError(c, record);
   }

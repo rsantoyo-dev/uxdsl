@@ -96,7 +96,7 @@
       "patterns": [
         {
           "name": "meta.media-feature.breakpoint.uxdsl",
-          "match": "\\(\\s*(--(?i:sm|md|lg|xl))\\s*\\)",
+          "match": "(?:(?<=@(?i:media))|(?<![\\w-]))\\(\\s*(--(?i:sm|md|lg|xl))\\s*\\)",
           "captures": {
             "1": {
               "name": "support.constant.breakpoint.uxdsl"

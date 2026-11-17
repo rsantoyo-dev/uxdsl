@@ -17,7 +17,7 @@ const postcss = require('postcss');
 
 const exported = require('../dist/plugin');
 const plugin = exported.default || exported;
-const { compile } = require('../dist/entries/index.js');
+const { compile, DEFAULT_THEME } = require('../dist/entries/index.js');
 const { temporaryDirectory } = require('./helpers/temporary-directory');
 
 const DIR = path.join(__dirname, 'mig-b9-30');
@@ -81,6 +81,28 @@ test('MIG-B9-30: with uxdsl/postcss alone, (--<bp>) in an @media prelude becomes
   ]) {
     assert.equal((await viaPlugin(source)).css, source, source);
   }
+});
+
+test('MIG-B9-30: a dashed name in a function inside an @media prelude, var(--lg), env(--lg) or theme(--breakpoint-xl), is not a media feature and is left as written, on both paths', async () => {
+  const preludes = [
+    '(min-width: var(--lg))',
+    '(min-width: var(--gutter))',
+    '(min-width: calc(100px + var( --xs )))',
+    '(min-width: calc(var(--lg) * 1px))',
+    '(min-width: env(--lg))',
+    '(width >= theme(--breakpoint-xl))',
+  ];
+  for (const prelude of preludes) {
+    const source = `@media ${prelude} { .a { color: red } }`;
+    assert.equal((await viaPlugin(source)).css, source, `the plugin alone: ${source}`);
+    const compiled = await viaCompile(`@media ${prelude} { .a { color: red; } }`);
+    // Dart Sass prints `var( --xs )` as `var(--xs)`; nothing else in these preludes changes.
+    assert.ok(compiled.css.startsWith(`@media ${prelude.replace('( --xs )', '(--xs)')} {`), `compile(): ${compiled.css}`);
+    assert.deepEqual(compiled.warnings, [], `compile(): ${prelude}`);
+  }
+  // Control: beside such a function, the media feature (--lg) is still the theme's query, and an unknown one still fails.
+  assert.equal((await viaPlugin('@media (--lg) and (max-width: var(--lg)) { .a { color: red } }')).css, '@media (min-width: 1024px) and (max-width: var(--lg)) { .a { color: red } }');
+  assert.equal((await failure(viaPlugin('@media (--gutter) and (max-width: var(--gutter)) { .a { color: red } }'))).reason, unknownText('--gutter'));
 });
 
 // --- T2 -----------------------------------------------------------------------
@@ -205,6 +227,12 @@ test('MIG-B9-30: a breakpoint where it cannot apply is UXD_BREAKPOINT_CONTEXT: (
   assert.equal(viaCompileBase.reason, base);
   assert.equal(viaCompileBase.line, 2);
   assert.match((await context(viaPlugin, '@media (--XS) { .a { color: red } }')).reason, /^UXD_BREAKPOINT_CONTEXT: \(--XS\) is the base breakpoint/);
+  // A theme whose zero-width breakpoint is `base`, with xs at 320px (every default value written over base()): (--base) is the
+  // base, and (--xs) is a breakpoint like any other.
+  const overBase = (value) => (typeof value === 'string' ? value.replace(/\bxs\(/g, 'base(') : Array.isArray(value) ? value : Object.fromEntries(Object.entries(value).map(([key, each]) => [key, overBase(each)])));
+  const baseTheme = { ...overBase(DEFAULT_THEME), breakpoints: { ...DEFAULT_THEME.breakpoints, base: 0, xs: 320 } };
+  assert.match((await context(viaPlugin, '@media (--base) { .a { color: red } }', baseTheme)).reason, /^UXD_BREAKPOINT_CONTEXT: \(--base\) is the base breakpoint/);
+  assert.equal((await viaPlugin('@media (--xs) { .a { color: red } }', baseTheme)).css, '@media (min-width: 320px) { .a { color: red } }');
 
   // Under an at-rule that cannot hold a media query.
   const keyframes = await context(viaPlugin, '@keyframes spin {\n  @media (--lg) { from { color: red } }\n}');
@@ -267,7 +295,7 @@ test('MIG-B9-30: a held $variable in a prelude that also holds (--lg) is judged 
 
 // --- T8 -----------------------------------------------------------------------
 
-const shadowedText = (written, query, bp = 'lg', theirs = '(min-width: 1024px)') => `UXD_BREAKPOINT_SHADOWED: @custom-media ${written} ${query} replaces the theme's ${bp}, ${theirs}, in this stylesheet: (--${bp}) compiles to ${query} here, while ${bp}() and stylesheets compiled apart keep the theme's. Remove it to use the theme's ${bp}, or change breakpoints.${bp} in the theme to move it everywhere.`;
+const shadowedText = (written, query, bp = 'lg', theirs = '(min-width: 1024px)', result = query) => `UXD_BREAKPOINT_SHADOWED: @custom-media ${written} ${query} replaces the theme's ${bp}, ${theirs}, in this stylesheet: (--${bp}) compiles to ${result} here, while ${bp}() and stylesheets compiled apart keep the theme's. Remove it to use the theme's ${bp}, or change breakpoints.${bp} in the theme to move it everywhere.`;
 
 test('MIG-B9-30: a project @custom-media --lg replaces the theme\'s lg with one UXD_BREAKPOINT_SHADOWED per definition, located at it, and stays in the output', async (t) => {
   // The plugin alone: the definition stays, (--lg) is the project's query, one warning at the definition.
@@ -299,7 +327,8 @@ test('MIG-B9-30: a project @custom-media --lg replaces the theme\'s lg with one 
   assert.deepEqual(upper.warnings, [shadowedText('--LG', '(min-width: 900px)')]);
   const twice = await viaPlugin('@custom-media --lg (min-width: 900px);\n@custom-media --lg (min-width: 950px);\n@media (--lg) { .a { color: red } }');
   assert.match(twice.css, /@media \(min-width: 950px\)/);
-  assert.deepEqual(twice.warnings, [shadowedText('--lg', '(min-width: 900px)'), shadowedText('--lg', '(min-width: 950px)')]);
+  // Each definition's warning names what (--lg) compiles to: the last definition's query.
+  assert.deepEqual(twice.warnings, [shadowedText('--lg', '(min-width: 900px)', 'lg', '(min-width: 1024px)', '(min-width: 950px)'), shadowedText('--lg', '(min-width: 950px)')]);
 
   // What the definition becomes: a condition is wrapped inside a compound prelude; a whole list item takes the query as written.
   const substituted = async (definition, prelude) => {
@@ -313,6 +342,9 @@ test('MIG-B9-30: a project @custom-media --lg replaces the theme\'s lg with one 
   assert.equal(await substituted('screen and (min-width: 900px)', '(--lg), print'), '@media screen and (min-width: 900px), print');
   assert.equal(await substituted('true', '(--lg)'), '@media all');
   assert.equal(await substituted('false', '(--lg)'), '@media not all');
+  // The warning names the query (--lg) compiles to: `all` for a definition of `true`, `not all` for `false`.
+  assert.deepEqual((await viaPlugin('@custom-media --lg true;\n@media (--lg) { .a { color: red } }')).warnings, [shadowedText('--lg', 'true', 'lg', '(min-width: 1024px)', 'all')]);
+  assert.deepEqual((await viaPlugin('@custom-media --lg false;\n@media (--lg) { .a { color: red } }')).warnings, [shadowedText('--lg', 'false', 'lg', '(min-width: 1024px)', 'not all')]);
 
   // The base breakpoint can be given a query too, and its warning says it had none.
   const base = await viaPlugin('@custom-media --xs (min-width: 100px);\n@media (--xs) { .a { color: red } }');
@@ -428,6 +460,47 @@ test('MIG-B9-30: in a PostCSS chain a custom media another plugin resolves is no
   const undefinedName = '@media (--narrow) { .a { color: red } }';
   assert.equal((await failure(postcss([uxdsl()]).process(undefinedName, { from: CSS_FROM }))).reason, unknownText('--narrow'));
   assert.equal((await failure(postcss([customMedia({ resolveNothing: true }), uxdsl()]).process(own, { from: CSS_FROM }))).reason, unknownText('--narrow'));
+});
+
+test('MIG-B9-30: an unknown (--name) waiting for OnceExit holds the compilation\'s warnings, and is judged on the stylesheet that reaches the end of the run', async () => {
+  // While it waits, what the steps report waits with it: a compilation it fails gives no warning.
+  const shadowedAndUnknown = '@custom-media --lg (min-width: 900px);\n@media (--lg) { .a { color: red } }\n@media (--nope) { .a { color: red } }';
+  const lazy = postcss([uxdsl()]).process(shadowedAndUnknown, { from: CSS_FROM });
+  assert.equal((await failure(lazy)).reason, unknownText('--nope'));
+  assert.deepEqual(lazy.result.messages.filter((message) => message.type === 'warning'), []);
+  // Control: without the unknown name the same definition's warning is given.
+  assert.deepEqual((await viaPlugin(shadowedAndUnknown.replace(/\n@media \(--nope\).*$/, ''))).warnings, [shadowedText('--lg', '(min-width: 900px)')]);
+
+  // A root another plugin replaced cannot be looked in: the first unknown name fails, never silently.
+  const replaceRoot = () => ({
+    postcssPlugin: 'stand-in/replace-root',
+    Once(root, { result }) {
+      result.root = postcss.parse(root.toString(), { from: CSS_FROM });
+    },
+  });
+  assert.equal((await failure(postcss([uxdsl(), replaceRoot()]).process('@media (--nope) { .a { color: red } }', { from: CSS_FROM }))).reason, unknownText('--nope'));
+  // Control: with no unknown name, the replaced root compiles.
+  assert.equal((await postcss([uxdsl(), replaceRoot()]).process('@media (--lg) { .a { color: red } }', { from: CSS_FROM })).css, '@media (min-width: 1024px) { .a { color: red } }');
+
+  // A plugin listed after uxdsl/postcss that adds the definition in its Once is heard.
+  const inject = () => ({
+    postcssPlugin: 'stand-in/inject-custom-media',
+    Once(root) {
+      root.prepend(postcss.atRule({ name: 'custom-media', params: '--narrow (max-width: 400px)' }));
+    },
+  });
+  const injected = await postcss([uxdsl(), inject()]).process('@media (--narrow) { .a { color: red } }', { from: CSS_FROM });
+  assert.equal(injected.css, '@custom-media --narrow (max-width: 400px); @media (--narrow) { .a { color: red } }');
+  // A plugin that removes the at-rule holding the name leaves nothing to judge.
+  const remove = () => ({
+    postcssPlugin: 'stand-in/remove-media',
+    Once(root) {
+      root.walkAtRules('media', (at) => {
+        if (at.params.includes('--nope')) at.remove();
+      });
+    },
+  });
+  assert.equal((await postcss([uxdsl(), remove()]).process('.b { color: red }\n@media (--nope) { .a { color: red } }', { from: CSS_FROM })).css, '.b { color: red }');
 });
 
 // --- T11 ----------------------------------------------------------------------

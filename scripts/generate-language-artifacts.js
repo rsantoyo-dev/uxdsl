@@ -102,7 +102,7 @@ const grammar = {
     breakpointMedia: {
       patterns: [{
         name: 'meta.media-feature.breakpoint.uxdsl',
-        match: `\\(\\s*(--(?i:${LANGUAGE_COMPLETIONS.customMedia.map((name) => name.slice(2)).join('|')}))\\s*\\)`,
+        match: `(?:(?<=@(?i:media))|(?<![\\w-]))\\(\\s*(--(?i:${LANGUAGE_COMPLETIONS.customMedia.map((name) => name.slice(2)).join('|')}))\\s*\\)`,
         captures: { 1: { name: 'support.constant.breakpoint.uxdsl' } },
       }],
     },

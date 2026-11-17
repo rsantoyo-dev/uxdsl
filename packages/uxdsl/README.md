@@ -458,6 +458,13 @@ same property, the cascade between a block and `lg()` is CSS's: through
 `compile()` the one written later wins; with the plugin alone `lg()`'s
 `@media` follows the rule, so it wins over a nested block.
 
+This is also a difference from plain Dart Sass for a renamed `.scss` that
+uses custom media: Dart Sass keeps `@media (--name)` as written, while
+`compile()` rewrites a theme breakpoint, warns on a project `@custom-media`
+of a breakpoint name and fails on any other undefined `(--name)`. A dashed
+name inside a function in a prelude, `var(--lg)`, is not a media feature and
+is left as written.
+
 A directive styles a whole rule, so a role from a breakpoint up is the rule
 inside the block, which works on both paths; in a `.uxdsl` file compiled by
 `compile()` the block may also be nested in the rule. With `uxdsl/postcss`

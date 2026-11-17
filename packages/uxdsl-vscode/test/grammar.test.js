@@ -161,7 +161,7 @@ const BREAKPOINT_SCOPE = 'support.constant.breakpoint.uxdsl';
 const uxdslScoped = (tokens) => tokens.filter((t) => t.scopes.some((s) => s !== 'source.uxdsl' && s.endsWith('.uxdsl')));
 
 test('MIG-B9-30: (--<breakpoint>) is highlighted in an @media prelude, top level and nested, under Oniguruma', async () => {
-  for (const line of ['@media (--lg) { .a { color: red; } }', '@media print and ( --LG ), screen { }', '.a { @media (--lg) { color: red; } }', '.a { color: red; @media screen and (--md) { color: blue; } }']) {
+  for (const line of ['@media (--lg) { .a { color: red; } }', '@media(--lg) { }', '@media print and ( --LG ), screen { }', '.a { @media (--lg) { color: red; } }', '.a { color: red; @media screen and (--md) { color: blue; } }']) {
     const tokens = await tokenizeWithCss(line);
     const name = tokens.find((t) => /^--(lg|LG|md)$/.test(t.text));
     assert.ok(name && name.scopes.includes(BREAKPOINT_SCOPE), `${line}: ${JSON.stringify(tokens)}`);
@@ -177,7 +177,7 @@ test('MIG-B9-30: no breakpoint scope without the injections, outside an @media p
   for (const line of ['@media (--lg) { }', '.a { @media (--lg) { color: red; } }']) {
     assert.deepEqual(uxdslScoped(await tokenizeWithCss(line, { withoutInjections: true })), [], line);
   }
-  for (const line of ['.a { color: var(--lg); }', '.a { --lg: 1px; }', '@container (--lg) { }', '.a { @container (--lg) { } }', '@media (--lgg) { }', '@media (--xs) { }', '.a { @media (--xs) { } }']) {
+  for (const line of ['.a { color: var(--lg); }', '.a { --lg: 1px; }', '@container (--lg) { }', '.a { @container (--lg) { } }', '@media (--lgg) { }', '@media (--xs) { }', '.a { @media (--xs) { } }', '@media (min-width: var(--lg)) { }', '.a { @media (min-width: env(--md)) { } }']) {
     const tokens = await tokenizeWithCss(line);
     assert.deepEqual(tokens.filter((t) => t.scopes.includes(BREAKPOINT_SCOPE)), [], `${line}: ${JSON.stringify(tokens)}`);
   }

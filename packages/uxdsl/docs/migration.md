@@ -322,8 +322,9 @@ with `includeTheme: false`.
 A block that applies from a breakpoint up can name the breakpoint instead of
 its width (FEAT-010, DEC-07, MIG-B9-30): `(--lg)` in an `@media` prelude
 compiles to the theme's query for `lg`, `(min-width: 1024px)` in the base
-theme, on both paths. A stylesheet whose `@media` preludes hold no `(--name)`
-compiles to the same bytes as before.
+theme, on both paths. A stylesheet whose `@media` preludes hold no `--`
+compiles to the same bytes as before; a breakpoint name written without its
+parentheses there, `@media --lg`, now fails as `UXD_BREAKPOINT_CONTEXT`.
 
 1. **Replace a hand-written query that copies a breakpoint.** An
    `@media (min-width: 1024px)` written to match the theme's `lg` becomes

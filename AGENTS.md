@@ -960,11 +960,15 @@ stages that each change only what they name: protect
 (`packages/uxdsl/src/sass/protect.ts`) lets UXDSL's own syntax through Dart
 Sass, Dart Sass (`packages/uxdsl/src/sass/compile-sass.ts`) compiles the SCSS,
 restore puts `@ds-x(…)` back together, and the UXDSL plugin resolves the
-theme, the directives, responsive values and token functions in Dart Sass's
-output. A `.scss` file renamed to `.uxdsl` therefore compiles to the CSS Dart
-Sass produces for it (Bootstrap 5.3.8 is byte-identical,
-`fixtures/sass-corpus`), with three exceptions besides the recorded
-differences of functions named like UXDSL's (`compile.md`): a top-level
+theme, the directives, responsive values, token functions and
+`(--<breakpoint>)` in an `@media` prelude in Dart Sass's output. A `.scss`
+file renamed to `.uxdsl` therefore compiles to the CSS Dart Sass produces
+for it (Bootstrap 5.3.8 is byte-identical, `fixtures/sass-corpus`), apart
+from two recorded differences (`compile.md`) — functions named like UXDSL's,
+and `(--name)` in an `@media` prelude, where a theme breakpoint is rewritten,
+a project `@custom-media` of a breakpoint name warns
+`UXD_BREAKPOINT_SHADOWED` and any other undefined `(--name)` fails as
+`UXD_BREAKPOINT_UNKNOWN` — and three exceptions: a top-level
 comment whose text starts with `# sourceMappingURL=` is removed, and two
 things fail, as described below — a `$variable` Dart Sass keeps as written,
 and text it prints from a string that is not CSS. `@use`/`@forward`, mixins,
