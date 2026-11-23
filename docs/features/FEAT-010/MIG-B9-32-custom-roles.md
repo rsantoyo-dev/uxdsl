@@ -8,7 +8,7 @@
 | Status | Ready |
 | Size | S |
 | Depends on | MIG-B9-34 (the global focus rule keeps every control focusable before roles lose the inherited ring) |
-| Blocks | MIG-B9-40 |
+| Blocks | MIG-B9-40, MIG-B9-92 (it depends on the moved wave-3 stories, decision 1 of 2026-11-23) |
 | Base | `feat/beta9` after MIG-B9-34 |
 | Owns | `packages/uxdsl/test/custom-roles.test.js` (new) |
 | Shares | `packages/uxdsl/src/control-engine.ts`, `ds-runtime/theme-validate.ts`, `diagnostics.ts`, `scripts/generate-language-artifacts.js` (schema), `packages/uxdsl/CHANGELOG.md`, `AGENTS.md` |

@@ -8,7 +8,7 @@
 | Status | Ready |
 | Size | M |
 | Depends on | MIG-B9-13 |
-| Blocks | MIG-B9-40 |
+| Blocks | MIG-B9-40, MIG-B9-92 (it depends on the moved wave-3 stories, decision 1 of 2026-11-23) |
 | Base | `feat/beta9` after MIG-B9-13 |
 | Owns | `fixtures/scoped-palettes/**` (new: a page and a Chrome check), `packages/uxdsl/test/scoped-palettes.test.js` (new) |
 | Shares | `packages/uxdsl/src/foundations.ts`, `css-blocks.ts`, `reference-core.ts`, `reference-integrity.ts`, `typography.ts`, `control-engine.ts`, `edges.ts`, `shadows.ts`, `surfaces.ts`, `language.ts` (default selectors), `fixtures/parity/expected/**`, `fixtures/release-1.0/run.js`, `packages/uxdsl/CHANGELOG.md`, `AGENTS.md` |

@@ -8,7 +8,7 @@
 | Status | Ready |
 | Size | S |
 | Depends on | MIG-B9-13 |
-| Blocks | MIG-B9-40 |
+| Blocks | MIG-B9-40, MIG-B9-92 (it depends on the moved wave-3 stories, decision 1 of 2026-11-23) |
 | Base | `feat/beta9` after MIG-B9-13 |
 | Owns | `packages/uxdsl/test/user-invalid.test.js` (new) |
 | Shares | `packages/uxdsl/src/inputs.ts`, `fixtures/mig02-nextjs-cssmodules/browser.js`, `packages/uxdsl/CHANGELOG.md`, `AGENTS.md` |

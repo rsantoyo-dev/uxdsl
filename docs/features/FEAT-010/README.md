@@ -26,6 +26,10 @@ what every story shares.
    node fixtures/mig07-consumer/run.js
    ```
 
+   Then run `npm run prepare` once at the root: it installs the pre-commit
+   hook, which `npm ci --ignore-scripts` skips (CI does not need it;
+   decision 53 of 2026-11-23).
+
 4. Run the story's **Preconditions** block. Every line is a command that must
    exit 0. If one fails, stop and report: the base moved, and the story must be
    re-read against the new base before any code is written. A precondition
@@ -36,6 +40,10 @@ what every story shares.
    wave 3)** were measured on `685c132` before waves 1–3 rewrite the pipeline:
    one S story after wave 3 re-runs all their preconditions and baselines and
    updates them in a single PR for the owner, before any of them starts.
+   MIG-B9-91 does not wait for the rest of wave 3, which decision 1 of
+   2026-11-23 moved to `0.5.0-beta.10`: for it, "after wave 3" reads "on
+   the beta.9 cut", and it is re-baselined on `6cdadaf` (or a later
+   `feat/beta9` before any moved story merges).
    Every story's §15 "Review of 2026-10-11" block is applied (or rejected by
    the owner) before the story starts.
 5. Run the story's **Baseline** block and compare its output with the recorded
@@ -215,7 +223,7 @@ its wave can run in parallel with its siblings, within §7.
 | MIG-B9-24 | [The plugin's fixed per-build costs](MIG-B9-24-plugin-fixed-costs.md) | 2 | — | S | 20, 21 | Merged (PR #102) |
 | MIG-B9-18 | [The codemod's directive-argument rewrite is complete in one run](MIG-B9-18-codemod-directive-arguments.md) | 3 | — | S | 29 | Merged (PR #91) |
 | MIG-B9-30 | [Breakpoint media queries: `@media (--lg)`](MIG-B9-30-breakpoint-blocks.md) | 3 | DEC-07 | M | 13 | Merged (PR #104) |
-| MIG-B9-91 | [The gate and the release record](MIG-B9-91-gate-and-release.md) | 7 | DEC-03 | M | every story merged into `feat/beta9` at `6cdadaf`, 28 included (decision 1 of 2026-11-23) | Draft (re-baseline after wave 3) |
+| MIG-B9-91 | [The gate and the release record](MIG-B9-91-gate-and-release.md) | 7 | DEC-03 | M | every story merged into `feat/beta9` at `6cdadaf`, 28 included (decision 1 of 2026-11-23) | Draft (re-baseline on `6cdadaf`, decision 1 of 2026-11-23) |
 | MIG-B9-31 | [Scoped palettes reach every composite](MIG-B9-31-scoped-palettes.md) | 3 | DEC-08 | M | 13 | Ready (moved to `0.5.0-beta.10` by decision 1 of 2026-11-23) |
 | MIG-B9-32 | [One inheritance rule for roles: `extends`](MIG-B9-32-custom-roles.md) | 3 | DEC-09 | S | 34 | Ready (moved to `0.5.0-beta.10` by decision 1 of 2026-11-23) |
 | MIG-B9-33 | [Typography `extends`](MIG-B9-33-typography-extends.md) | 3 | DEC-10 | S | 13 | Ready (moved to `0.5.0-beta.10` by decision 1 of 2026-11-23) |
@@ -269,7 +277,9 @@ MIG-B9-24 to 29, MIG-B9-37 and MIG-B9-92, whose story files are still to be
 written (FEAT-010 §2, "Owner decisions of 2026-11-04", whose list numbers
 the decisions D1 to D19). `0.5.0-beta.9` ships waves 0 to 3, and MIG-B9-91
 closes it: its row sits right after the last wave-3 row, although the story
-is in wave 7, because it integrates after wave 3 and before wave 4.
+is in wave 7, because it integrates after wave 3 and before wave 4 (until
+decision 1 of 2026-11-23, which moved MIG-B9-06, 19 and 31 to 38 to
+`0.5.0-beta.10` and MIG-B9-91's row up, after MIG-B9-30's).
 `0.5.0-beta.10` ships waves 4 to 6, and MIG-B9-90 and MIG-B9-92 close it;
 the unmerged stories of waves 4 to 6 and MIG-B9-90 name that release in
 their header.
@@ -298,7 +308,8 @@ MIG-B9-22, which also edit `packages/playground-nextjs/**` (MIG-B9-20 the
 same page, at line 103), so MIG-B9-20 and MIG-B9-22, which are Ready, do not
 wait for a story whose file is still to be written; the wave-3 stories that
 edit the playground (MIG-B9-30, 33, 34, 35 and 36) wait for it in turn.
-MIG-B9-38 and 39 are the last wave-3 rows, right before MIG-B9-91; both edit
+MIG-B9-38 and 39 are the last wave-3 rows, right before MIG-B9-91 (until
+decision 1 of 2026-11-23 moved MIG-B9-91's row up); both edit
 `bin/uxdsl.js`, so MIG-B9-39 waits for MIG-B9-38. MIG-B9-39 is also on the
 rows for `packages/uxdsl/test/cli/**` and `packages/playground-nextjs/**`,
 for the watch-mode test and the captures check the decision gives it
@@ -313,7 +324,8 @@ merged, and registered MIG-B9-44, whose story file is still to be written
 (FEAT-010 §2, "Owner decisions of 2026-11-09", whose list numbers the
 decisions 1 to 13). Every wave-4 story relies on
 `fixtures/playground-browser/compare.js`, so MIG-B9-44 merges before any of
-them starts: its row is the first of wave 4, right after MIG-B9-91's, and
+them starts: its row is the first of wave 4, right after MIG-B9-91's
+(after the moved wave-3 rows since decision 1 of 2026-11-23), and
 MIG-B9-40 depends on it. It ships in `0.5.0-beta.10` with its wave, so
 `0.5.0-beta.9`'s scope does not change. Under §7 it shares
 `fixtures/playground-browser/**` with MIG-B9-40 to 43, which follow it. Four
@@ -466,11 +478,16 @@ story merged at `6cdadaf`, MIG-B9-28 included, and no longer on MIG-B9-06
 (decision 28 of 2026-11-15 is lifted). Its row moves up, after the last
 merged wave-3 row that precedes the moved ones, since it integrates before
 them; under §7 the moved stories on its files wait for it, not the reverse.
-MIG-B9-92 also depends on the moved stories. Under the same standing
+MIG-B9-92 also depends on the moved stories. MIG-B9-91's status reads
+"re-baseline on `6cdadaf`": §1 item 4's "after wave 3" would otherwise make
+the beta.9 gate wait for beta.10 work. Under the same standing
 instruction, the five deliveries' flags and follow-ups became decisions 2 to
-53 of 2026-11-23, without being put to the owner one by one; the owner may
-override any of them, and MIG-B9-28's G4 (decision 29) is recorded as open
-for the owner to override. Seven stories are registered for
+53 of 2026-11-23, and MIG-B9-18's two flags of 2026-11-14 and its
+follow-ups, which no earlier record carried, decisions 54 to 57, without
+being put to the owner one by one; the owner may override any of them.
+MIG-B9-28's G4 (decision 29) is recorded as PR #101's recommendation,
+confirm (c). Decision 58 lists the owner checks the merged stories leave
+open, inputs to the documentation review before publishing. Seven stories are registered for
 `0.5.0-beta.10`, the last wave-6 rows after MIG-B9-97, with their story
 files still to be written: MIG-B9-99, 101, 102, 103, 68, 69 and 70
 (decisions 39, 41, 43, 44, 47, 45 and 46). MIG-B9-30's delivery proposed
@@ -479,8 +496,9 @@ unregistered proposal, so those two are 69 and 70; MIG-B9-100 is not
 registered (decision 40). They have no §7 rows, like MIG-B9-94 to 97: as the
 last wave-6 rows they come after every unmerged story on the files they will
 likely edit. MIG-B9-06 also takes G4's class (decision 48) and MIG-B9-66 the
-root `npm test`'s other suites on Windows (decision 49). MIG-B9-17, 24, 27,
-28, 30, 55 and 91, and the moved stories MIG-B9-19 and 31 to 38, carry a
+root `npm test`'s other suites on Windows (decision 49), and MIG-B9-60
+F11's half rewrite (decision 56). MIG-B9-17, 18, 24, 27, 28, 30, 55, 60 and
+91, and the moved stories MIG-B9-19 and 31 to 38, carry a
 block of this date at the end of their §15.
 
 ## 6. Branches and merges

@@ -8,7 +8,7 @@
 | Status | Ready |
 | Size | S |
 | Depends on | MIG-B9-13 |
-| Blocks | MIG-B9-40 |
+| Blocks | MIG-B9-40, MIG-B9-92 (it depends on the moved wave-3 stories, decision 1 of 2026-11-23) |
 | Base | `feat/beta9` after MIG-B9-13 |
 | Owns | `packages/uxdsl/test/typography-extends.test.js` (new) |
 | Shares | `packages/uxdsl/src/typography.ts`, `src/theme/base.json`, `ds-runtime/theme-validate.ts`, `diagnostics.ts`, `scripts/generate-language-artifacts.js`, `fixtures/parity/expected/**`, `packages/uxdsl/CHANGELOG.md`, `AGENTS.md`, the playground's `.uxdsl` files that relied on zero margins |

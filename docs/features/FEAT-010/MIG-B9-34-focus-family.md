@@ -8,7 +8,7 @@
 | Status | Ready |
 | Size | M |
 | Depends on | MIG-B9-13 |
-| Blocks | MIG-B9-32, MIG-B9-40, MIG-B9-62 |
+| Blocks | MIG-B9-32, MIG-B9-40, MIG-B9-62, MIG-B9-92 (it depends on the moved wave-3 stories, decision 1 of 2026-11-23) |
 | Base | `feat/beta9` after MIG-B9-13 |
 | Owns | `packages/uxdsl/src/focus.ts` (new), `packages/uxdsl/test/focus.test.js` (new) |
 | Shares | `packages/uxdsl/src/theme/base.json`, `ds-runtime/theme-validate.ts` (`KNOWN_THEME_FAMILIES`), `ds-runtime/theme-generator.ts`, `ds-runtime/contrast.ts`, `diagnostics.ts`, `scripts/generate-language-artifacts.js`, `scripts/verify-docs-update.js`, `fixtures/parity/expected/**`, `fixtures/release-1.0/run.js`, `packages/uxdsl/CHANGELOG.md`, `AGENTS.md` |
