@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 2 |
 | Decision gate | None (registered by decision D11 of 2026-11-04; §15 asks the owner seven questions, and the contract states the option it assumes for each) |
-| Status | Ready |
+| Status | In review (PR #101) |
 | Size | M (registered as "S or split (its scout sizes it)"). This file is the first part: the `uxdsl` package's own suites on Windows. What a larger scope would add is §15's questions 1 and 2, with no new id (question 1's second part is MIG-B9-66, decision 15 of 2026-11-10) |
 | Depends on | None by registration (D11). Under §7 it starts after five earlier rows merge, which edit test files it shares (§3): MIG-B9-20 (`test/cli/**`), MIG-B9-25 (`test/cli/**`, `compile-sass.test.js`, `sass-source-maps.test.js`, `no-silent-output.test.js`), MIG-B9-26 (`compile-sass.test.js`), MIG-B9-17 (`test/cli/uxdsl-cli.test.js`, which decision 6 of 2026-11-10 moved from MIG-B9-26 to it) and MIG-B9-27 (`no-silent-output.test.js`) |
 | Blocks | MIG-B9-91 (D11); MIG-B9-66, in `0.5.0-beta.10` (decision 15 of 2026-11-10). Under §7, MIG-B9-38, 19 and 06 (MIG-B9-19 and 06 in MIG-B9-39's place, by decisions 28 and 29 of 2026-11-13) and every later story on `packages/uxdsl/test/cli/**` or on another file in Shares |
@@ -671,7 +671,97 @@ PR title: `FEAT-010: MIG-B9-28 - CI on Windows`. The body:
 
 ## 14. Closure record
 
-To be filled in the delivering PR.
+Delivered in PR #101 (`feat/b9-28-ci-on-windows` into `feat/beta9`). The
+story started on `dec40b1`; `225ef8e` merged `feat/beta9` at `6b8e3a9`
+(MIG-B9-24, PR #102), which is BASE for AC5 and AC6. The tip measured
+below is `e17740c` (the review fixes); the closure commit after it changes
+only this file and the index.
+
+**Environment.** Local: macOS 27.0, Node 20.19.0, npm 11.21.1, Chrome at the
+macOS default path, TMPDIR set to an empty directory under the scratchpad.
+CI: `windows-latest` (image `windows-2025-vs2026`, version 20261111.635),
+Node 20 and npm 11; `ubuntu-latest` for `npm test` and `verify:1.0`.
+
+**Windows runs** (`gh run list --branch feat/b9-28-ci-on-windows`):
+
+| Run | Commit | Result | What failed, what changed next |
+| --- | --- | --- | --- |
+| 43923540755 | `717ecdc` | failure | The baseline: the job alone, no test change. Step 8's unit group `# tests 756`, `# fail 4`, and the `&&` chain stopped there; step 9 (job 133513677451) printed `exit 1` for 17 files (among them `removed-language-surface` `spawnSync npm ENOENT`, `compile-sass` 36 of 58 failing on `RUNNER~1` against `runneradmin`, `sass-source-maps`, `temporary-directory` (untyped symlinks), `es5-consumer-compat`, `sass-stage-diagnostics`, `error-location`, `init`, `uxdsl-cli`, `watch-mode`, `watch-selection`, three Vite files and `webpack/theme-emission`), `left` lines up to 166, `fail=1`. The image's `core.autocrlf` was `true` from `file:C:/Program Files/Git/etc/gitconfig`; `files checked out with CRLF: 0`. |
+| 43928219096 | `e235b55` | cancelled | Superseded: step 9 runs only once the install has succeeded. |
+| 43933237360 | `5a0ff25` | cancelled | Harness fixes (npm helper, separators, `realpathSync.native`, junction symlinks, T3/T4/T11, T5–T8); showed G1 (`pkg:` lower case) and the load-path `..` case before it was superseded. |
+| 43942955727 | `640bed8` | failure | G1 again, G2 (the deny is listed through), the `vite/theme-emission` lookup, the atomic-replace test running to exit 124. |
+| 43950837496 | `0488249` | failure | G3 (`EPERM` on rename under a reader) and G4's first doubled events (C6g block). |
+| 43954805492 | `3bd00d8` | failure | G4 again (the re-run C6g asks for): 3 `test/cli` failures; the story stopped for the owner. |
+| 43957973805 | `e6a51d6` | cancelled | Docs only, superseded by G4's change. |
+| 43960109820 | `fc8d628` | success | G4 applied: all three jobs pass (Windows job 133625076636, 16 min 45 s). |
+| 43964314038 | `9e5b3b0` | success | Docs only: Windows job 133639596473, 15 min 1 s. |
+| 45214978701 | `e17740c` | success | The review's fixes: Windows job 137833567906 (14 min 55 s), `npm test` job 137833567561 (5 min 44 s), `verify:1.0` (9 min 23 s). |
+
+**AC1** `npm test (uxdsl, Windows)` is `pass` on PR #101 for `e17740c`
+(`gh pr checks 101`). AC1's mutation as amended (§15, review R1): step 8's
+drift check prints `the package's test script is not the one this step
+runs: …` and exits 1 on a copy of `package.json` whose `test` script
+differs, 0 on the real one.
+
+**AC2** (job 137833567906, step 8 read up to its exclusion line, as G4
+amends it): `# tests` 769, 370, 239, 32, 29, 1 for the six gated groups,
+then the excluded file's 37; the ubuntu job 137833567561 of the same
+commit gives 769, 370, 276, 32, 29, 1 (239 + 37 = 276). Seven `# fail 0`
+lines (the six groups and the excluded file's), no `not ok`; `# SKIP` 6
+(the corpus, MIG-B9-12's I/O error, MIG-B9-23's execute-only directory,
+MIG-B9-14's backslash, MIG-B9-22's recorded invocation, and T7);
+`ok N - MIG-B9-28:` 10, exactly one with `# SKIP` (T7, G2); the NFD line
+once; no `tmpdir-guard:` line. After the exclusion line:
+`watch-mode.test.js: # tests 37`, `# pass 37`, `# fail 0`, `exit 0, left
+0`. Step 9: every gated file passes and leaves nothing, `fail=0`; the
+excluded file prints `exit 1 … (excluded from the Windows gate)` (`not ok
+17 - MIG-B9-14: an entry whose first build failed, …`, `expected: 1`,
+`actual: 2`, G4's class) and `left 38`, which are the 38 `temporary
+directory kept:` lines the helper prints for a failing file (R2).
+
+What T5 to T8 observed on `windows-latest`: T5, a component written
+`RUNNER~1` keeps that spelling in `loadedFiles` and `dependencies` while
+`realpathSync.native` spells it `runneradmin`; T6, `lstat` reports a
+junction as a symbolic link and the stage lists only the directory that
+holds it; T7 skips (G2: the elevated administrator lists the directory
+through an `(RD)` deny); T8, the final map keeps every author mapping with
+drive-lettered stage sources, and its negative control loses them without
+`chainable()`. G1's test pins the lower-case `pkg:` spelling.
+
+**AC3** `TMPDIR=<empty> node --test packages/uxdsl/test/core/sass-stage-win32.test.js packages/uxdsl/test/win32-harness.test.js`
+on macOS: exit 0, `# tests 10`, `# pass 2`, `# skipped 8`, 0 entries left.
+
+**AC4** `TMPDIR=<empty> npm test` at the root on macOS (`e17740c`): exit 0;
+the package groups 769 (3 skipped), 370 (6 skipped), 276, 32, 29, 1, every
+`# fail 0`; `tmpdir-guard` passed; 0 entries left. The new tests are the
+five of `win32-harness.test.js` (unit) and the five of
+`sass-stage-win32.test.js` (`test/core`), so BASE's groups are 764 and
+365, the others unchanged.
+
+**AC5** `git diff -U0 6b8e3a9 -- .github/workflows/ci.yml | command grep -c '^-[^-]'`
+prints 0.
+
+**AC6** `git diff --exit-code 6b8e3a9 -- packages/uxdsl/src packages/uxdsl/bin packages/uxdsl/package.json packages/uxdsl/package-lock.json package.json package-lock.json`
+exits 0.
+
+**AC7** Job 137833567906 prints `files checked out with CRLF: 0`; the
+image's own setting is `file:C:/Program Files/Git/etc/gitconfig true`. A
+local clone of `9e5b3b0` checked out with `core.autocrlf=true` prints 703
+and the step's test exits 1 (review).
+
+**Other commands, local, `e17740c`.**
+`npm run verify:1.0 -- --skip-playground-walk`: exit 0, `72/72 automated
+checks passed`; it leaves its five known directories in `TMPDIR`
+(`uxdsl-1.0-gate-*`, `uxdsl-1.0-upgrade-before-*`, two
+`uxdsl-vite-adapter-*`, `uxdsl-webpack-adapter-*`, as MIG-B9-25 records).
+`npm run verify:playground-browser` (real Chrome): exit 0, `PASS: no
+console errors, no UXDSL warnings, no unresolved var(), visible keyboard
+focus, contrast page = Node.`, every planted defect caught.
+
+**Not run, or not a pass.** `verify:1.0` on Windows; the root `npm test`'s
+other suites on Windows (vscode, playground, fixtures, scripts: MIG-B9-66);
+Windows on ARM; C6c on win32 (G2); `test/cli/watch-mode.test.js` inside
+the Windows gate (G4, MIG-B9-06).
 
 ## 15. Findings and follow-ups
 
@@ -1414,3 +1504,40 @@ before it was fixed; none touches `src`, `bin` or a `package.json`.
   MIG-B9-06 lands, whichever release that is.
 - **R7:** the `realpathSync.native` comment of `test/vite/index.test.js`
   sits above `mkTmpDir()` again, not above `'use strict'`.
+
+### Delivery of 2026-11-23
+
+- **Run 45214978701 (`e17740c`) passes all three jobs.** The Windows job
+  (137833567906, 14 min 55 s) gives AC2 as amended by G4 and R5 (§14). In
+  its step 8 `watch-mode.test.js` passes 37/37 and leaves 0; in its step 9
+  the same file fails `MIG-B9-14: an entry whose first build failed, …`
+  (`expected: 1`, `actual: 2`). Across the three green runs the excluded
+  file failed in 4 of its 6 runs, each time one test seeing G4's doubled
+  event (`2 !== 1`), never for another reason. That is MIG-B9-06's evidence, not a
+  new finding.
+- **The runner image is `windows-2025-vs2026`** (version 20261111.635), and
+  its `core.autocrlf` is `true` from `file:C:/Program Files/Git/etc/gitconfig`
+  in every run. Step 1 is what makes AC7 hold there.
+- **The closure was measured on the review's tip.** Local `npm test`,
+  `verify:1.0 -- --skip-playground-walk` and `verify:playground-browser`
+  all exit 0 (§14). `verify:1.0`'s five leftover directories are the ones
+  MIG-B9-25 records, and this story does not touch the fixtures.
+- **For the owner before merge.** G4 (watch-mode.test.js outside the
+  Windows gate) was chosen by the owner's session without a clearly
+  recommended option, and its cause is in `bin`, so it needs the owner's
+  confirmation or override. G1, G2, G3, F1–F6 and R1 were answered with
+  their recommended options under the standing instruction, and the owner
+  may override any of them.
+
+Follow-ups. No new id is needed; the ones above stand:
+
+- **MIG-B9-06** (registered; story file still to be written; beta.10 under
+  the planned beta.9 cut) takes G4's class and returns
+  `watch-mode.test.js` to the Windows gate.
+- **MIG-B9-102** (proposed, S, `0.5.0-beta.10`) spells a `pkg:` file in its
+  on-disk case on win32 (G1).
+- **MIG-B9-103** (proposed, S, `0.5.0-beta.10`, or within MIG-B9-06) retries
+  the watch rename under a reader on win32 (G3).
+- **MIG-B9-66** (registered, `0.5.0-beta.10`) runs the root `npm test`'s
+  other suites on Windows (vscode, playground, fixtures, scripts), together
+  with `scripts/tmpdir-guard.test.js`.
