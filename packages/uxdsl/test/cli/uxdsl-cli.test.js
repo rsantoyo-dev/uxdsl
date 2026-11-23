@@ -11,6 +11,7 @@ const fs = require('node:fs');
 const { temporaryDirectory } = require('../helpers/temporary-directory');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
+const { posixSeparators, posixOutput } = require('../helpers/separators');
 const postcss = require('postcss');
 
 const CLI_BIN = path.join(__dirname, '..', '..', 'bin', 'uxdsl.js');
@@ -1422,7 +1423,7 @@ test("MIG-B9-20: '[uxdsl] Theme config detected' is printed only for an entry th
   const theme = spawnSync(process.execPath, [CLI_BIN, 'build', '--entry', 'src/theme.uxdsl', '--out', 'out/theme.css'], { cwd: dir, encoding: 'utf8' });
   assert.equal(theme.status, 0, theme.stderr);
   assert.match(theme.stdout, /^\[uxdsl\] Theme config detected$/m, 'control: the entry that emits the theme says so');
-  assert.ok(theme.stdout.indexOf('Theme config detected') < theme.stdout.indexOf('built out/theme.css'), 'before its built line');
+  assert.ok(theme.stdout.indexOf('Theme config detected') < posixSeparators(theme.stdout).indexOf('built out/theme.css'), 'before its built line');
 });
 
 // --- MIG-B6-21 (FEAT-008): source maps ---
@@ -1575,7 +1576,9 @@ function cliProject() {
   return dir;
 }
 
-const runCli = (dir, ...args) => spawnSync(process.execPath, [CLI_BIN, ...args], { cwd: dir, encoding: 'utf8' });
+// Its output reads each path separator as '/' (the identity on POSIX); the CLI
+// prints them as the platform writes them.
+const runCli = (dir, ...args) => posixOutput(spawnSync(process.execPath, [CLI_BIN, ...args], { cwd: dir, encoding: 'utf8' }));
 
 test('phase 2 (3): bare `uxdsl` prints the general help and exits 0, and builds nothing', () => {
   const dir = cliProject();
@@ -1727,7 +1730,7 @@ test('MIG-B9-14: warnings print once with their position; sass.silenceDeprecatio
     SHADOWED_WARNING,
   ]);
   assert.equal(built.stderr, `${warningLines(built.stderr).join('\n')}\n`, 'nothing else on stderr');
-  assert.equal(built.stderr.includes(dir), false, 'no absolute path');
+  assert.equal(built.stderr.includes(posixSeparators(dir)), false, 'no absolute path');
   assert.match(fs.readFileSync(path.join(dir, 'out', 'entry.css'), 'utf8'), /padding: 8px/);
 
   // A partial two entries load prints its warning once per build.

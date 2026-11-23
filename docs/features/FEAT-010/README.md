@@ -210,7 +210,7 @@ its wave can run in parallel with its siblings, within §7.
 | MIG-B9-26 | [Dotted near-misses keep DEC-02's "did you mean" through `compile()`; Sass's `@debug` reaches the build as a warning](MIG-B9-26-near-misses-debug-isolation.md) | 2 | DEC-02 | S | 14, 21 | Merged (PR #97) |
 | MIG-B9-17 | [The silent cases of `@use`'s module isolation warn](MIG-B9-17-module-isolation-warnings.md) | 2 | DEC-17 | M | 26 | In review (PR #99) |
 | MIG-B9-27 | [`uxdsl/postcss` in a PostCSS chain: run the Sass-syntax checks at `OnceExit` if that keeps every contract](MIG-B9-27-postcss-chain.md) | 2 | DEC-05 | S | 21 | In review (PR #100) |
-| MIG-B9-28 | [CI on Windows](MIG-B9-28-ci-on-windows.md) | 2 | — | M | — | Ready |
+| MIG-B9-28 | [CI on Windows](MIG-B9-28-ci-on-windows.md) | 2 | — | M | — | In review (PR #101) |
 | MIG-B9-29 | [The canonical-grammar codemod is idempotent](MIG-B9-29-codemod-idempotent.md) | 2 | — | S | — | Merged (PR #82) |
 | MIG-B9-24 | [The plugin's fixed per-build costs](MIG-B9-24-plugin-fixed-costs.md) | 2 | — | S | 20, 21 | In review (PR #102) |
 | MIG-B9-18 | [The codemod's directive-argument rewrite is complete in one run](MIG-B9-18-codemod-directive-arguments.md) | 3 | — | S | 29 | Merged (PR #91) |
@@ -481,7 +481,7 @@ edit `bin/uxdsl.js`).
 | `packages/uxdsl/test/cli/**` | 14, 20, 21, 22, 25, 17, 28, 38, 19, 06 |
 | `packages/uxdsl/test/no-silent-output.test.js` | 13, 25, 27, 28 |
 | `packages/uxdsl/test/core/sass-source-maps.test.js` | 13, 25, 28 |
-| `packages/uxdsl/test/vite/index.test.js`, `test/webpack/loader.test.js` | 20, 21, 25, 06 (`loader.test.js`, provisional: decision 40 of 2026-11-15) |
+| `packages/uxdsl/test/vite/index.test.js`, `test/webpack/loader.test.js` | 20, 21, 25, 28 (`index.test.js`), 06 (`loader.test.js`, provisional: decision 40 of 2026-11-15) |
 | `packages/uxdsl/bin/uxdsl.js` | 14, 20, 21, 22, 37, 38, 19, 06, 60, 61, 63 |
 | `packages/uxdsl/src/vite.ts`, `webpack.ts` | 14, 20, 21, 39, 64 |
 | `packages/uxdsl/src/diagnostics.ts` | 04, 11, 12, 13, 21, 26, 17, 30, 32, 33, 34, 35, 37, 38 |

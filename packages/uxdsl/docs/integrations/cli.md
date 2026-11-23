@@ -561,7 +561,12 @@ another directory, is picked up at the next save of a watched file. Add its
 directory to `watch` (`'shared/**/*.scss'`) to have it noticed.
 
 Output is written only when it changed, atomically (temp file plus rename), so
-a reader never sees a truncated file and an unchanged entry keeps its mtime:
+a reader never sees a truncated file and an unchanged entry keeps its mtime.
+On Windows a rename onto a file another process has open at that moment is
+refused: that build prints `[uxdsl] build failed: EPERM: operation not
+permitted, rename …`, the previous output stays whole, and the next change
+builds again. A build that writes prints the first line below, one that finds
+the output unchanged the second:
 
 ```text
 [uxdsl] built src/uxdsl.css (50854 bytes)

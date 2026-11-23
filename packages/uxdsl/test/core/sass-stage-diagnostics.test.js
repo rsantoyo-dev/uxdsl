@@ -20,6 +20,7 @@ const postcss = require('postcss');
 const core = require('../../dist/entries/index.js');
 const exported = require('../../dist/plugin');
 const { temporaryDirectory } = require('../helpers/temporary-directory');
+const { posixSeparators, posixOutput } = require('../helpers/separators');
 
 const plugin = exported.default || exported;
 const BIN = path.join(__dirname, '..', '..', 'bin', 'uxdsl.js');
@@ -37,7 +38,9 @@ function project(t, files = {}) {
   return dir;
 }
 
-const build = (dir) => spawnSync(process.execPath, [BIN, 'build'], { cwd: dir, encoding: 'utf8' });
+// The CLI's output and the warnings below read each path separator as '/'
+// (the identity on POSIX).
+const build = (dir) => posixOutput(spawnSync(process.execPath, [BIN, 'build'], { cwd: dir, encoding: 'utf8' }));
 const failure = (promise) => promise.then(() => null, (error) => error);
 const compileSource = (source, from, options = {}) => core.compile({ source, from }, { ...OPTIONS, ...options });
 const throughPlugin = (source, from) => postcss([plugin(OPTIONS)]).process(source, { from });
@@ -215,7 +218,7 @@ test('MIG-B9-26: each @debug Dart Sass evaluates is a UXD_SASS_WARNING: DEBUG: w
 
   const built = build(dir);
   assert.equal(built.status, 0, built.stderr);
-  const rel = (warning) => `[uxdsl] Warning: ${path.relative(dir, warning.file)}:${warning.line}:${warning.column}: ${warning.text}`;
+  const rel = (warning) => posixSeparators(`[uxdsl] Warning: ${path.relative(dir, warning.file)}:${warning.line}:${warning.column}: ${warning.text}`);
   assert.deepEqual(built.stderr.split('\n').filter(Boolean), expected.map(rel));
 
   // The column is the author's, after a protected token on the same line.
@@ -328,7 +331,7 @@ async function isolated(t, files, entry) {
   const dir = project(t, { ...files, 'src/uxdsl-entry.uxdsl': entry });
   const result = await core.compile({ entry: path.join(dir, 'src', 'uxdsl-entry.uxdsl') }, OPTIONS);
   const strip = (text) => text.split(`${dir}${path.sep}`).join('');
-  return { dir, css: flat(result.css), warnings: result.warnings.map((w) => (w.file ? `${path.relative(dir, w.file)}:${w.line}:${w.column} ${strip(w.text)}` : strip(w.text))) };
+  return { dir, css: flat(result.css), warnings: result.warnings.map((w) => posixSeparators(w.file ? `${path.relative(dir, w.file)}:${w.line}:${w.column} ${strip(w.text)}` : strip(w.text))) };
 }
 const isolationOf = (warnings) => warnings.filter((w) => / UXD_MODULE_ISOLATION: /.test(w) || /^UXD_MODULE_ISOLATION: /.test(w));
 
@@ -654,7 +657,7 @@ test('MIG-B9-17: the fix a UXD_MODULE_ISOLATION warning names for a private memb
 });
 
 test('MIG-B9-17: a compile that fails after the Sass stage carries its UXD_MODULE_ISOLATION warnings on the error, and a Sass failure carries none', async (t) => {
-  const located = (error) => error.warnings.map((w) => `${path.relative(error.dir, w.file)}:${w.line}:${w.column} ${w.text.split(`${error.dir}${path.sep}`).join('')}`);
+  const located = (error) => error.warnings.map((w) => posixSeparators(`${path.relative(error.dir, w.file)}:${w.line}:${w.column} ${w.text.split(`${error.dir}${path.sep}`).join('')}`));
   const fails = async (widget) => {
     const dir = project(t, { ...B5.function.files, 'src/widget.uxdsl': widget, 'src/uxdsl-entry.uxdsl': useEntry(B5.function.names) });
     const error = await failure(core.compile({ entry: path.join(dir, 'src', 'uxdsl-entry.uxdsl') }, OPTIONS));

@@ -64,7 +64,10 @@ The CLI prints a compile error at the author's file, line and column, then a
 frame of the author's source: Dart Sass's own frame and stack for `UXD_SASS`,
 PostCSS's for a UXDSL error. It does so in a one-shot build and under
 `--watch`, where every failed build of the session, the first one included,
-prints `[uxdsl] build failed:` and leaves the last good CSS on disk. Every
+prints `[uxdsl] build failed:` and leaves the last good CSS on disk (on
+Windows, a build whose output file another process is reading at that moment
+fails as `build failed: EPERM: operation not permitted, rename …`, and the
+next change builds again). Every
 `compile()` warning (Dart Sass's deprecations and `@warn`,
 `UXD_FUNCTION_SHADOWED`, `UXD_MODULE_ISOLATION`, the plugin's) prints once per build as
 `[uxdsl] Warning: <file>:<line>:<column>: <text>` (one without a position,
@@ -1791,10 +1794,22 @@ changes only what it names:
    a `.uxdsl` partial does). On macOS and Windows each loaded file is spelled
    in its on-disk case, read from its real path, except that a name stored in
    NFD and written in NFC, or one in a directory that cannot be listed, keeps
-   the spelling it is written in; a directory is listed only to spell a
-   symlink's own name, so a build slows down with the number of entries in a
-   directory above the project only where that directory holds a symlink on a
-   loaded file's path.
+   the spelling it is written in, and that on Windows a component written as
+   an 8.3 short name (`RUNNER~1`) keeps that spelling, and a file Dart Sass
+   loads itself through `pkg:` is named as Dart Sass names it there, in lower
+   case, in `loadedFiles`, the source map and `compile()`'s `dependencies`;
+   a directory is listed only to spell a symlink's own name, so a build slows
+   down with the number of entries in a directory above the project only
+   where that directory holds a symlink on a loaded file's path. The
+   package's own suites run on Windows in CI as well as on Linux, where
+   `test/cli/watch-mode.test.js` runs and is reported outside the job's
+   pass/fail, because on Windows one save can reach `build --watch` as two
+   change events, and so two builds, the second finding its output
+   unchanged; the file returns to that pass/fail once one save builds once
+   there. On Windows
+   a `../x` searched under a load path that does not exist can still be
+   found, since Windows reads the `..` without the directory before it, as
+   Dart Sass does there.
    Sass's import rules apply: `@import "x.css"`, and an `@import` with a media
    query, `layer()`, `supports()` or `url()`, stays a plain CSS `@import` (`@use`
    or `meta.load-css()` inlines a file), a file `@import`ed twice is included

@@ -161,7 +161,10 @@ function checkHalves(base, helper, file, viaTestRunner) {
   if (fail.dir === null) problems.failing.push('the planted file recorded no directory');
   else {
     if (!fail.kept || !fs.existsSync(path.join(fail.dir, 'file.txt'))) problems.failing.push(`${fail.dir} was removed after a failing run`);
-    if (!fail.output.includes(`${KEPT} ${fail.dir}`)) problems.failing.push(`the output does not print "${KEPT} ${fail.dir}":\n${fail.output}`);
+    // Under node --test the line reaches the output through TAP, which writes a
+    // backslash (a Windows separator) as two; elsewhere the two forms are one.
+    const printed = [`${KEPT} ${fail.dir}`, `${KEPT} ${fail.dir.split('\\').join('\\\\')}`];
+    if (!printed.some((line) => fail.output.includes(line))) problems.failing.push(`the output does not print "${KEPT} ${fail.dir}":\n${fail.output}`);
   }
   return problems;
 }
