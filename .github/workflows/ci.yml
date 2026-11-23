@@ -96,9 +96,12 @@ jobs:
           cache-dependency-path: '**/package-lock.json'
       - name: npm 11
         run: npm install -g npm@11 && npm -v
-      # cmd.exe, npm's default script shell on Windows, does not expand the
-      # globs of the package's test script, and Node 20 does not either.
-      - name: npm runs the package's scripts with bash, which expands their globs
+      # npm's default script shell on Windows is cmd.exe. The scripts npm runs
+      # here, the package's build and the prepack of the npm pack a test
+      # starts, run with bash instead, as on ubuntu. The test groups do not
+      # go through npm: the next step but one runs them from bash, which
+      # expands their globs.
+      - name: npm runs the package's scripts with bash, as on ubuntu
         run: npm config set script-shell "$(cygpath -w "$(command -v bash)")"
       - name: The tree has ubuntu's line endings
         run: |

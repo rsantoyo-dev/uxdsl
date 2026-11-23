@@ -481,7 +481,7 @@ edit `bin/uxdsl.js`).
 | `packages/uxdsl/test/cli/**` | 14, 20, 21, 22, 25, 17, 28, 38, 19, 06 |
 | `packages/uxdsl/test/no-silent-output.test.js` | 13, 25, 27, 28 |
 | `packages/uxdsl/test/core/sass-source-maps.test.js` | 13, 25, 28 |
-| `packages/uxdsl/test/vite/index.test.js`, `test/webpack/loader.test.js` | 20, 21, 25, 06 (`loader.test.js`, provisional: decision 40 of 2026-11-15) |
+| `packages/uxdsl/test/vite/index.test.js`, `test/webpack/loader.test.js` | 20, 21, 25, 28 (`index.test.js`), 06 (`loader.test.js`, provisional: decision 40 of 2026-11-15) |
 | `packages/uxdsl/bin/uxdsl.js` | 14, 20, 21, 22, 37, 38, 19, 06, 60, 61, 63 |
 | `packages/uxdsl/src/vite.ts`, `webpack.ts` | 14, 20, 21, 39, 64 |
 | `packages/uxdsl/src/diagnostics.ts` | 04, 11, 12, 13, 21, 26, 17, 30, 32, 33, 34, 35, 37, 38 |

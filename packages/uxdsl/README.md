@@ -1693,7 +1693,8 @@ changes only what it names:
    `test/cli/watch-mode.test.js` runs and is reported outside the job's
    pass/fail, because on Windows one save can reach `build --watch` as two
    change events, and so two builds, the second finding its output
-   unchanged. On Windows
+   unchanged; the file returns to that pass/fail once one save builds once
+   there. On Windows
    a `../x` searched under a load path that does not exist can still be
    found, since Windows reads the `..` without the directory before it, as
    Dart Sass does there.

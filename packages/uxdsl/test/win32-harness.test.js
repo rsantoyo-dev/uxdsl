@@ -5,8 +5,10 @@
 // that none is needed: npm is a .cmd file Node starts only through a shell; a
 // POSIX absolute `from` is absolute on win32 too, so PostCSS names an error's
 // file as written, not resolved onto the current drive; and os.tmpdir() reads
-// TEMP and TMP (not TMPDIR), which the tmpdir guard sets. Off win32 each
-// test is skipped with its reason.
+// TEMP and TMP (not TMPDIR), which the tmpdir guard sets. Off win32 those
+// tests are skipped with their reason. Two more run on every platform: they
+// pin what the npm and separator helpers do for each platform, given the
+// platform or the separator, so a change to the POSIX branch fails on POSIX.
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { execFileSync, spawnSync } = require('node:child_process');
@@ -14,6 +16,7 @@ const path = require('node:path');
 const postcss = require('postcss');
 
 const { npmCall, execNpmSync } = require('./helpers/npm');
+const { posixSeparators, posixOutput } = require('./helpers/separators');
 const exported = require('../dist/plugin');
 const plugin = exported.default || exported;
 
@@ -67,4 +70,34 @@ test('MIG-B9-28: on win32 the tmpdir guard sets TEMP and TMP, so a passing comma
   const clean = spawnSync(process.execPath, [GUARD, node, '-e', `"${tidy}"`], { encoding: 'utf8' });
   assert.equal(clean.status, 0, clean.stderr);
   assert.equal(clean.stderr, '');
+});
+
+test('MIG-B9-28: npmCall gives the call unchanged off win32, and on win32 adds a shell, double-quotes each argument and refuses one cmd.exe reads specially', () => {
+  const args = ['pack', '--dry-run', 'C:\\a b\\kit'];
+  const options = { cwd: 'x', stdio: 'pipe' };
+  for (const platform of ['linux', 'darwin']) {
+    const [command, given, opts] = npmCall(args, options, platform);
+    assert.equal(command, 'npm');
+    assert.equal(given, args, `${platform}: the same arguments array`);
+    assert.equal(opts, options, `${platform}: the same options object, no shell`);
+  }
+  const [command, quoted, opts] = npmCall(args, options, 'win32');
+  assert.equal(command, 'npm');
+  assert.deepEqual(quoted, ['"pack"', '"--dry-run"', '"C:\\a b\\kit"']);
+  assert.deepEqual(opts, { cwd: 'x', stdio: 'pipe', shell: true });
+  assert.equal(options.shell, undefined, 'the caller\'s options are not changed');
+  for (const special of ['"', '%', '!', '^', '&', '|', '<', '>']) {
+    assert.throws(() => npmCall(['pack', `a${special}b`], {}, 'win32'), { name: 'TypeError', message: /reads specially/ }, special);
+    assert.doesNotThrow(() => npmCall(['pack', `a${special}b`], {}, 'linux'), special);
+  }
+});
+
+test('MIG-B9-28: posixSeparators and posixOutput are the identity where path.sep is /, and read each backslash as / where path.sep is a backslash', () => {
+  const text = 'src\\a.uxdsl and src/b.uxdsl';
+  assert.equal(posixSeparators(text, '/'), text, 'a backslash is kept where the separator is /');
+  assert.equal(posixSeparators(text, '\\'), 'src/a.uxdsl and src/b.uxdsl');
+  const result = { status: 1, stdout: 'out\\x.css', stderr: 'in\\y.uxdsl', stdio: null };
+  assert.equal(posixOutput(result, '/'), result, 'the same object where the separator is /');
+  assert.deepEqual(posixOutput(result, '\\'), { status: 1, stdout: 'out/x.css', stderr: 'in/y.uxdsl', stdio: null });
+  assert.deepEqual(posixOutput({ stdout: null, stderr: undefined }, '\\'), { stdout: null, stderr: undefined }, 'a missing stream stays missing');
 });

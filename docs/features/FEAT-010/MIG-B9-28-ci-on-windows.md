@@ -11,7 +11,7 @@
 | Blocks | MIG-B9-91 (D11); MIG-B9-66, in `0.5.0-beta.10` (decision 15 of 2026-11-10). Under §7, MIG-B9-38, 19 and 06 (MIG-B9-19 and 06 in MIG-B9-39's place, by decisions 28 and 29 of 2026-11-13) and every later story on `packages/uxdsl/test/cli/**` or on another file in Shares |
 | Base | `feat/beta9` after MIG-B9-20, MIG-B9-25, MIG-B9-26, MIG-B9-17 and MIG-B9-27. The preconditions and the baseline were run on `f855765` (§3, §4), and run again on `dec40b1` when the story started (2026-11-16, macOS 27.0, Node 20.19.0, load 18.44; §15, "Re-baseline on `dec40b1`") |
 | Owns | `packages/uxdsl/test/core/sass-stage-win32.test.js` (new), `packages/uxdsl/test/win32-harness.test.js` (new: the encoded negative controls of T3 and T4), `packages/uxdsl/test/helpers/npm.js` (new) |
-| Shares | `.github/workflows/ci.yml` (one job added; the `test` and `gate` jobs stay as they are. README §7's row 28, 66; MIG-B9-66 is provisional, decision 15 of 2026-11-10); `packages/uxdsl/test/cli/watch-mode.test.js`, `uxdsl-cli.test.js`, `watch-selection.test.js` and `init.test.js` (the row `packages/uxdsl/test/cli/**`); `packages/uxdsl/test/core/compile-sass.test.js` (`project()`); `packages/uxdsl/test/core/sass-source-maps.test.js` (MIG-B9-13's emulated LM-3 test, on win32); `packages/uxdsl/test/canonical-grammar.test.js`, `no-silent-output.test.js`, `removed-language-surface.test.js` and `types.test.js` (POSIX path literals, `npm pack`, `'dir'` symlinks); `packages/uxdsl/README.md` (one sentence; under §15's question 6, item 1, option (b), also the sentence at lines 1550–1553 on `f855765`, edited rather than appended); `packages/uxdsl/CHANGELOG.md` (one subsection) |
+| Shares | `.github/workflows/ci.yml` (one job added; the `test` and `gate` jobs stay as they are. README §7's row 28, 66; MIG-B9-66 is provisional, decision 15 of 2026-11-10); `packages/uxdsl/test/cli/watch-mode.test.js`, `uxdsl-cli.test.js`, `watch-selection.test.js` and `init.test.js` (the row `packages/uxdsl/test/cli/**`); `packages/uxdsl/test/core/compile-sass.test.js` (`project()`); `packages/uxdsl/test/core/sass-source-maps.test.js` (MIG-B9-13's emulated LM-3 test, on win32); `packages/uxdsl/test/canonical-grammar.test.js`, `no-silent-output.test.js`, `removed-language-surface.test.js` and `types.test.js` (POSIX path literals, `npm pack`, `'dir'` symlinks); `packages/uxdsl/README.md` (one sentence; under §15's question 6, item 1, option (b), also the sentence at lines 1550–1553 on `f855765`, edited rather than appended); `packages/uxdsl/CHANGELOG.md` (one subsection); and the files §15's "Found while implementing (2026-11-16)" adds under F4, each with the run that showed it (`test/helpers/separators.js`, new, among them) |
 | Output impact | none. CI and tests only: no file under `packages/uxdsl/src` or `packages/uxdsl/bin` changes |
 
 ## 1. Goal
@@ -1215,11 +1215,17 @@ The story stops here.
 
 Answered in the next block: (c).
 
-### Owner decision taken under the standing instruction (2026-11-16, third batch)
+### The owner's session's decision on G4, open for the owner to confirm (2026-11-16, third batch)
 
-The open question above was answered by the owner's session with option
-(c), as the recommendation, under the standing instruction of 2026-11-10;
-it was not put to the owner on its own, and the owner may override it.
+The open question above had no clearly recommended option, so the standing
+instruction of 2026-11-10 did not settle it. The owner's session chose
+option (c) on 2026-11-16 to keep the story moving; it was not put to the
+owner on its own. Decision 19 of 2026-11-10 leaves a defect whose cause is
+in `bin` to the owner, so G4 stays open for the owner to confirm or
+override before the pull request merges, and the pull request lists it
+next to G1 to G3. Until then C6g is not met as written: in both green runs
+`watch-mode.test.js` runs outside the gate (it failed 1 test in run
+43960109820 and passed whole in run 43964314038).
 
 - **G4: one save reaches `build --watch` as two `change` events on win32.**
   Evidence: runs 43950837496 (`0488249`) and 43954805492 (`3bd00d8`), as
@@ -1300,26 +1306,29 @@ passes and leaves nothing (`fail=0`); the excluded file prints `exit 1`
 (the "first build failed" twin, `2 !== 1`) and `left 38 in
 C:\Users\RUNNER~1\AppData\Local\Temp\uxdsl-loop.1mXky2\excluded.kKYi8z`.
 
-- **`watch-mode.test.js` leaves 38 entries on Windows.** In this run's
-  step 8 and step 9, and in run 43954805492's loop (`left 38`), the file
-  leaves 38 entries in its temporary directory when it runs on win32, with
-  1 to 3 tests failing; on macOS and ubuntu it leaves none. Whether a
-  watcher process still holding its directory or the test's own removal
-  causes it was not determined. It is outside the gate under G4 and goes
-  with the file to MIG-B9-06: returning the file to the gate means it
-  passes and leaves nothing there.
+- **`watch-mode.test.js` keeps 38 directories on Windows when one of its
+  tests fails.** In this run's step 8 and step 9, and in run 43954805492's
+  loop (`left 38`), the file ends with 1 to 3 tests failing and 38 entries
+  in its temporary directory. They are the directories
+  `test/helpers/temporary-directory.js` keeps by design when a test fails
+  or its file exits non-zero: run 43964314038's step 9 prints 38 lines
+  `# temporary directory kept: C:\…\excluded.otEVG8\uxdsl-cli-watch-…`
+  before `left 38`, while in its step 8 the same file passes 37/37 and
+  prints `watch-mode.test.js: exit 0, left 0`. It is a consequence of G4's
+  failures, not a separate leak (corrected by review R2 of 2026-11-23).
 
 ### Follow-ups (proposed)
 
-- **MIG-B9-06 (registered; wave 3, `0.5.0-beta.9`, after MIG-B9-19; story
-  file still to be written) takes G4's class:** one save reaching
-  `build --watch` as two `change` events on win32, a build for each, and
-  the two config-reload watch tests that time out on Windows with no
-  output. One of its acceptance criteria returns
-  `test/cli/watch-mode.test.js` to the Windows job's gate (step 8's
-  exclusion and step 9's `excluded` branch removed), where it then passes
-  and leaves nothing in its temporary directory (it leaves 38 entries there
-  on Windows today).
+- **MIG-B9-06 (registered; wave 3, after MIG-B9-19; story file still to be
+  written) takes G4's class:** one save reaching `build --watch` as two
+  `change` events on win32, a build for each, and the two config-reload
+  watch tests that time out on Windows with no output. One of its
+  acceptance criteria returns `test/cli/watch-mode.test.js` to the Windows
+  job's gate (step 8's exclusion and step 9's `excluded` branch removed),
+  where it then passes. The exclusion stays until MIG-B9-06 lands, in
+  whichever release that is: the planned beta.9 cut moves MIG-B9-06 to
+  `0.5.0-beta.10`, so `0.5.0-beta.9` would ship with the file outside the
+  Windows gate.
 
 - **MIG-B9-102 — win32: a file Dart Sass loads itself through `pkg:` is
   spelled in its on-disk case.** S, for `0.5.0-beta.10` with MIG-B9-66; it
@@ -1330,3 +1339,78 @@ C:\Users\RUNNER~1\AppData\Local\Temp\uxdsl-loop.1mXky2\excluded.kKYi8z`.
   within MIG-B9-06, if the owner prefers); it does not block MIG-B9-91. G3
   above is its evidence; its regression is the atomic-replace test's win32
   branch, which then expects every rebuild to land.
+
+### Review of 2026-11-23 (applied in the delivering PR)
+
+The review of the tip `9e5b3b0` raised seven findings. Each was reproduced
+before it was fixed; none touches `src`, `bin` or a `package.json`.
+
+- **R1: AC1's recorded mutation no longer fails the job.** Since `fc8d628`
+  step 8 runs the six groups from bash through the guard, so bash expands
+  `test/*.test.js` whether or not npm's script shell is bash; only the
+  build and the prepack of the `npm pack` that
+  `removed-language-surface.test.js` starts still go through npm's script
+  shell. Reproduced: step 8's own check, run on a copy of
+  `packages/uxdsl/package.json` whose `test` script gains
+  ` && node --test test/extra/*.test.js`, prints `the package's test
+  script is not the one this step runs: …` and exits 1, and exits 0 on the
+  real file. Flag, answered with its recommended option under the
+  standing instruction of 2026-11-10 (the owner may override it): (a) keep
+  the `script-shell` step, so npm's scripts run in bash as on ubuntu,
+  with its name and comment saying what it does now, and amend AC1's
+  mutation; (b) remove the step. **Answer: (a)**: it costs one second and
+  keeps the build's shell the same as ubuntu's.
+  - **AC1, amended (not rewritten above).** The mutation is step 8's
+    drift check: a package `test` script other than the one step 8 runs
+    makes the job fail, naming the script.
+  - `ci.yml`, old: `# cmd.exe, npm's default script shell on Windows, does
+    not expand the / # globs of the package's test script, and Node 20
+    does not either.` and `- name: npm runs the package's scripts with bash,
+    which expands their globs`. New: the comment names the build and the
+    prepack, and says the test groups run from bash in step 8; the step is
+    `npm runs the package's scripts with bash, as on ubuntu`.
+- **R2: the 38 entries `watch-mode.test.js` leaves on Windows are the
+  helper's keep-on-failure.** Reproduced from job 133639596473's log
+  (run 43964314038): 38 `temporary directory kept:` lines precede step 9's
+  `left 38 in …\excluded.otEVG8`, and step 8 prints
+  `watch-mode.test.js: exit 0, left 0` for the same commit, where the file
+  passed 37/37. Old (run 43960109820's block): "**`watch-mode.test.js`
+  leaves 38 entries on Windows.** … Whether a watcher process still holding
+  its directory or the test's own removal causes it was not determined."
+  New: "**`watch-mode.test.js` keeps 38 directories on Windows when one of
+  its tests fails.** … It is a consequence of G4's failures, not a separate
+  leak". The MIG-B9-06 follow-up drops "(it leaves 38 entries there on
+  Windows today)".
+- **R3: G4's record contradicted itself.** Old heading: "Owner decision
+  taken under the standing instruction (2026-11-16, third batch)", and its
+  first sentence: "The open question above was answered by the owner's
+  session with option (c), as the recommendation, under the standing
+  instruction of 2026-11-10". New heading: "The owner's session's decision
+  on G4, open for the owner to confirm (2026-11-16, third batch)", and the
+  block says there was no clearly recommended option, that decision 19
+  leaves a `bin` cause to the owner, and that C6g is not met as written.
+  The pull request lists G4 for the owner to confirm or override before
+  merge.
+- **R4: F4's README §7 edit.** The row `test/vite/index.test.js,
+  test/webpack/loader.test.js` reads `20, 21, 25, 28 (index.test.js), 06
+  (loader.test.js, …)`; the header's Shares row points to the files F4
+  added.
+- **R5: the helpers' platform contracts are pinned off Windows.** Two
+  tests in `win32-harness.test.js` run on every platform:
+  `MIG-B9-28: npmCall gives the call unchanged off win32, and on win32 adds
+  a shell, double-quotes each argument and refuses one cmd.exe reads
+  specially` and `MIG-B9-28: posixSeparators and posixOutput are the
+  identity where path.sep is /, and read each backslash as / where path.sep
+  is a backslash`. Each failed first under a mutation of the helper on
+  macOS (`# fail 1` each): `posixSeparators` rewriting every backslash on
+  POSIX too; `npmCall`'s POSIX branch adding `shell: true`; `npmCall`
+  without its refusal of `" % ! ^ & | < >`. Unmutated: `# tests 5`,
+  `# pass 2`, `# skipped 3`.
+  - **AC2, AC3 and AC4, amended again.** AC2: `ok N - MIG-B9-28:` counts 10,
+    exactly one with `# SKIP` (T7); `# SKIP` stays 6. AC3: the two new files
+    give `# tests 10` and `# skipped 8` on macOS. AC4: the unit group is
+    BASE + 5, `test/core` BASE + 5.
+- **R6: MIG-B9-06's release.** The follow-up says the exclusion stays until
+  MIG-B9-06 lands, whichever release that is.
+- **R7:** the `realpathSync.native` comment of `test/vite/index.test.js`
+  sits above `mkTmpDir()` again, not above `'use strict'`.
