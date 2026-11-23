@@ -339,4 +339,4 @@ function discoverSurfaces() {
     || /^packages\/playground-nextjs\/src\/.*\.(tsx|mdx)$/.test(f)).sort();
 }
 
-module.exports = { ROOT, discoverSurfaces, extractMarkdown, extractJsx, collectExamples, statementsOf, routeOf, runExample, verifySurfaces, validateThemes, parseTheme };
+module.exports = { ROOT, UXDSL_SYNTAX, discoverSurfaces, extractMarkdown, extractJsx, collectExamples, statementsOf, routeOf, runExample, verifySurfaces, validateThemes, parseTheme };

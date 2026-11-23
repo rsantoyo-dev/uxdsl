@@ -176,6 +176,9 @@ function levelOf(live, documented, required) {
   return { level, met, files: (live.length ? live : documented).slice(0, 3) };
 }
 
+/** An @media prelude naming `name` as a media feature, `@media (--lg)`; `var(--lg)` in a prelude is not one. */
+const breakpointBlock = (name) => new RegExp(`@media(?:[^{;]*[^\\w{;-])?\\(\\s*${escapeRe(name)}\\s*\\)`, 'i');
+
 /** Every capability, with the evidence found for it. */
 function deriveCapabilities() {
   const sources = playgroundSources();
@@ -192,9 +195,9 @@ function deriveCapabilities() {
   for (const fn of L.functions) {
     add(BREAKPOINTS.has(fn) ? 'breakpoint-function' : 'function', fn, 'live', matching(sources.uxdsl, new RegExp(`\\b${fn}\\(`)), docsMention(new RegExp(`\\b${fn}\\(`)));
   }
-  // A breakpoint an @media prelude names, `@media (--lg)` (not `var(--lg)`): live where a .uxdsl source writes one.
+  // A breakpoint an @media prelude names, `@media (--lg)`: live where a .uxdsl source writes one.
   for (const name of L.customMedia) {
-    const block = new RegExp(`@media(?:[^{;]*[^\\w{;-])?\\(\\s*${escapeRe(name)}\\s*\\)`, 'i');
+    const block = breakpointBlock(name);
     add('custom-media', name, 'live', matching(sources.uxdsl, block), docsMention(block));
   }
   for (const family of [...rt.KNOWN_THEME_FAMILIES].sort()) {
@@ -276,4 +279,4 @@ function dogfoodingCounts() {
   };
 }
 
-module.exports = { ROOT, PLAYGROUND, EVIDENCE_FILE, manualEvidence, deriveCapabilities, dogfoodingCounts, playgroundSources, FAMILY_CONSUMERS };
+module.exports = { ROOT, PLAYGROUND, EVIDENCE_FILE, manualEvidence, breakpointBlock, deriveCapabilities, dogfoodingCounts, playgroundSources, FAMILY_CONSUMERS };

@@ -13,7 +13,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const {
-  ROOT, discoverSurfaces, extractMarkdown, extractJsx, collectExamples, statementsOf, runExample, verifySurfaces, validateThemes,
+  ROOT, UXDSL_SYNTAX, discoverSurfaces, extractMarkdown, extractJsx, collectExamples, statementsOf, runExample, verifySurfaces, validateThemes,
 } = require('./lib/doc-examples');
 
 const blocks = (events) => events.filter((event) => event.type === 'block');
@@ -325,4 +325,10 @@ test('MIG-B9-16: the language page checker needs an anchor to compile.md\'s Sass
   // UXD_SASS_CONTEXT and UXD_SASS_WARNING do not name the Sass failure code.
   assert.ok(languagePageProblems('<code>UXD_SASS_CONTEXT</code> and <code>UXD_SASS_WARNING</code>', catalog()).includes(sassProblem));
   assert.ok(!languagePageProblems('<code>UXD_SASS</code>', catalog()).includes(sassProblem));
+});
+
+test('MIG-B9-30: an example whose only UXDSL is a breakpoint in an @media prelude is compiled, and one whose only dashed name there is inside a function is not UXDSL', () => {
+  for (const code of ['@media (--lg) { .a { color: red } }', '@media screen and (--md) { .a { color: red } }', '@media(--lg){.a{color:red}}']) assert.ok(UXDSL_SYNTAX.test(code), code);
+  // Negative controls: var(--lg) or env(--lg) in a prelude is plain CSS.
+  for (const code of ['@media (min-width: var(--lg)) { .a { color: red } }', '@media (min-width: env(--lg)) { .a { color: red } }']) assert.ok(!UXDSL_SYNTAX.test(code), code);
 });

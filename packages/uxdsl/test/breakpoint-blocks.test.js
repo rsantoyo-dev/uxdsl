@@ -501,6 +501,21 @@ test('MIG-B9-30: an unknown (--name) waiting for OnceExit holds the compilation\
     },
   });
   assert.equal((await postcss([uxdsl(), remove()]).process('.b { color: red }\n@media (--nope) { .a { color: red } }', { from: CSS_FROM })).css, '.b { color: red }');
+
+  // A name another plugin resolved is judged as a media feature only: the same name inside var() in the prelude is not it.
+  const resolveGutter = () => ({
+    postcssPlugin: 'stand-in/resolve-gutter',
+    AtRule: {
+      media(at) {
+        at.params = at.params.replace(/(?<![\w-])\(\s*--gutter\s*\)/g, '(min-width: 1px)');
+      },
+    },
+  });
+  const gutter = '@media (--gutter) and (max-width: var(--gutter)) { .a { color: red } }';
+  for (const order of [[uxdsl(), resolveGutter()], [resolveGutter(), uxdsl()]]) {
+    const result = await postcss(order).process(gutter, { from: CSS_FROM });
+    assert.equal(result.css, '@media (min-width: 1px) and (max-width: var(--gutter)) { .a { color: red } }', order[0].postcssPlugin);
+  }
 });
 
 // --- T11 ----------------------------------------------------------------------

@@ -13,7 +13,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { ROOT, deriveCapabilities, dogfoodingCounts, manualEvidence, FAMILY_CONSUMERS } = require('./lib/capabilities');
+const { ROOT, breakpointBlock, deriveCapabilities, dogfoodingCounts, manualEvidence, FAMILY_CONSUMERS } = require('./lib/capabilities');
 const { render, OUT } = require('./generate-capability-matrix');
 
 const rows = deriveCapabilities();
@@ -86,4 +86,11 @@ test('MIG-B9-30: every breakpoint an @media prelude can name, (--sm) to (--xl), 
   for (const row of kinds('custom-media')) assert.equal(row.level, 'live', `${row.name}: ${JSON.stringify(row)}`);
   assert.ok(kinds('custom-media').find((r) => r.name === '--lg').files.includes('src/components/SideNav.uxdsl'), 'SideNav takes its sidebar from @media (--lg)');
   assert.equal(evidence.dogfoodingBaseline.handWrittenMediaQueries, 1, 'the hand-written min-width query SideNav dropped stays dropped');
+});
+
+test('MIG-B9-30: a .uxdsl source counts as a live @media (--name) block only where the name is a media feature, not a dashed name inside a function', () => {
+  const lg = breakpointBlock('--lg');
+  for (const source of ['@media (--lg) {', '@media screen and ( --lg ) {', '@media(--lg){', '@MEDIA print and (--lg) {']) assert.ok(lg.test(source), source);
+  // Negative controls: var(--lg), env(--lg) and another name are not the --lg block.
+  for (const source of ['@media (min-width: var(--lg)) {', '@media (min-width: env(--lg)) {', '@media (--lgx) {', '@media (--lg-wide) {']) assert.ok(!lg.test(source), source);
 });

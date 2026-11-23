@@ -502,6 +502,10 @@ In a PostCSS chain that also runs `postcss-custom-media` or
 the definition in their `Once`, before `uxdsl/postcss` can see it, and
 `(--lg)` compiles to the theme's query with no warning.
 
+At the end of the run only a media feature is judged: once another plugin
+has replaced `(--gutter)` in a prelude, a `var(--gutter)` left in the same
+prelude does not make it fail.
+
 <p align="center">
   <a href="https://uxdsl.vercel.app/docs/home">
     <strong>Explore the Full Docs &rarr;</strong>
