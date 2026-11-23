@@ -383,7 +383,7 @@ test('MIG-B9-91: LOCK-pg accepts the playground lockfile\'s ../uxdsl entry as th
 
 test('MIG-B9-91: LOCK-pg rejects a stale entry, a missing entry and another version (negative control)', () => {
   const manifest = readJson(path.join(PACKAGE_DIR, 'package.json'));
-  assert.throws(() => assertLockEntryMatches(manifest, STALE_PLAYGROUND_LOCK_ENTRY), { message: /^the playground lockfile's packages\["\.\.\/uxdsl"\] differs from packages\/uxdsl\/package\.json in dependencies, devDependencies, engines; run npm install --package-lock-only in packages\/playground-nextjs$/ });
+  assert.throws(() => assertLockEntryMatches(manifest, { ...STALE_PLAYGROUND_LOCK_ENTRY, version: manifest.version }), { message: /^the playground lockfile's packages\["\.\.\/uxdsl"\] differs from packages\/uxdsl\/package\.json in dependencies, devDependencies, engines; run npm install --package-lock-only in packages\/playground-nextjs$/ });
   assert.throws(() => assertLockEntryMatches(manifest, undefined), { message: /no packages\["\.\.\/uxdsl"\] entry/ });
   const lock = readJson(path.join(REPO_ROOT, 'packages/playground-nextjs/package-lock.json'));
   assert.throws(() => assertLockEntryMatches(manifest, { ...lock.packages['../uxdsl'], version: '0.5.0-beta.8' }), { message: /differs from packages\/uxdsl\/package\.json in version;/ });

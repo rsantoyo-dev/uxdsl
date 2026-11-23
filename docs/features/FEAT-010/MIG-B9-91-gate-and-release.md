@@ -448,4 +448,11 @@ override any of them. None changes the release cut or publishes anything.
   install in Press Craftor; its prebuilt platform package is installed and
   nothing failed. Recorded for the documentation review.
 
+- **The bump found a test that pinned the version.** `npm test` on the first
+  bump commit failed one test, `LOCK-pg rejects a stale entry …`: its stale
+  fixture carried `0.5.0-beta.9`, so at `0.5.0-beta.9.dev` the verdict also
+  named `version`. The fixture now takes the manifest's version (a test-only
+  change, after the gate's run on `3267c93`); the unpushed bump commit was
+  remade on top of it.
+
 **G5, the bump commit.** Prepared after this block's commit, on it: `chore/after-beta9-publish`, one commit setting `0.5.0-beta.9.dev` in `packages/uxdsl/package.json`, its lockfile (`version`, `packages[""].version`) and the playground lockfile's `packages["../uxdsl"].version`; pushed with no pull request, never merged by an agent. Its SHA and the results of `npm test` and the playground's `npm ci` on it are in PR #106's conversation, since a commit cannot name the one built on it. `semver` 7.8.5 (`packages/uxdsl/node_modules`) orders it as decided: `0.5.0-beta.9.dev` is valid, after `0.5.0-beta.9` and before `0.5.0-beta.10`, while `0.5.0-beta.10-dev` is after `0.5.0-beta.10` (the negative control).
