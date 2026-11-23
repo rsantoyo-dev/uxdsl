@@ -11,7 +11,7 @@ const { pathToFileURL } = require('node:url');
 const {
   assertAuthorLocated, assertSassFramed, assertLocatedWarning, assertNearMissSuggested, assertDebugWarned, assertIsolationWarned, S7_ISOLATION_LINE, webpackAdapterRecord, assertWebpackAdapter, viteAdapterRecord, assertViteAdapter, assertMissingImport,
   S8_BLOCK_SOURCE, S8_SHADOWED_SOURCE, S8_UNKNOWN_SOURCE, assertBreakpointBlock, assertBreakpointShadowed, assertBreakpointUnknown,
-  assertNearLinear, assertEnginesCovered, assertLockEntryMatches, freePort, DROPPED,
+  assertNearLinear, assertEnginesCovered, assertLockEntryMatches, freePort, DROPPED, installedManifests,
 } = require('./run');
 const { PACKAGE_DIR, REPO_ROOT } = require('../lib/tarball-consumer');
 const net = require('node:net');
@@ -412,4 +412,21 @@ test('MIG-B9-91: DROPPED names the beta.8 meanings of B3-e and UX-12, which the 
     assert.match(what, /--no-include-theme/, id);
     assert.match(why, /@uxdsl theme;/, id);
   }
+});
+
+test('MIG-B9-91: I-7 reads every package installed under node_modules, scoped and nested, from the directories themselves', () => {
+  const root = temporaryDirectory();
+  const plant = (rel, manifest) => {
+    fs.mkdirSync(path.join(root, rel), { recursive: true });
+    fs.writeFileSync(path.join(root, rel, 'package.json'), JSON.stringify(manifest));
+  };
+  plant('node_modules/a', { name: 'a', version: '1.0.0', engines: { node: '>=18' } });
+  plant('node_modules/@s/b', { name: '@s/b', version: '2.0.0' });
+  plant('node_modules/a/node_modules/c', { name: 'c', version: '3.0.0', engines: { node: '>= 20.19.0' } });
+  fs.mkdirSync(path.join(root, 'node_modules/.bin'), { recursive: true });
+  fs.mkdirSync(path.join(root, 'node_modules/not-a-package'), { recursive: true });
+  assert.deepEqual(installedManifests(root).map((pkg) => `${pkg.name}@${pkg.version}`).sort(), ['@s/b@2.0.0', 'a@1.0.0', 'c@3.0.0']);
+  const sass = installedManifests(PACKAGE_DIR).filter((pkg) => pkg.name === 'sass' || pkg.name === 'readdirp');
+  assert.ok(sass.some((pkg) => pkg.name === 'sass' && pkg.engines.node === '>=20.19.0'), JSON.stringify(sass));
+  assert.ok(sass.some((pkg) => pkg.name === 'readdirp' && pkg.engines.node === '>= 20.19.0'), 'the readdirp sass nests is read');
 });

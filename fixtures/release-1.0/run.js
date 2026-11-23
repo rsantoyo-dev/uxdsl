@@ -124,6 +124,33 @@ function assertEnginesCovered(uxdsl, packages, semver) {
   return `uxdsl requires node ${range}; ${declaring.length} of ${packages.length} installed packages declare engines.node, each satisfied within it`;
 }
 
+/**
+ * The manifest of every package installed under `root`'s node_modules, scoped
+ * and nested ones included, read from the directories themselves (npm's own
+ * listings can print a path with a segment replaced by `***`). A directory
+ * without a package.json (`.bin`) is skipped.
+ */
+function installedManifests(root) {
+  const manifests = [];
+  const visit = (modules) => {
+    if (!fs.existsSync(modules)) return;
+    for (const entry of fs.readdirSync(modules, { withFileTypes: true })) {
+      if (!entry.isDirectory() || entry.name.startsWith('.')) continue;
+      const dirs = entry.name.startsWith('@')
+        ? fs.readdirSync(path.join(modules, entry.name), { withFileTypes: true }).filter((child) => child.isDirectory()).map((child) => path.join(modules, entry.name, child.name))
+        : [path.join(modules, entry.name)];
+      for (const location of dirs) {
+        const manifest = path.join(location, 'package.json');
+        if (!fs.existsSync(manifest)) continue;
+        manifests.push({ ...JSON.parse(fs.readFileSync(manifest, 'utf8')), location });
+        visit(path.join(location, 'node_modules'));
+      }
+    }
+  };
+  visit(path.join(root, 'node_modules'));
+  return manifests;
+}
+
 /** The fields of packages/uxdsl/package.json that the playground lockfile's `../uxdsl` entry must record as they are. */
 const LOCK_FIELDS = ['version', 'dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies', 'engines'];
 
@@ -782,11 +809,10 @@ async function main() {
     return `${result.outputFiles[0].contents.length} bytes minified, ${inputs.length} modules`;
   });
   await check('I-7', 'the installed uxdsl declares engines.node, and every installed package\'s engines.node accepts each Node version it admits', () => {
-    const listed = spawnSync('npm', ['ls', '--all', '--parseable'], { cwd: dir, encoding: 'utf8', maxBuffer: 1 << 26 });
-    const others = [...new Set((listed.stdout || '').trim().split('\n').slice(1))].filter((location) => fs.realpathSync(location) !== fs.realpathSync(pkgDir));
-    if (!others.length) throw new Error(`npm ls listed no installed package: ${(listed.stderr || '').trim().split('\n')[0] || `exit ${listed.status}`}`);
-    const manifest = (location) => JSON.parse(fs.readFileSync(path.join(location, 'package.json'), 'utf8'));
-    return assertEnginesCovered(manifest(pkgDir), others.map(manifest), instrument('semver'));
+    const installedPackages = installedManifests(dir);
+    const self = installedPackages.find((pkg) => pkg.location === pkgDir);
+    if (!self) throw new Error(`uxdsl is not installed at ${pkgDir}`);
+    return assertEnginesCovered(self, installedPackages.filter((pkg) => pkg !== self), instrument('semver'));
   });
 
   // --- beta.2: CLI, PostCSS and runtime agree in an installed project ------
@@ -1495,4 +1521,4 @@ async function main() {
 
 if (require.main === module) main().catch((error) => { console.error(error); process.exitCode = 1; });
 
-module.exports = { contrastSignature, exceptedSignature, contrastBaselineOf, assertContrastBaseline, auditLockfile, assertAuthorLocated, assertSassFramed, assertLocatedWarning, assertNearMissSuggested, assertDebugWarned, assertIsolationWarned, S7_ISOLATION_LINE, webpackAdapterRecord, assertWebpackAdapter, viteAdapterRecord, assertViteAdapter, assertMissingImport, mapIntegrityProblems, DROPPED, S8_BLOCK_SOURCE, S8_SHADOWED_SOURCE, S8_UNKNOWN_SOURCE, assertBreakpointBlock, assertBreakpointShadowed, assertBreakpointUnknown, assertNearLinear, assertEnginesCovered, assertLockEntryMatches, freePort };
+module.exports = { contrastSignature, exceptedSignature, contrastBaselineOf, assertContrastBaseline, auditLockfile, assertAuthorLocated, assertSassFramed, assertLocatedWarning, assertNearMissSuggested, assertDebugWarned, assertIsolationWarned, S7_ISOLATION_LINE, webpackAdapterRecord, assertWebpackAdapter, viteAdapterRecord, assertViteAdapter, assertMissingImport, mapIntegrityProblems, DROPPED, S8_BLOCK_SOURCE, S8_SHADOWED_SOURCE, S8_UNKNOWN_SOURCE, assertBreakpointBlock, assertBreakpointShadowed, assertBreakpointUnknown, assertNearLinear, assertEnginesCovered, assertLockEntryMatches, freePort, installedManifests };
