@@ -30,7 +30,12 @@ listed.
 files, shasum `c4a25fefe7e372c0c2180382828031757b1eb67f`, sha256
 `370532d24421a1abe09fdad35eaef1ab79b0788e5540fe8b3b0fe277444a474d`, written
 to `<scratch>/pc-tarball`. The record's figures come from the gate's own pack
-of the final tree; this one is the same `package.json` and `dist`.
+of the final tree. After this run, the release review's fixes changed the
+package README and the message of a theme file under a former name; the
+final tarball differs from this one in those two places only. This run was
+not repeated on it: neither is on the path it exercises, and the record's
+steps it followed are the same apart from the sentences the review added
+(of those, only the `@theme` step touches this project, in its own test, below).
 
 ## Steps, with exit codes
 
@@ -42,7 +47,7 @@ of the final tree; this one is the same `package.json` and `dist`.
 | 3 | Node 20.19 or later | `node --version` → `v20.19.0` | 0 |
 | 4 | Step 1: replace the packages | `npm uninstall postcss-uxdsl uxdsl-cli uxdsl-core vite-plugin-uxdsl uxdsl-webpack-loader` ("removed 21 packages"); `npm i -D <scratch>/pc-tarball/uxdsl-0.5.0-beta.9.tgz` ("added 13 packages, and changed 1 package") | 0; 0 |
 | 4a | check | `npx uxdsl --version` → `Error: Cannot find module 'postcss'` (the project's `.npmrc` sets `legacy-peer-deps=true`, so npm installs no peer) | **1**, as the step's third command says |
-| 4b | Step 1's third command | `npm i -D postcss` ("added 1 package"; `postcss ^8.5.33`); `npx uxdsl --version` → `uxdsl 0.5.0-beta.9` | 0; 0 |
+| 4b | Step 1's third command | `npm i -D postcss` ("added 1 package, and changed 1 package in 761ms"; `postcss ^8.5.33`); `npx uxdsl --version` → `uxdsl 0.5.0-beta.9` | 0; 0 |
 | 5 | Step 2: the theme file | `uxdsl.theme.config.cjs` → `uxdsl.theme.cjs` exporting the theme itself, `references` into `uxdsl.config.cjs`, `postcss.config.mjs` importing the two (MIG-B9-03 §8's hunks for these four files, `git apply --include`); the seven `includeTheme` keys of `uxdsl.config.cjs`'s `builds` removed | 0 |
 | 6 | Step 3: the codemod, preview | `node node_modules/uxdsl/scripts/codemod-canonical-grammar.js --theme uxdsl.theme.cjs src uxdsl.config.js`: "15 file(s) would change (15 with findings)" (the seven `.uxdsl` sources, the seven generated `.css` files, and `uxdsl.config.js`, "palette()/color() dashed -> dotted ×98") | 0 |
 | 7 | Step 3: `--write` | the same with `--write`: "15 file(s) rewritten (15 with findings)." | 0 |
@@ -80,7 +85,13 @@ and MIG-B9-14's columns (MIG-B9-03 §2, "On the superset pipeline", "Sizes"):
 
 Every file has the superset's size. The superset's files were not kept
 (macOS's cleaning of the scratch directory emptied them), so the comparison
-is by size, not byte for byte. `:root` appears only in `uxdsl.css` (14
+is by size, not byte for byte. The `wc -c` sizes, and the global chunk's
+size below, were read at run time and not saved; the saved
+`uxdsl build` log prints the CLI's own counts, which are characters (89576,
+506122, 294862, 65109, …: the files' multi-byte characters account for the
+difference, as MIG-B9-03 explained). The release review of 2026-11-23 moved
+a fresh clone by the record's steps and read the same seven sizes with
+`wc -c`. `:root` appears only in `uxdsl.css` (14
 occurrences), none in the six modules. In `.next/static/css`: seven chunks,
 `:root` only in the global one (11 blocks, 124,806 bytes, the size MIG-B9-14
 recorded for both of its builds).
@@ -127,7 +138,7 @@ property. A plugin listed in `postcss.config.js` is unaffected: PostCSS
 calls `prepare` itself.
 
 The fix in a wrapper, applied in the clone (step 12a), and now in the
-record's step 6 and in MIG-B9-91's CHANGELOG subsection:
+record's step 7 ("Imports") and in MIG-B9-91's CHANGELOG subsection:
 
 ```js
 module.exports = function sourceOnlyUxdsl(options) {

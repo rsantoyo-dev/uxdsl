@@ -560,7 +560,7 @@ edit `bin/uxdsl.js`).
 | `packages/playground-nextjs/**` | 20, 21, 22, 16, 26, 30, 91 (`package-lock.json` only), 33, 34, 35, 36, 19, 40, 41, 42, 43 |
 | `fixtures/playground-browser/**` (MIG-B9-42 and 43: `walk.js`) | 40, 41, 42, 43, 44 |
 | `package.json`, `package-lock.json` (root and `packages/uxdsl`) | 01, 02, 10, 12, 13, 21 (root `package.json`), 25, 91 |
-| `packages/uxdsl/README.md` (the docs guard asks almost every code story to touch it) | every code story (append-only, one sentence per story; MIG-B9-26 and 27 also rewrite passages their §11 names, and MIG-B9-28 rewrites the sentence at lines 1550–1553 on `f855765` if `windows-latest` shows the on-disk case, by decision 20 of 2026-11-10) |
+| `packages/uxdsl/README.md` (the docs guard asks almost every code story to touch it) | every code story (append-only, one sentence per story; MIG-B9-26 and 27 also rewrite passages their §11 names, and MIG-B9-28 rewrites the sentence at lines 1550–1553 on `f855765` if `windows-latest` shows the on-disk case, by decision 20 of 2026-11-10; MIG-B9-91 corrects four sentences its release review found, recorded in its §15) |
 | `packages/uxdsl/src/typography.ts` | 21, 31, 33 |
 | `packages/uxdsl/src/language.ts` | 04, 21, 30, 31 |
 | `packages/uxdsl/src/entries/engine.ts` | 21, 36 |
