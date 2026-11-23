@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 3 |
 | Decision gate | DEC-07 (decided 2026-10-23, amended: `@media (--<breakpoint>)`, not `@lg { … }`) |
-| Status | In review (PR #104) |
+| Status | Merged (PR #104) |
 | Size | M |
 | Depends on | MIG-B9-13 |
 | Blocks | MIG-B9-40, MIG-B9-55, MIG-B9-62, MIG-B9-65 |
@@ -1299,3 +1299,11 @@ stay byte-identical. The owner patches it after beta.9.
 8. UX-10's timing under load (fact 3), the known flake. MIG-B9-91.
 9. Press Craftor's eight queries above. The owner's patch after beta.9
    (D17; MIG-B9-03's project).
+
+### Owner decisions of 2026-11-23, on the delivery's flags
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-23), as decisions 31 to 38, 45 to 47 and 50 to 53 of 2026-11-23. On 2026-11-10 the owner gave a standing instruction for FEAT-010, verbatim, "fusiona todo.. y preguntas como recomendadas, y sgeuimos" ("merge everything, and the questions as recommended, and let's keep going"), and reaffirmed it on 2026-11-13, verbatim, "haz todo como recomendado" ("do everything as recommended"). This story was merged into `feat/beta9` as PR #104 (`6cdadaf`) on 2026-11-23. Its flags F1 to F5 ("Owner flags of 2026-11-16, under the standing instruction") and flags 1 to 3 ("Delivery of 2026-11-23", "Owner flags raised at review and delivery") were implemented as recommended and were not put to the owner one by one: each recommendation is the owner's decision of 2026-11-23, and the owner may still override any of them. On 2026-11-23 the owner also cut `0.5.0-beta.9` to what `feat/beta9` holds at `6cdadaf`, plus MIG-B9-91 (decision 1), so this story ships in `0.5.0-beta.9`. This record is in English. The header's Status reads Merged (PR #104).
+
+- **F1 (decision 31): (b).** **F2 to F5 (decisions 32 to 35): (a) each.** **Delivery flags 1 to 3 (decisions 36 to 38): (a) each.** As implemented and written into the rewritten contract.
+- **Follow-ups 1 to 4, with new ids.** Follow-up 1, `(--lg)` in an `@import` media list, proposed as MIG-B9-66, an id already registered (decision 15 of 2026-11-10), is MIG-B9-69 (decision 45). Follow-up 2, a responsive value in a literal `@media` nested in a rule with `uxdsl/postcss` alone, proposed as MIG-B9-67, which is MIG-B9-20's unregistered proposal, is MIG-B9-70 (decision 46). Follow-ups 3 and 4, both proposed as MIG-B9-68, are registered together under that id (decision 47). All three are for `0.5.0-beta.10`. Where this story's "Follow-ups" say MIG-B9-66 and MIG-B9-67, read MIG-B9-69 and MIG-B9-70.
+- **Follow-ups 5 to 9, routed.** VS Code's completion and highlighting: MIG-B9-55 (decision 50). `snapshot.js`'s interactions: MIG-B9-44, which decision 12 of 2026-11-09 registered for it; MIG-B9-91's record lists `--no-interactions` as a known limitation (decision 51). The walk's fixed port 3919: MIG-B9-91 (decision 52). `UX-10` under load: MIG-B9-91, by decision 26 of 2026-11-15, and Press Craftor's eight queries: the owner's patch after beta.9 (decision 53).

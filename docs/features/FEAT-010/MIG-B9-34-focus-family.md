@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Feature · Release | FEAT-010 · `0.5.0-beta.9` |
+| Feature · Release | FEAT-010 · `0.5.0-beta.10` (DEC-03, revised 2026-11-23) |
 | Wave | 3 |
 | Decision gate | DEC-11 (decided 2026-10-23: a `focus` family and one generated `:where(…):focus-visible` rule) |
 | Status | Ready |
@@ -204,3 +204,10 @@ Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#2-decisions). Where they differ 
 - **DEC-11, confirmed** with the review's conditions: a theme can switch the global rule off; the selector list covers every focusable element (links and areas with `href`, `button`, `input` including checkboxes, `select`, `textarea`, `summary`, `[tabindex]`, `[contenteditable]`).
 - **Buttons and Inputs keep their own focus states** (the `tone(main)` ring; an Input's focus border), which win by specificity: the base theme writes no `var(--uxdsl__focus__…)` by hand, and the plan's "the base Button and Input states reference it" is dropped. A Chrome check pins that a control styled by `@ds-button` or `@ds-input` looks focused exactly as it does today, and that an unstyled link, `summary` and `[tabindex]` element shows the theme's ring.
 - If MIG-B9-31 lands first, the focus variables use its scope selector.
+
+### Owner decisions of 2026-11-23
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-23), as decision 1 of 2026-11-23. On 2026-11-17 and on 2026-11-23 the owner asked for `0.5.0-beta.9` to be what is ready in code now, so that it can be shown and its documentation reviewed before publishing, and for whatever is still pending to go to `0.5.0-beta.10`; both messages are quoted verbatim there, with an English rendering. This record is in English. Where it differs from this story's contract or from an earlier block, it rules.
+
+- **Moved to `0.5.0-beta.10` (decision 1 of 2026-11-23, DEC-03's third revision).** This story had not started when `0.5.0-beta.9` was cut to what `feat/beta9` holds at `6cdadaf`, plus MIG-B9-91, so it ships in `0.5.0-beta.10`. Its contract, its decisions, its wave and its place in the index's §5 order do not change; it blocks MIG-B9-92, the beta.10 gate, instead of MIG-B9-91, and the header's Release follows. Its preconditions and baselines are re-run on the base it starts from (the index's §1, item 4). Where its text puts its CHANGELOG subsection, a migration note or a release-record line under `0.5.0-beta.9`, read `0.5.0-beta.10`, the release then unreleased.
+- **The contrast baseline.** Under the index's §7 it now waits for MIG-B9-91 on `fixtures/release-1.0/contrast-baseline.json`, which MIG-B9-91 owns; the row lists 91 before 34 and 35.

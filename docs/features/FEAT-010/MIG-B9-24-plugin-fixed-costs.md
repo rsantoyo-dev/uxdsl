@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 2 |
 | Decision gate | None (registered by decision D3 of 2026-11-04, as proposed in MIG-B9-23 §15). Four questions for the owner are open in §15 and are answered before implementing; the contract states what it assumes until then |
-| Status | In review (PR #102) |
+| Status | Merged (PR #102) |
 | Size | S |
 | Depends on | MIG-B9-20, MIG-B9-21 |
 | Blocks | — (under §7, MIG-B9-30 to 35 and MIG-B9-37 wait for it) |
@@ -1176,3 +1176,10 @@ Follow-ups, each with a proposed story id:
    `generateThemeCss` still run the engines more than once per call. The
    plugin's `THEME_ENGINE_OUTPUTS` hook is the means if the owner wants
    that later; whether the runtime's cost matters is the owner's call.
+
+### Owner decisions of 2026-11-23, on the delivery's flags
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-23), as decisions 17 to 19, 40, 42 and 53 of 2026-11-23. On 2026-11-10 the owner gave a standing instruction for FEAT-010, verbatim, "fusiona todo.. y preguntas como recomendadas, y sgeuimos" ("merge everything, and the questions as recommended, and let's keep going"), and reaffirmed it on 2026-11-13, verbatim, "haz todo como recomendado" ("do everything as recommended"). This story was merged into `feat/beta9` as PR #102 (`6b8e3a9`) on 2026-11-16. Its scout's flags 1 to 3 ("Scout and owner flags of 2026-11-16, under the standing instruction") were implemented as recommended and were not put to the owner one by one: each recommendation is the owner's decision of 2026-11-23, and the owner may still override any of them. On 2026-11-23 the owner also cut `0.5.0-beta.9` to what `feat/beta9` holds at `6cdadaf`, plus MIG-B9-91 (decision 1), so this story ships in `0.5.0-beta.9`. This record is in English. The header's Status reads Merged (PR #102).
+
+- **Flags 1 to 3 (decisions 17 to 19): (a) each**, as implemented: the module-only `THEME_ENGINE_OUTPUTS` key in `theme-generator.ts`; §4's head columns recorded; C1 read per plugin run.
+- **Follow-ups.** Follow-up 1, `verify:1.0`'s directories, stays MIG-B9-91's (decision 40). Follow-up 2, the optional MIG-B9-102 for `compile()`'s near-miss path running the plugin twice, is not registered, as this story recommended (decision 42); the id MIG-B9-102 goes to MIG-B9-28's proposal (win32 spells a `pkg:` file in its on-disk case, decision 43), which a shipped test title and the CHANGELOG already cite. Follow-up 3, the runtime's engine runs, is recorded with no story (decision 53).

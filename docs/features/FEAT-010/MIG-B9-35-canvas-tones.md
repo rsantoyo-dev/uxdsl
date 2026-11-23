@@ -2,13 +2,13 @@
 
 | Field | Value |
 | --- | --- |
-| Feature · Release | FEAT-010 · `0.5.0-beta.9` |
+| Feature · Release | FEAT-010 · `0.5.0-beta.10` (DEC-03, revised 2026-11-23) |
 | Wave | 3 |
 | Decision gate | DEC-12 (decided 2026-10-23, amended: a contrast warning, not an error by family name) |
 | Status | Ready |
 | Size | S |
 | Depends on | MIG-B9-13 |
-| Blocks | MIG-B9-40, MIG-B9-91 (the gate's exact contrast sets) |
+| Blocks | MIG-B9-40, MIG-B9-92 (the gate's exact contrast sets; decision 1 of 2026-11-23) |
 | Base | `feat/beta9` after MIG-B9-13 |
 | Owns | `packages/uxdsl/test/canvas-tones.test.js` (new), `packages/uxdsl/src/theme/base.contrast-exceptions.json` (becomes `[]`) |
 | Shares | `packages/uxdsl/src/surfaces.ts`, `control-engine.ts`, `inputs.ts`, `buttons.ts`, `ds-runtime/contrast.ts`, `diagnostics.ts`, `fixtures/release-1.0/contrast-baseline.json`, `packages/uxdsl/CHANGELOG.md`, `AGENTS.md` |
@@ -192,3 +192,10 @@ Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#2-decisions). Where they differ 
 
 - **DEC-12 changes N1.** Rewrite §1 and §5 before implementing: a tone on a transparent-background role (`outlined`, `flat`, `underline`) or on an Input is checked by contrast, not by family name. For each mode of the effective theme, compute the contrast of the tone against the canvas with the contrast gate's predicate and threshold; below it, emit a located warning with the fix (`contained`, or another tone). It never fails the build: the compiler cannot know the real background (a `data-theme` scope, a contained parent).
 - The contrast gate's three pattern exceptions are replaced by the same predicate: those pairs stay listed, as warned, never as passing. Re-pin `fixtures/release-1.0/contrast-baseline.json` deliberately. The review's note on the underline Input (its focus treatment is `underline`, not `border`) applies.
+
+### Owner decisions of 2026-11-23
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-23), as decision 1 of 2026-11-23. On 2026-11-17 and on 2026-11-23 the owner asked for `0.5.0-beta.9` to be what is ready in code now, so that it can be shown and its documentation reviewed before publishing, and for whatever is still pending to go to `0.5.0-beta.10`; both messages are quoted verbatim there, with an English rendering. This record is in English. Where it differs from this story's contract or from an earlier block, it rules.
+
+- **Moved to `0.5.0-beta.10` (decision 1 of 2026-11-23, DEC-03's third revision).** This story had not started when `0.5.0-beta.9` was cut to what `feat/beta9` holds at `6cdadaf`, plus MIG-B9-91, so it ships in `0.5.0-beta.10`. Its contract, its decisions, its wave and its place in the index's §5 order do not change; it blocks MIG-B9-92, the beta.10 gate, instead of MIG-B9-91, and the header's Release follows. Its preconditions and baselines are re-run on the base it starts from (the index's §1, item 4). Where its text puts its CHANGELOG subsection, a migration note or a release-record line under `0.5.0-beta.9`, read `0.5.0-beta.10`, the release then unreleased.
+- **The contrast baseline.** Its re-pin of `fixtures/release-1.0/contrast-baseline.json` is not in the beta.9 gate, which verifies the baseline as it is at `6cdadaf`; the gate's exact contrast sets it blocks are MIG-B9-92's. Under the index's §7 it now waits for MIG-B9-91 on that file, as MIG-B9-34 does.

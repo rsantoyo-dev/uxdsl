@@ -15,7 +15,7 @@ Done when the documentation site is built only from UXDSL's own roles and
 tokens (nothing hard-coded, checked by a test), the documentation is
 rewritten for the one package, and an app built only from the public
 documentation runs without help. Where beta.9 ends and beta.10 starts is
-decided in FEAT-010 (DEC-03, 2026-11-04).
+decided in FEAT-010 (DEC-03, last revised on 2026-11-23).
 
 ## 1.0.0-rc.1
 

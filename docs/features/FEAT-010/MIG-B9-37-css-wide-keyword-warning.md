@@ -2,13 +2,13 @@
 
 | Field | Value |
 | --- | --- |
-| Feature · Release | FEAT-010 · `0.5.0-beta.9` |
+| Feature · Release | FEAT-010 · `0.5.0-beta.10` (DEC-03, revised 2026-11-23) |
 | Wave | 3 |
 | Decision gate | None (registered by decision D4 of 2026-11-04, as proposed in MIG-B9-03 §15, finding 4) |
 | Status | Ready |
 | Size | S |
 | Depends on | MIG-B9-13 (README §5; merged, PR #63). Under README §7 it also waits for the earlier rows of the files it shares: MIG-B9-24, 32, 33 and 34 (`theme-validate.ts`); MIG-B9-26, 17, 30 and 32 to 35 (`diagnostics.ts`); MIG-B9-30 to 36 (`AGENTS.md`); and MIG-B9-21, which every wave-3 story waits for (§7's preamble). On `bin/uxdsl.js` the earlier rows, MIG-B9-14, 20 and 22, are merged |
-| Blocks | MIG-B9-91 (it depends on every story of waves 0 to 3). Under §7: MIG-B9-38 (`diagnostics.ts`, `bin/uxdsl.js`), MIG-B9-39 (`bin/uxdsl.js`), MIG-B9-51 (`AGENTS.md`), and MIG-B9-60, 61 and 63 (`bin/uxdsl.js`) |
+| Blocks | MIG-B9-92 (it depends on the moved wave-3 stories, decision 1 of 2026-11-23). Under §7: MIG-B9-38 (`diagnostics.ts`, `bin/uxdsl.js`), MIG-B9-39 (`bin/uxdsl.js`), MIG-B9-51 (`AGENTS.md`), and MIG-B9-60, 61 and 63 (`bin/uxdsl.js`) |
 | Base | `feat/beta9` after MIG-B9-13, and within §7 after MIG-B9-17, 21, 24, 26 and 30 to 36. §3 and §4 were recorded on `5a041fc` (`feat/beta9` at `cc10de6`, with MIG-B9-20 merged as PR #88), before all of them; both are re-run on the base the story starts from (§3). Five questions for the owner are open in §15; the contract states the option it assumes until they are answered |
 | Owns | `packages/uxdsl/test/theme-css-wide-keyword.test.js` (new) |
 | Shares | `packages/uxdsl/src/ds-runtime/theme-validate.ts` (the structure pass of `validateTheme`), `packages/uxdsl/src/diagnostics.ts` (one catalog entry), `packages/uxdsl/bin/uxdsl.js` (`warnUnknownThemeKeys`'s filter and the comments that describe it), `AGENTS.md` and the generated `packages/uxdsl/docs/agent-guide.md` (one sentence), `packages/uxdsl/CHANGELOG.md` (one subsection), `packages/uxdsl/README.md` (one sentence). This list follows Q2 (a) and Q5 (a) of §15; another answer changes it as §15 says |
@@ -1041,3 +1041,10 @@ Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-13), 
 - **Q5 (decision 23): (a).** The CLI prints it once per process, at its key path, through `warnUnknownThemeKeys`, whose filter is extended to the new code; `bin/uxdsl.js` stays in Shares.
 
 One consequence of decision 28 of 2026-11-13, for the header, which this block does not edit: MIG-B9-39 was split, and its CLI part is MIG-B9-19, so the story this one blocks on `bin/uxdsl.js` is MIG-B9-19, not MIG-B9-39, and MIG-B9-06 (decision 29) follows on that file too. The index's §5 and §7 follow.
+
+### Owner decisions of 2026-11-23
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-23), as decision 1 of 2026-11-23. On 2026-11-17 and on 2026-11-23 the owner asked for `0.5.0-beta.9` to be what is ready in code now, so that it can be shown and its documentation reviewed before publishing, and for whatever is still pending to go to `0.5.0-beta.10`; both messages are quoted verbatim there, with an English rendering. This record is in English. Where it differs from this story's contract or from an earlier block, it rules.
+
+- **Moved to `0.5.0-beta.10` (decision 1 of 2026-11-23, DEC-03's third revision).** This story had not started when `0.5.0-beta.9` was cut to what `feat/beta9` holds at `6cdadaf`, plus MIG-B9-91, so it ships in `0.5.0-beta.10`. Its contract, its decisions, its wave and its place in the index's §5 order do not change; it blocks MIG-B9-92, the beta.10 gate, instead of MIG-B9-91, and the header's Release follows. Its preconditions and baselines are re-run on the base it starts from (the index's §1, item 4). Where its text puts its CHANGELOG subsection, a migration note or a release-record line under `0.5.0-beta.9`, read `0.5.0-beta.10`, the release then unreleased.
+- **Decision D13 of 2026-11-04 put it in `0.5.0-beta.9`.** That release no longer holds it: a CSS-wide keyword as a theme token value still emits a guaranteed-invalid `:root` property silently in `0.5.0-beta.9`.

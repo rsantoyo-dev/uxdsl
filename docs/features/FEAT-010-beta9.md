@@ -2,9 +2,9 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Planned on 2026-10-11 over `main` at `685c132`. Every decision confirmed by the owner on 2026-10-23 (§2). MIG-B9-23 added on 2026-11-02, by the owner's decision on MIG-B9-13's AC1. On 2026-11-04 the owner revised DEC-03 to two releases and registered MIG-B9-24 to 29, 37 and 92 (§2). On 2026-11-08 the owner settled the flags of MIG-B9-14 and 15 and registered MIG-B9-16, 38 and 39 (§2). On 2026-11-09 the owner settled the flags of MIG-B9-22 and 23 and registered MIG-B9-44 (§2). On 2026-11-10 the owner answered the open questions of the story files of MIG-B9-16 and 24 to 29 and three notes of their PR, split MIG-B9-26 into MIG-B9-26 and MIG-B9-17, made `migration.md` append-only and registered MIG-B9-66 (§2); under the owner's standing instruction of the same day, MIG-B9-29's delivery flags became decisions 33 to 37, which register MIG-B9-18 in wave 3 (§2). On 2026-11-13, under the same standing instruction, MIG-B9-20's delivery flags became the owner's decisions of 2026-11-13, which assign follow-ups to MIG-B9-21, 60 and 91 (§2). Merged: MIG-B9-01 to 05, 10 to 15, 20, 22, 23, 29 and 53; wave 1 is complete. The index has each story's status. |
+| Status | Planned on 2026-10-11 over `main` at `685c132`. Every decision confirmed by the owner on 2026-10-23 (§2). MIG-B9-23 added on 2026-11-02, by the owner's decision on MIG-B9-13's AC1. On 2026-11-04 the owner revised DEC-03 to two releases and registered MIG-B9-24 to 29, 37 and 92 (§2). On 2026-11-08 the owner settled the flags of MIG-B9-14 and 15 and registered MIG-B9-16, 38 and 39 (§2). On 2026-11-09 the owner settled the flags of MIG-B9-22 and 23 and registered MIG-B9-44 (§2). On 2026-11-10 the owner answered the open questions of the story files of MIG-B9-16 and 24 to 29 and three notes of their PR, split MIG-B9-26 into MIG-B9-26 and MIG-B9-17, made `migration.md` append-only and registered MIG-B9-66 (§2); under the owner's standing instruction of the same day, MIG-B9-29's delivery flags became decisions 33 to 37, which register MIG-B9-18 in wave 3 (§2). On 2026-11-13, under the same standing instruction, MIG-B9-20's delivery flags became the owner's decisions of 2026-11-13, which assign follow-ups to MIG-B9-21, 60 and 91 (§2). On 2026-11-23 the owner cut `0.5.0-beta.9` to what `feat/beta9` holds at `6cdadaf` plus MIG-B9-91, moved the rest of wave 3 to `0.5.0-beta.10`, and asked for a review of the documentation with Claude before publishing; under the standing instruction, the flags of MIG-B9-17, 24, 27, 28 and 30 became the owner's decisions of 2026-11-23, which register MIG-B9-68 to 70 and 99 to 103, 100 excepted (§2). Merged: MIG-B9-01 to 05, 10 to 18, 20 to 30, 39 and 53; waves 0 to 2 are complete. The index has each story's status. |
 | Goal | Make the definition below true in the code and pinned by tests, then make the playground the best implementer of it. |
-| Release | Two releases (DEC-03, revised on 2026-11-04): `uxdsl@0.5.0-beta.9`, the first publish of the single `uxdsl` package, with waves 0 to 3 and MIG-B9-91; then `uxdsl@0.5.0-beta.10`, with waves 4 to 6, MIG-B9-90 and MIG-B9-92. |
+| Release | Two releases (DEC-03, revised on 2026-11-04 and on 2026-11-23): `uxdsl@0.5.0-beta.9`, the first publish of the single `uxdsl` package, with every story merged into `feat/beta9` at `6cdadaf` and MIG-B9-91; then `uxdsl@0.5.0-beta.10`, with the rest of wave 3 (MIG-B9-06, 19 and 31 to 38), waves 4 to 6, MIG-B9-90 and MIG-B9-92. |
 | Implemented by | AI agents only. The owner decides, reviews, merges and publishes. |
 | Index and stories | [FEAT-010/README.md](FEAT-010/README.md) holds the protocol, the test policy, the story template, the order of work and the status table. Each story is one file in [FEAT-010/](FEAT-010/). |
 | Backlog and reasons | [docs/audits/2026-10-08-plan-beta9.md](../audits/2026-10-08-plan-beta9.md) records every candidate with its options. This feature is the executable form of it. |
@@ -92,7 +92,7 @@ questions; the register in [FEAT-010/README.md](FEAT-010/README.md) maps them.
 | DEC-14 | The playground is UXDSL's reference implementer: one component per concept, every principle demonstrated, nothing hand-written or hardcoded, and the superset shown live. | **Decided**, owner, 2026-10-08 and 2026-10-11 | MIG-B9-40 to 43 |
 | DEC-15 | Public documentation, the stories of this feature and their tests are written in English (audit DE-12). | **Decided**, audit 2026-09-29 | all |
 | DEC-02 | The spacing token function keeps the name `space()`. `spacing()` is an error that names `space()`, like the other removed spellings, and every near-miss of a UXDSL function name is an error with a "did you mean". With the review's precisions: a real CSS function (`shape()`) is never flagged; a top-level name one edit from a breakpoint stays `UXD_BREAKPOINT_UNKNOWN`; the check lives in `language.ts`, so theme values fail the same way. | **Decided**, owner, 2026-10-23 | MIG-B9-04 |
-| DEC-03 | **The release cut: two releases, option (b).** `0.5.0-beta.9` ships waves 0 to 3 and MIG-B9-91, the beta.9 gate, which includes the Press Craftor re-run and an English beta.8 → beta.9 migration section. `0.5.0-beta.10` ships waves 4 to 6, MIG-B9-90 and MIG-B9-92, the beta.10 gate and release record (the plan's "91b"). The stories registered on 2026-11-04 ship in beta.9: MIG-B9-24 to 29 in wave 2 and MIG-B9-37 in wave 3. | **Decided**, owner, 2026-11-04: option (b); option (a) of 2026-10-23 superseded | MIG-B9-91, MIG-B9-92 |
+| DEC-03 | **The release cut: two releases, option (b); beta.9 is what `feat/beta9` holds.** `0.5.0-beta.9` ships every story merged into `feat/beta9` at `6cdadaf` (MIG-B9-01 to 05, 10 to 18, 20 to 30, 39 and 53) and MIG-B9-91, the beta.9 gate, which includes the Press Craftor re-run and an English beta.8 → beta.9 migration section; before the owner publishes, the owner and Claude review the documentation together, an owner step of its record. `0.5.0-beta.10` ships the rest of wave 3 (MIG-B9-06, 19 and 31 to 38), waves 4 to 6, MIG-B9-90 and MIG-B9-92, the beta.10 gate and release record (the plan's "91b"). Of the stories registered on 2026-11-04, MIG-B9-24 to 29 ship in beta.9 and MIG-B9-37 in beta.10. | **Decided**, owner, 2026-11-23 (decision 1 of 2026-11-23, third revision: the wave-3 remainder moves to beta.10); 2026-11-04: option (b); option (a) of 2026-10-23 superseded | MIG-B9-91, MIG-B9-92 |
 | DEC-04 | `sass`, the pure-JavaScript Dart Sass package (not `sass-embedded`, so it also runs in the browser), is a regular dependency of `uxdsl` (zero setup for "rename and it works"), not an optional peer. It is loaded only when `compile()` runs: the PostCSS plugin used alone never loads it. | **Decided**, owner, 2026-10-23 | MIG-B9-12 |
 | DEC-05 | The PostCSS plugin used alone compiles CSS plus UXDSL, without Sass: its own `$variable` resolution is deleted, and Sass syntax in a file it compiles is a located error that names the fix (a `.uxdsl` file through `uxdsl build`, `compile()` or an adapter). Every Sass construct is detected, not only `$name`: `@use`, `@forward`, `@mixin`, `@include`, `@function`, `@extend`, the control rules, `#{…}`, `&`-suffix selectors and `%placeholders`. `--x: $var` has its own message: Sass keeps `$var` literally in a custom property; write `#{$var}`. | **Decided**, owner, 2026-10-23 | MIG-B9-13 |
 | DEC-06 | The theme CSS is written only where `@uxdsl theme;` appears; the `includeTheme` option, config key and flags are removed. Generated entries, `uxdsl init` and the Next.js scaffold write the marker. A build that emits no theme warns once, on every host (a single-entry CLI build, `builds`, `build --watch` counted over every entry's last result, Vite, webpack, Next.js), and so does a build in which more than one module emits it (a marker reached through a shared partial). | **Decided**, owner, 2026-10-23 | MIG-B9-20 |
@@ -680,26 +680,198 @@ The follow-ups (MIG-B9-39's "Delivery of 2026-11-15"; MIG-B9-26's
   - The helper for MIG-B9-39's new `test/vite` and `test/webpack` tests (decisions 15 and 27): carried out by MIG-B9-39 (decision 32).
   - MIG-B9-17 meets the near-miss replay (`nearMissError`, after the plugin's warnings are collected) in `compileInto` (MIG-B9-26's delivery): MIG-B9-17's own §15 records it when it delivers, and its story file, in progress on its own branch, is not edited here. README §7's `compile.ts` row already orders MIG-B9-17 after MIG-B9-26 (decision 38).
 
+### Owner decisions of 2026-11-23
+
+After the record of 2026-11-15 (PR #98, merged into `feat/beta9` as
+`06c99d1`), five stories were merged into `feat/beta9`: MIG-B9-17 as PR #99
+(`f254b24`), MIG-B9-27 as PR #100 (`dec40b1`) and MIG-B9-24 as PR #102
+(`6b8e3a9`) on 2026-11-16, then MIG-B9-28 as PR #101 (`461116b`) and
+MIG-B9-30 as PR #104 (`6cdadaf`) on 2026-11-23. `feat/beta9` is at
+`6cdadaf`.
+
+On 2026-11-17 the owner wrote, in Spanish, verbatim:
+
+> buno en realidad quieor tener beta 9 para empezarlo a mostrar y darle una revisada a la documentacion.. podemos separar l no propritario para beta 10. si me ayudas cone sto,estipular beta 9, alcance y beta 10. alcance, asi nos enfocamos en beta 9, lo que si es que en beta 9 debemos revisar muy bien la documentacion
+
+("well, actually I want to have beta.9 to start showing it and to give the
+documentation a review. We can separate what is not a priority into
+beta.10. If you help me with this: set out beta.9 and its scope, and beta.10
+and its scope, so that we focus on beta.9. What is certain is that in beta.9
+we must review the documentation very carefully.") On 2026-11-23 the owner
+wrote, verbatim:
+
+> continua por favor.. la idea es dejar una version lista para beta 9.. lo que quede pendiente lo dejamos para la 10.. asi que mergea todo, y deja lista la version..una vez funcinal y antes de publicar.,. revisaremos documnentacionm, pero avisame cuando 9 este lista en codigo..
+
+("continue, please. The idea is to leave a version ready for beta.9;
+whatever is still pending we leave for 10. So merge everything, and leave
+the version ready. Once it works and before publishing, we will review the
+documentation; but tell me when 9 is ready in code.") Decision 1 is what
+these two messages decide; this record states it in English.
+
+Decisions 2 to 38 are the owner flags the five deliveries answered with
+their recommended option, story by story, in the order the stories were
+merged. They fall under the owner's standing instruction of 2026-11-10 for
+FEAT-010, quoted above, verbatim, "fusiona todo.. y preguntas como
+recomendadas, y sgeuimos" ("merge everything, and the questions as
+recommended, and let's keep going."), which the owner reaffirmed on
+2026-11-13, verbatim, "haz todo como recomendado" ("do everything as
+recommended."). They were implemented as recommended and were not put to
+the owner one by one: each is the owner's decision of 2026-11-23, and the
+owner may still override any of them. One is different: MIG-B9-28's G4
+(decision 29) had no clearly recommended option; it is recorded as taken
+under the standing instruction, open for the owner to override, with what
+an override would mean. Decisions 39 to 53 route the deliveries'
+follow-ups; *routing* and *widening* mean what they mean in the block of
+2026-11-15. This record is in English. The numbers 1 to 53 belong to this
+list only, and a story cites one as "decision 29 of 2026-11-23".
+
+Seven story ids are registered, all for `0.5.0-beta.10`: MIG-B9-99, 101,
+102 and 103, the ids the deliveries proposed, and MIG-B9-68, 69 and 70
+(decisions 39, 41, 43 to 47). MIG-B9-30's delivery proposed MIG-B9-66 and
+MIG-B9-67 for two of them: MIG-B9-66 is registered (decision 15 of
+2026-11-10), and MIG-B9-67 is MIG-B9-20's proposal, not registered and
+named in the block of 2026-11-13, so those two get the next free ids, 69
+and 70, after MIG-B9-68, which the same delivery proposed for a third
+item. MIG-B9-100 is not registered (decision 40), and MIG-B9-24's optional
+MIG-B9-102 is not taken, the id going to MIG-B9-28's proposal, which a
+shipped test title and the CHANGELOG already cite (decisions 42 and 43).
+The standing instruction assigns no id, so the recorder took them, and the
+owner may renumber them. Blocks of this date sit at the end of the §15 of
+MIG-B9-17, 24, 27, 28 and 30 ("Owner decisions of 2026-11-23, on the
+delivery's flags"), of MIG-B9-55 and 91 ("Owner decisions of 2026-11-23
+(apply before implementing)"), and of the moved stories MIG-B9-19 and 31
+to 38 ("Owner decisions of 2026-11-23"). MIG-B9-06 and 66 have no story
+file: the index's §5 rows say what they take.
+
+The cut:
+
+- **Decision 1 — DEC-03, third revision: `0.5.0-beta.9` is what `feat/beta9` holds at `6cdadaf`, plus MIG-B9-91.**
+  - `0.5.0-beta.9` ships every story merged into `feat/beta9` at `6cdadaf`: MIG-B9-01 to 05, MIG-B9-10 to 18, MIG-B9-20 to 30, MIG-B9-39 and MIG-B9-53 (wave 5, merged early as PR #35), and MIG-B9-91, the beta.9 gate and release record. Waves 0, 1 and 2 are complete; of wave 3, MIG-B9-18, 30 and 39 are merged.
+  - Moved to `0.5.0-beta.10`, unstarted: MIG-B9-19, MIG-B9-31 to 38 and MIG-B9-06, the remainder of wave 3. They keep their wave, which is an order, not a release (§3), and their decisions (DEC-08 to DEC-13 stay decided; they ship later). Clause 3's gaps in §1 (scoped palettes, `extends` for roles and typography) therefore stay open in `0.5.0-beta.9`.
+  - Waves 4 to 6, MIG-B9-90 and MIG-B9-92 were already `0.5.0-beta.10` (decision D13 of 2026-11-04) and stay there, with the follow-ups this block registers (decisions 39 to 47). MIG-B9-92, the beta.10 gate, now also depends on the moved stories.
+  - What the cut lifts: the gate's wait for MIG-B9-06 (decision 28 of 2026-11-15, and decision 40's "MIG-B9-91's gate waits for it as before"). The atomic-replace watch failure, webpack's extra build in the older loader watch tests and MIG-B9-28's G4 class (decision 48) become known limitations of beta.9's record, routed to MIG-B9-06 in `0.5.0-beta.10`, so beta.9 ships with `test/cli/watch-mode.test.js` outside the Windows gate. The checks the moved and later stories add (`S-5` from MIG-B9-31, MIG-B9-35's contrast re-pin, `DR-1`, `AU-1`, `EX-1`/`EX-2`, `EU-1`, `TX-1`) are not in the beta.9 gate. Decision 35 of 2026-11-10 still holds: MIG-B9-18 is merged.
+  - Before the owner publishes `0.5.0-beta.9`, the owner and Claude review the documentation together. It is an owner step of the release record that MIG-B9-91 writes, the first of its owner steps, not a story; the documentation stories of wave 5 (MIG-B9-50 to 54) and MIG-B9-90 stay in `0.5.0-beta.10`. The publish itself stays the owner's.
+  - Reason: the owner's two messages above. `0.5.0-beta.9` is what is ready in code now, so the owner can start showing it; whatever is pending moves to `0.5.0-beta.10`.
+
+MIG-B9-17's flags (merged as PR #99; its §15, "Owner flags of 2026-11-15,
+answered as recommended", F1 to F9, raised by its design before PR #98's
+record and not recorded there while the story was in progress (decision
+44 of 2026-11-15), and "Delivery of 2026-11-16", "Owner flags of the
+review", DB-1, DB-2 and CT-2):
+
+- **Decision 2 — `protect.ts` and `protect.test.js` outside Shares (F1).** (a): Shares widened to both files (`ProtectProblem.bodyStart`, a new export `findTopLevelVariables`, the `bodies` test destructuring `bodyStart`). Not taken: (b) duplicate the brace matcher in `compile-sass.ts`, against "no separate parsers"; (c) a lexical heuristic.
+- **Decision 3 — `compile-sass.test.js`'s row W2 (F2).** (a): Shares widened to `compile-sass.test.js`; `sassWarnings` also drops `UXD_MODULE_ISOLATION`, and each DEC-17 row asserts its exact isolation list. "W2 warns by design." Not taken: (b) exclude names hidden by `@forward … hide/show` from C5; (c) compute C5 only with a map.
+- **Decision 4 — `compile.md` outside Shares (F3).** (a): Shares widened to `compile.md`, docs only. Not taken: (b) leave it for MIG-B9-27 or 38.
+- **Decision 5 — `diagnostics-catalog.test.js`'s core set (F4).** (a): Shares widened, and that test retitled in place as MIG-B9-17's with the fourth `core` code. Not taken: (b) owner `compiler`, against decision 9 of 2026-11-10; (c) stop.
+- **Decision 6 — C4 where the call's own file defines the function (F5).** (a): the same code, with the fix clause "define it at the top level of its file, before this call". Not taken: (b) the generic message, whose fix is wrong there; (c) no warning.
+- **Decision 7 — `compile.ts`'s header (F6).** (a): both comments updated, no code. Not taken: (b) only the warnings comment.
+- **Decision 8 — Isolation warnings on a later error (F7).** (a): the error `compile()` throws after a successful stage carries the stage's warnings, as `compile.md` promises. Not taken: (b) only on successful compiles.
+- **Decision 9 — A build that defines `get-function` or `function-exists` (F8).** (a): C5 is never reported in such a build, a narrowing of an edge case that keeps every message true. Not taken: (b) report it and amend the sentence.
+- **Decision 10 — The index's §7 table (F9).** (a): the closing implementer updates the rows of `protect.ts`, `compile-sass.test.js` and `compile.md` in the closure commit. Not taken: (b) record only in the story.
+- **Decision 11 — Where the `!default` twins run (DB-1).** (a), implemented in `7754e2f`: never folded into the shadowing probe; the records come from the dedicated, guarded compile. Not taken: (b) keep folding and re-run the probe without twins on a failure; (c) stop the story as Blocked.
+- **Decision 12 — The fix for a private member (DB-2).** (a), implemented in `7754e2f`: the same code, with a fix that renames first ("`<name>` is private to its file, as its name starts with `<c>`: rename it without the leading `<c>`, then …"). The story asks the owner to review the wording. Not taken: (b) skip C4 and C6 for private members; (c) keep the wrong fix.
+- **Decision 13 — `with ($x: null)` against C6's "Never reported" (CT-2).** (a): the warning is kept, "configured" is read as configured with a value, and the CHANGELOG, `compile.md`, `cli.md` and `migration.md` say "unless the value is `null`". Not taken: (b) suppress C6 for any `with` configuration.
+
+The delivery's other notes are not flags and are not decisions: its README
+"From SCSS" passage gained two sentences where the index's §7 allows one
+per story, and the owner may ask for them to be merged (DE-7).
+
+MIG-B9-27's flags (merged as PR #100; its §15, "Owner decisions taken under
+the standing instruction of 2026-11-10 (2026-11-16)", flags 1 to 3):
+
+- **Decision 14 — PostCSS Document roots under C1's strict reading (flag 1).** (a): a Document's roots keep BASE's timing; `holdSassSyntax` throws in `Once` for a root whose parent is a Document, T4 and T5 have Document cases, and the docs say such a root is checked when `uxdsl/postcss`'s `Once` runs. Not taken: (b) defer per Document; (c) leave it, which fails C1 (outcome B).
+- **Decision 15 — Chain inputs outside C4's set change their error (flag 2).** (a): accepted, the evidence recorded in the story's §14 and documented ("another plugin's own error is reported as that plugin gives it"); the inputs are not added to T7. Not taken: (b) read C4 as covering every chain input (outcome B).
+- **Decision 16 — `compiler-structure.test.js` pinned the old factory's source shape (flag 3).** (a): restructured into named top-level steps (`Once` = `validateOptions` → `holdSassSyntax` → `runSteps`, `OnceExit` = `releaseSassSyntax`), with the pin updated to the new shape and the same intent. Not taken: (b) outcome B.
+
+MIG-B9-24's flags (merged as PR #102; its §15, "Scout and owner flags of
+2026-11-16, under the standing instruction", flags 1 to 3):
+
+- **Decision 17 — Where the shared engine pass lives (flag 1).** (a): a module-only Symbol key (`THEME_ENGINE_OUTPUTS`), the `ThemeEngineOutputs` type and `renderThemeCssFromOutputs` in `theme-generator.ts`, which `uxdsl/engine` re-exports by name only; the plugin calls the public `validateTheme` with it. Every file stays within Shares; only `ds-runtime/theme-generator.d.ts` differs from BASE among the built declarations. Not taken: (b) turn `engine.ts`'s `export *` into an explicit list of 110 names; (c) add a public name.
+- **Decision 18 — What §4 reads on the head for the columns §12 does not name (flag 2).** (a): "theme renders 0", "validateTheme 1" and about 11.5k value parses are recorded; C1 ties the CSS to `renderThemeCss`'s bytes, not to calls of it. Not taken: (b) keep calling `renderThemeCss`, impossible without a second engine run.
+- **Decision 19 — C1 per `compile()` or per plugin run (flag 3).** (a): C1 is read per plugin run (per Compilation, as its title says); on `compile()`'s near-miss path, which runs the plugin twice, T1 asserts 2 engine runs. Not taken: (b) add `compile.ts` to Shares and carry the render across the two runs; (c) Blocked.
+
+MIG-B9-28's flags (merged as PR #101; its §15, "Owner decisions taken under
+the standing instruction (2026-11-16)", F1 to F6, "… second batch", G1 to
+G3, "The owner's session's decision on G4, open for the owner to confirm
+(2026-11-16, third batch)", and "Review of 2026-11-23", R1):
+
+- **Decision 20 — The Windows job wraps the package's test script in `scripts/tmpdir-guard.js` (F1).** (a): step 8 runs the suites inside the guard. Not taken: (b) the guard runs once elsewhere for the record.
+- **Decision 21 — Where a Windows leftover is fixed (F2).** (a): in the test file that leaves it or in `test/helpers/temporary-directory.js`, the file joining Shares with the run id that showed it; a cause in `src` or `bin` stays decision 19 of 2026-11-10's stop. Not taken: (b) a follow-up; (c) tolerated.
+- **Decision 22 — How the job runs MIG-B9-25's §12 loop (F3).** (a): a permanent step 9 (`if: success() || failure()`), limited to the package's steps; the loop's other steps go to MIG-B9-66 (decision 49). Not taken: (b) only on failure; (c) on branch commits, then removed.
+- **Decision 23 — Test files outside the Shares that fail on win32 for a harness reason (F4).** (a): Shares widened to each file the job shows, with its run id, and 28 put before the provisional 06 on the index's §7 row of `test/vite/index.test.js` and `test/webpack/loader.test.js`. Not taken: (b) stop and ask for each.
+- **Decision 24 — How `test/helpers/npm.js` starts npm on win32 (F5).** (a): `shell: true` with each argument double-quoted, refusing an argument that holds a cmd metacharacter. Not taken: (b) `process.execPath` with `npm-cli.js`.
+- **Decision 25 — An encoded negative control for "`os.tmpdir()` reads `TEMP` and `TMP` on Windows" (F6).** (a): T11 in `win32-harness.test.js`. Not taken: (b) none.
+- **Decision 26 — A file Dart Sass loads itself through `pkg:` is spelled in lower case on win32 (G1).** (b): recorded as a win32 difference, `src` untouched: the failing test finds the file whatever its case on win32, a new test pins Dart Sass's spelling and names the follow-up, and the package README sentence on spelling is narrowed. The fix is MIG-B9-102 (decision 43). Not taken: (a) fix it in `src` in MIG-B9-28.
+- **Decision 27 — T7's ACL cannot be set up on the hosted runner (G2).** (a): on win32 T7 skips with the exact reason when the directory can still be listed, printing the `readdirSync` result and the `icacls` listing; C6c stays unobserved on win32, and the README and CHANGELOG keep decision 2 of 2026-11-09's sentence for that case. Not taken: (b) another, unelevated account; (c) pin outcome B unobserved.
+- **Decision 28 — On win32 `build --watch`'s atomic replace is refused while a reader holds the output file (G3).** (b): recorded as a win32 difference, `bin` untouched: on win32 the atomic-replace test accepts, per rebuild, the new output or the `EPERM` line with the previous output whole, and checks that a change with no reader then builds; the CLI guide, the package README and the CHANGELOG say so. The retry is MIG-B9-103 (decision 44). Not taken: (a) retry the rename in `bin`; (c) skip the test on win32.
+- **Decision 29 — One save reaches `build --watch` as two `change` events on win32 (G4): taken under the standing instruction, open for the owner to override.** (c): `test/cli/watch-mode.test.js` runs in the Windows job with its whole output printed, as a named exclusion from the job's pass/fail (the line `excluded from the Windows gate: watch-mode.test.js, one save reaches build --watch as two change events on win32; MIG-B9-06 returns it to the gate`), every other file stays in the gate, and C3, C6g and AC2 are amended accordingly; the class goes to MIG-B9-06 (decision 48). The story recorded that no option was clearly the recommended one: the owner's session chose (c) on 2026-11-16 to keep the story moving, and since decision 19 of 2026-11-10 leaves a cause in `bin` to the owner, the story and PR #101's body ("G4, needs your confirmation") asked the owner to confirm or override it before merge. PR #101 was merged on 2026-11-23, after the owner's message of that day ("mergea todo"), which does not name G4; this record does not read the merge as a confirmation. G4 is therefore recorded as taken under the standing instruction, and stays open for the owner to override.
+  - Without an override, `0.5.0-beta.9` ships with `watch-mode.test.js` outside the Windows gate, a known limitation of its record, and MIG-B9-06, now in `0.5.0-beta.10` (decision 1), returns it to the gate.
+  - An override to (a), "change `bin` so that an event whose file keeps the stats of its last build builds nothing", is a change to `bin/uxdsl.js` before the beta.9 gate: a new story, or MIG-B9-06's `bin` part brought back into `0.5.0-beta.9`, which reopens decision 1's cut for that part and makes MIG-B9-91 wait for it again.
+  - An override to (b), "keep `bin` and pin the difference on win32 in each watch test that counts builds", edits about a dozen count assertions in `watch-mode.test.js` (test files only) so the file returns to the Windows gate in `0.5.0-beta.9`, with the coalescing of events left to MIG-B9-06; it also needs a story or an amendment before MIG-B9-91.
+  - Not taken by the session: (a) and (b), for the reasons the story gives: "(a) changes `bin` against C7; (b) weakens about a dozen count assertions; (c) keeps every assertion and `bin` intact and names the gap."
+- **Decision 30 — AC1's recorded mutation no longer fails the job (R1).** (a): the `script-shell` step is kept, so npm's scripts run in bash as on ubuntu, with its name and comment saying what it does now, and AC1's mutation is amended to step 8's drift check. Not taken: (b) remove the step.
+
+MIG-B9-30's flags (merged as PR #104; its §15, "Owner flags of 2026-11-16,
+under the standing instruction", F1 to F5, and "Delivery of 2026-11-23",
+"Owner flags raised at review and delivery", flags 1 to 3):
+
+- **Decision 31 — A responsive value in a nested block, with the plugin alone (F1).** (b): `UXD_BREAKPOINT_CONTEXT` only when an enclosing `@media` was rewritten from `(--bp)`; literal inputs keep BASE's bytes, and the literal case is a follow-up (MIG-B9-70, decision 46). Not taken: (a) the error for every such at-rule, which changes outputs with no `(--name)`; (c) leave it; (d) fix the emission, which changes literal outputs.
+- **Decision 32 — Which unknown `(--name)` is an error, and when (F2).** (a): every `(--name)` that is neither a theme breakpoint nor a top-level `@custom-media` is `UXD_BREAKPOINT_UNKNOWN`, judged at `OnceExit` so another plugin may resolve it first. Option (d), an option listing external names, can be added later (MIG-B9-68, decision 47). Not taken: (b) judged in `Once`; (c) only names near a breakpoint.
+- **Decision 33 — The base breakpoint in a prelude, `(--xs)` (F3).** (a): `UXD_BREAKPOINT_CONTEXT` with the form to write. Not taken: (b) `(min-width: 0px)`; (c) drop the feature.
+- **Decision 34 — `(--<bp>)` outside an `@media` prelude (F4).** (a): left as written, documented, with the `@import` case a follow-up (MIG-B9-69, decision 45). Not taken: (b) `UXD_BREAKPOINT_CONTEXT`, which changes outputs whose preludes hold no `--`; (c) also rewrite `@import` and `@custom-media` media lists.
+- **Decision 35 — AC3's "no visual difference" (F5).** (a): AC3 reads "no visual difference except the declared docs additions"; SideNav and every other route unchanged. Not taken: (b) no demo, leaving capability-matrix gaps.
+- **Decision 36 — Where `UXD_BREAKPOINT_UNKNOWN` is located through `compile()` (delivery flag 1).** (a): B5 and §7 qualified: at the token with the plugin alone, at the `@media` rule's line and column through `compile()`. Not taken: (b) point `compile()` at the token, which the Sass map cannot give; (c) leave B5 and record a finding.
+- **Decision 37 — The byte-identity line (delivery flag 2).** (a): §5's "Must stay" reads "every output whose `@media` preludes hold no `--`". Not taken: (b) name the exception after the existing wording; (c) drop the bare-name check.
+- **Decision 38 — "In that build" (delivery flag 3).** (a): DEC-07's "in that build" is read as "in that compilation: the stylesheet and the partials it loads"; stylesheets compiled apart keep the theme's query. Not taken: (b) carry a definition across every entry of a build.
+
+The follow-ups (MIG-B9-17's "Follow-ups"; MIG-B9-27's and MIG-B9-24's
+"Delivery of 2026-11-16"; MIG-B9-28's "Follow-ups (proposed)" and
+"Delivery of 2026-11-23"; MIG-B9-30's "Delivery of 2026-11-23"):
+
+- **Decision 39 (widening) — The isolation warnings' edge cases (MIG-B9-17's follow-up).** Registered as MIG-B9-99, "The isolation warnings' edge cases": wave 6, last in the wave (after MIG-B9-97), S, decision gate none, `0.5.0-beta.10`, status "Draft (story file to be written; registered by decision 39 of 2026-11-23)". It covers what the follow-up lists: C4 reading an uppercase or mixed-case `URL(name(…))` that Dart Sass evaluates (RR-1); C6's "earlier" by evaluation order rather than load order, no C6 for an earlier `$x: null;`, and the setter named as the last assignment in the earlier file (DB-3 (a) to (c)); and `compile-error-warnings.test.js`'s header comment naming `UXD_MODULE_ISOLATION` in the order. Reason: the follow-up's first option; each item changes `compile-sass.ts`, and `0.5.0-beta.9` is cut. Until then MIG-B9-91's record lists them as known limitations of beta.9, the follow-up's alternative.
+- **Decision 40 — `verify:1.0` leaves five directories in `TMPDIR` (MIG-B9-27's proposed MIG-B9-100; seen again by MIG-B9-24's and MIG-B9-17's deliveries).** Not registered: the item is already MIG-B9-91's, by decisions 26 and 44 of 2026-11-15 (`uxdsl-1.0-gate-`, `uxdsl-1.0-upgrade-before-`, two `uxdsl-vite-adapter-`, `uxdsl-webpack-adapter-`, and `packAndInstall`'s consumer directories), as MIG-B9-17's delivery says ("Already MIG-B9-91's, by decision 44 of 2026-11-15"). MIG-B9-100 is left unused. Reason: one owner per item; the beta.9 gate already has it.
+- **Decision 41 (widening) — The timing test `MIG-B6-25: reference validation grows near-linearly` fails under load (MIG-B9-27's proposed MIG-B9-101).** Registered as MIG-B9-101, "The near-linear timing test of reference validation holds under load": wave 6, last in the wave (after MIG-B9-99), S, decision gate none, `0.5.0-beta.10`, status "Draft (story file to be written; registered by decision 41 of 2026-11-23)". Its story file chooses between the follow-up's two options: the interleaved re-measure the Sass corpus budget uses, or fencing it from `npm test` under load as MIG-B9-23 did for the corpus. It is the package test in `npm test`, not the gate's `UX-10` check, which decision 26 of 2026-11-15 gives MIG-B9-91.
+- **Decision 42 — `compile()`'s near-miss path runs the plugin twice (MIG-B9-24's optional proposed MIG-B9-102).** Not registered, as the delivery recommends: "do not register it unless the error path's time matters". The gain is on an error path, and reusing the first run's engine outputs needs a new option or a cache. The id MIG-B9-102, which MIG-B9-28's delivery also proposed, goes to that proposal (decision 43); MIG-B9-24's §15 is pointed at it.
+- **Decision 43 (widening) — win32: a file Dart Sass loads itself through `pkg:` is spelled in its on-disk case (MIG-B9-28's proposed MIG-B9-102, from G1).** Registered as MIG-B9-102, with the title the delivery gave: wave 6, last in the wave (after MIG-B9-101), S, decision gate none, `0.5.0-beta.10`, status "Draft (story file to be written; registered by decision 43 of 2026-11-23)". Its regression is G1's test, which then asserts the on-disk case. It keeps the id because `packages/uxdsl/test/core/sass-stage-win32.test.js` (G1's test title) and the CHANGELOG already cite MIG-B9-102 for it.
+- **Decision 44 (widening) — win32: `build --watch` retries a rename onto an output file a reader holds open (MIG-B9-28's proposed MIG-B9-103, from G3).** Registered as MIG-B9-103, with the title the delivery gave: wave 6, last in the wave (after MIG-B9-102), S, decision gate none, `0.5.0-beta.10`, status "Draft (story file to be written; registered by decision 44 of 2026-11-23)". Its regression is the atomic-replace test's win32 branch, which then expects every rebuild to land. The delivery's first option is taken; "within MIG-B9-06, if the owner prefers" stays the owner's to choose. The CHANGELOG already cites MIG-B9-103 for it.
+- **Decision 45 (widening) — `(--lg)` in an `@import` media list is left as written on both paths (MIG-B9-30's follow-up 1; F4 (a), decision 34).** The delivery proposed "a new beta.10 story, MIG-B9-66", an id registered by decision 15 of 2026-11-10. Registered as MIG-B9-69, "`(--<breakpoint>)` in an `@import` media list": wave 6, last in the wave (after MIG-B9-68), S, decision gate none, `0.5.0-beta.10`, status "Draft (story file to be written; registered by decision 45 of 2026-11-23)". Its story file makes it `UXD_BREAKPOINT_CONTEXT` or rewrites it, with the owner's call on byte identity, as the follow-up says. MIG-B9-30's §15 is pointed at the new id.
+- **Decision 46 (widening) — With `uxdsl/postcss` alone, a responsive value in a literal `@media` nested in a rule prints a selector-less clone at the root (MIG-B9-30's follow-up 2; F1 (b), decision 31).** The delivery proposed MIG-B9-67, which is MIG-B9-20's unregistered proposal (block of 2026-11-13). Registered as MIG-B9-70, "A responsive value in a literal `@media` nested in a rule, with `uxdsl/postcss` alone": wave 6, last in the wave (after MIG-B9-69), S, decision gate none, `0.5.0-beta.10`, status "Draft (story file to be written; registered by decision 46 of 2026-11-23)". It changes literal outputs, so its story file states the byte-identity exception for the owner. MIG-B9-30's §15 is pointed at the new id.
+- **Decision 47 (widening) — Custom media across files and two messages (MIG-B9-30's follow-ups 3 and 4, both proposed as MIG-B9-68).** Registered as MIG-B9-68, "`@custom-media` defined in another file, and the breakpoint messages under a project `@custom-media`": wave 6, last in the wave (after MIG-B9-103), S, decision gate none, `0.5.0-beta.10`, status "Draft (story file to be written; registered by decision 47 of 2026-11-23)". It covers F2 (d), an option listing external custom-media names for `uxdsl/postcss` alone, which "can be added later without breaking anyone", and the message polish: F1's message advising `lg(…)` where a project `@custom-media --lg` moved `(--lg)`, and `UXD_BREAKPOINT_SHADOWED` naming an unwrapped query where a compound prelude wraps it.
+- **Decision 48 (routing) — G4's class goes to MIG-B9-06 (MIG-B9-28's follow-ups).** MIG-B9-06 takes one save reaching `build --watch` as two `change` events on win32 (a build for each) and the two config-reload watch tests that time out on Windows with no output; one of its acceptance criteria returns `test/cli/watch-mode.test.js` to the Windows job's gate, removing step 8's exclusion and step 9's `excluded` branch. MIG-B9-06 has no story file; the index's §5 row says so. It is in `0.5.0-beta.10` (decision 1), so the exclusion stays in `0.5.0-beta.9`.
+- **Decision 49 (routing) — The root `npm test`'s other suites on Windows (MIG-B9-28's delivery; F3, decision 22).** MIG-B9-66 also takes the loop's other §12 steps (the VS Code extension, the playground, the fixtures and `scripts/`) on Windows, together with `scripts/tmpdir-guard.test.js`. It widens MIG-B9-66's registered scope (parity, the consumer fixtures and the shims, decision 15 of 2026-11-10); MIG-B9-66 has no story file, and the index's §5 row says so.
+- **Decision 50 (routing) — VS Code: completion of `--<bp>` in an `@media` prelude, and highlighting of `@ds-*` and `xs()` written inside a rule (MIG-B9-30's follow-up 5).** MIG-B9-55, as the delivery proposed: it packages the extension, and VS Code's CSS property list owns those tokens inside a rule. MIG-B9-55 carries a block of this date.
+- **Decision 51 (routing) — `fixtures/playground-browser/snapshot.js`'s interactions time out (MIG-B9-30's follow-up 6).** MIG-B9-44, registered for exactly this by decision 12 of 2026-11-09 ("`snapshot.js`'s interaction step times out on `.density-card__edit-btn`"), in `0.5.0-beta.10`; MIG-B9-91's record lists the compare's `--no-interactions` as a known limitation of beta.9. This differs from the delivery's proposal (MIG-B9-91), so that the beta.9 gate does not take a fix MIG-B9-44 already owns.
+- **Decision 52 (routing) — The playground walk's fixed port 3919, shared by concurrent gate runs on one machine (MIG-B9-30's follow-up 7).** MIG-B9-91, as the delivery proposed: a free port or a lock, or, if its re-baseline finds that the gate's run conditions suffice, the record states them, as decision 26 of 2026-11-15 allows for UX-10.
+- **Decision 53 — Follow-ups an earlier decision already routes, or that need no story.**
+  - `UX-10`'s timing under load (MIG-B9-30's follow-up 8): decision 26 of 2026-11-15, MIG-B9-91.
+  - MIG-B9-27's note to MIG-B9-24 ("MIG-B9-24's fixed per-build costs should measure from this base"): carried out; MIG-B9-24 started and measured on `dec40b1`, the merge of PR #100.
+  - `applyTheme` and `generateThemeCss` still run the engines more than once per call (MIG-B9-24's follow-up 3, "No new id"): recorded; whether the runtime's cost matters is the owner's call.
+  - Press Craftor's eight hand-written queries that equal a theme breakpoint (MIG-B9-30's follow-up 9): the owner's patch after beta.9 (decision D17 of 2026-11-04).
+
 ## 3. Scope, in waves
 
 The stories are grouped in waves. A wave is an order, not a release: under
-DEC-03, as revised on 2026-11-04, waves 0 to 3 ship in `0.5.0-beta.9`, which
-MIG-B9-91 closes after wave 3, and waves 4 to 6 ship in `0.5.0-beta.10`,
-which MIG-B9-90 and MIG-B9-92 close. MIG-B9-91 is the one story out of its
-wave's order: it belongs to wave 7 but integrates after wave 3 and before
-wave 4, since `0.5.0-beta.9` ships waves 0 to 3 (D13), and its row in the
-index's §5 sits there.
+DEC-03, as revised on 2026-11-04, waves 0 to 3 were to ship in
+`0.5.0-beta.9` and waves 4 to 6 in `0.5.0-beta.10`. On 2026-11-23 the owner
+cut `0.5.0-beta.9` to what `feat/beta9` holds at `6cdadaf` (decision 1 of
+2026-11-23): waves 0 to 2 and, of wave 3, MIG-B9-18, 30 and 39, plus
+MIG-B9-53 from wave 5, merged early. MIG-B9-91 closes that release. The rest
+of wave 3 (MIG-B9-06, 19 and 31 to 38) keeps its wave and its order and
+ships in `0.5.0-beta.10` with waves 4 to 6, which MIG-B9-90 and MIG-B9-92
+close. MIG-B9-91 is the one story out of its wave's order: it belongs to
+wave 7 but integrates before wave 4, and its row in the index's §5 sits
+after the last wave-3 row.
 
 | Wave | What | Stories | Release |
 | --- | --- | --- | --- |
 | 0 | Housekeeping and validation: numbering, dependencies, `main` proven on a real project, the language refuses near-misses, byte-preserving plugin. | MIG-B9-01 to 05 | `0.5.0-beta.9` |
 | 1 | The SCSS superset: tests first, the protect pass, Dart Sass with the `.uxdsl` importer, `compile()` on the new pipeline, the CLI and adapters, the documentation. | MIG-B9-10 to 15 | `0.5.0-beta.9` |
 | 2 | One source of truth, less code: the theme at the marker only, deletions, `build --watch` keeps the entry; `compile()` within 1.5× of Dart Sass. Registered on 2026-11-04: the plugin's fixed per-build costs, the suites remove their temporary directories, dotted near-misses and `@debug` through `compile()`, `uxdsl/postcss` in a PostCSS chain, CI on Windows, an idempotent codemod. Registered on 2026-11-08: the playground's `/docs/language` page on the superset. Registered on 2026-11-10, by splitting MIG-B9-26: the silent cases of `@use`'s module isolation warn. | MIG-B9-16, MIG-B9-17, MIG-B9-20 to 29 | `0.5.0-beta.9` |
-| 3 | Output-changing decisions, each behind its DEC: `@media (--lg)`, scoped palettes, one `extends` rule for roles and typography, focus, canvas-tone contrast warnings, `:user-invalid`. Registered on 2026-11-04: a located warning for a CSS-wide keyword as a theme token value. Registered on 2026-11-08: a located CLI warning for a plain `@import` of a `.uxdsl`, `.scss` or `.sass` URL left in the CSS; every host's watch recovers after a failed compile. Registered on 2026-11-10, from MIG-B9-29's delivery (decision 36): the codemod's directive-argument rewrite is complete in one run. On 2026-11-13, the plain-`@import` warning was retitled "a located warning", since every host prints it (decision 24), and two stories were registered: by splitting MIG-B9-39 (decision 28), the CLI's watch recovers after a failed compile, and its flaky watch test and captures check name what failed (MIG-B9-39 keeps the adapters); and the CLI watch's four older gaps, the same class in the adapters, and an error while a recreated watcher starts (decision 29). On 2026-11-15, MIG-B9-06 (decision 29 of 2026-11-13) also took the atomic-replace watch failure seen once on CI (decision 28 of 2026-11-15), and, later that day, the extra webpack build that the older watch tests in `test/webpack/loader.test.js` can take for an edit's (decision 40 of 2026-11-15). | MIG-B9-06, MIG-B9-18, MIG-B9-19, MIG-B9-30 to 39 | `0.5.0-beta.9` |
+| 3 | Output-changing decisions, each behind its DEC: `@media (--lg)`, scoped palettes, one `extends` rule for roles and typography, focus, canvas-tone contrast warnings, `:user-invalid`. Registered on 2026-11-04: a located warning for a CSS-wide keyword as a theme token value. Registered on 2026-11-08: a located CLI warning for a plain `@import` of a `.uxdsl`, `.scss` or `.sass` URL left in the CSS; every host's watch recovers after a failed compile. Registered on 2026-11-10, from MIG-B9-29's delivery (decision 36): the codemod's directive-argument rewrite is complete in one run. On 2026-11-13, the plain-`@import` warning was retitled "a located warning", since every host prints it (decision 24), and two stories were registered: by splitting MIG-B9-39 (decision 28), the CLI's watch recovers after a failed compile, and its flaky watch test and captures check name what failed (MIG-B9-39 keeps the adapters); and the CLI watch's four older gaps, the same class in the adapters, and an error while a recreated watcher starts (decision 29). On 2026-11-15, MIG-B9-06 (decision 29 of 2026-11-13) also took the atomic-replace watch failure seen once on CI (decision 28 of 2026-11-15), and, later that day, the extra webpack build that the older watch tests in `test/webpack/loader.test.js` can take for an edit's (decision 40 of 2026-11-15). On 2026-11-23, the stories of this wave not merged at `6cdadaf` moved to `0.5.0-beta.10` (decision 1 of 2026-11-23), and MIG-B9-06 also took the class of MIG-B9-28's G4, one save reaching `build --watch` as two `change` events on win32 (decision 48). | MIG-B9-06, MIG-B9-18, MIG-B9-19, MIG-B9-30 to 39 | MIG-B9-18, 30 and 39 (merged): `0.5.0-beta.9`; MIG-B9-06, 19 and 31 to 38: `0.5.0-beta.10` (decision 1 of 2026-11-23) |
 | 4 | The playground as reference implementer: the design-system layer, one demo frame and one editor, the five principles live, nothing hardcoded. Registered on 2026-11-09, first in the wave: a deterministic visual comparison harness. | MIG-B9-40 to 44 | `0.5.0-beta.10` |
-| 5 | Documentation and presentation: README and quick start, AGENTS.md and CONTRIBUTING.md, migration guide in English, maintenance signals, "Why UXDSL", the VS Code extension. | MIG-B9-50 to 55 | `0.5.0-beta.10` (MIG-B9-53 is merged already) |
-| 6 | Tools for the adoption ladder: `doctor`, `audit` and `migrate --suggest`, the generated reference, `explain` and hover, `emit: 'used'`, the container note. Registered on 2026-11-10, last in the wave: CI on Windows, part two (parity, the consumer fixtures and the shims). Registered on 2026-11-15, last in the wave, from MIG-B9-21's delivery: unknown options warn on the plugin, `compile()`, Vite and webpack (decision 17); the reference checker follows `!important` as the cascade does (decision 18). Registered later on 2026-11-15, last in the wave, from MIG-B9-39's delivery: the error `compile()` throws for a UXDSL error carries its `UXD_` code (MIG-B9-96, decision 39); the Vite adapter fixture runs on Vite 6, inside the declared peer range `>=4.0.0` (MIG-B9-97, decision 41). | MIG-B9-60 to 66, MIG-B9-94 to 97 | `0.5.0-beta.10` |
-| 7 | Release: the test exercise, the gates, the records. MIG-B9-91 closes beta.9 after wave 3, before wave 4; MIG-B9-90 and MIG-B9-92 close beta.10 after wave 6. | MIG-B9-90, 91, 92 | MIG-B9-91: `0.5.0-beta.9`; MIG-B9-90 and 92: `0.5.0-beta.10` |
+| 5 | Documentation and presentation: README and quick start, AGENTS.md and CONTRIBUTING.md, migration guide in English, maintenance signals, "Why UXDSL", the VS Code extension. | MIG-B9-50 to 55 | `0.5.0-beta.10`, except MIG-B9-53, merged early, which ships in `0.5.0-beta.9` (decision 1 of 2026-11-23) |
+| 6 | Tools for the adoption ladder: `doctor`, `audit` and `migrate --suggest`, the generated reference, `explain` and hover, `emit: 'used'`, the container note. Registered on 2026-11-10, last in the wave: CI on Windows, part two (parity, the consumer fixtures and the shims). Registered on 2026-11-15, last in the wave, from MIG-B9-21's delivery: unknown options warn on the plugin, `compile()`, Vite and webpack (decision 17); the reference checker follows `!important` as the cascade does (decision 18). Registered later on 2026-11-15, last in the wave, from MIG-B9-39's delivery: the error `compile()` throws for a UXDSL error carries its `UXD_` code (MIG-B9-96, decision 39); the Vite adapter fixture runs on Vite 6, inside the declared peer range `>=4.0.0` (MIG-B9-97, decision 41). Registered on 2026-11-23, last in the wave, from the deliveries of MIG-B9-17, 27, 28 and 30: the isolation warnings' edge cases (MIG-B9-99, decision 39); the near-linear timing test of reference validation holds under load (MIG-B9-101, decision 41); win32 spells a file Dart Sass loads through `pkg:` in its on-disk case (MIG-B9-102, decision 43); win32's `build --watch` retries a rename onto an output a reader holds open (MIG-B9-103, decision 44); `@custom-media` defined in another file and the breakpoint messages under a project `@custom-media` (MIG-B9-68, decision 47); `(--<breakpoint>)` in an `@import` media list (MIG-B9-69, decision 45); a responsive value in a literal `@media` nested in a rule with `uxdsl/postcss` alone (MIG-B9-70, decision 46). MIG-B9-66 also takes the root `npm test`'s other suites on Windows (decision 49 of 2026-11-23). | MIG-B9-60 to 66, MIG-B9-94 to 97, MIG-B9-99, MIG-B9-101 to 103, MIG-B9-68 to 70 | `0.5.0-beta.10` |
+| 7 | Release: the test exercise, the gates, the records. MIG-B9-91 closes beta.9 over what `feat/beta9` holds at `6cdadaf`, before wave 4 (decision 1 of 2026-11-23); MIG-B9-90 and MIG-B9-92 close beta.10 after wave 6 and the moved wave-3 stories. | MIG-B9-90, 91, 92 | MIG-B9-91: `0.5.0-beta.9`; MIG-B9-90 and 92: `0.5.0-beta.10` |
 
 **Not in this feature, on purpose:** the MUI theme import (plan D-11, a
 mapping table in the docs is part of MIG-B9-50), container queries, fluid
@@ -731,9 +903,14 @@ FEAT-009 stories that were still open on `main` and their fate here:
 
 ## 5. Release
 
-The beta.9 gate is MIG-B9-91. After it passes, the owner publishes
-`uxdsl@0.5.0-beta.9` with `latest` and `beta`, then decides about the five
-former names (deprecate; optionally publish the shims). The record of what was
-published is `docs/releases/0.5.0-beta.9.md`, written by MIG-B9-91 from the
-gate's output. `0.5.0-beta.10` has its own gate and release record,
-MIG-B9-92 (DEC-03, revised on 2026-11-04).
+The beta.9 gate is MIG-B9-91. `0.5.0-beta.9` ships what `feat/beta9`
+holds at `6cdadaf` (decision 1 of 2026-11-23): MIG-B9-01 to 05, 10 to 18,
+20 to 30, 39 and 53. After the gate passes, and before publishing, the owner
+and Claude review the documentation together, an owner step of the release
+record. Then the owner publishes `uxdsl@0.5.0-beta.9` with `latest` and
+`beta`, and decides about the five former names (deprecate; optionally
+publish the shims). The record of what was published is
+`docs/releases/0.5.0-beta.9.md`, written by MIG-B9-91 from the gate's
+output; its "moved to beta.10" section lists MIG-B9-06, 19 and 31 to 38.
+`0.5.0-beta.10` has its own gate and release record, MIG-B9-92 (DEC-03,
+revised on 2026-11-04 and on 2026-11-23).
