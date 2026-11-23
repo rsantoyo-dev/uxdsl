@@ -312,10 +312,13 @@ a third Sass extension beside `.scss` and `.sass`:
   variable. A candidate beside the importing file wins over a load path, and
   files in different directories are never ambiguous. Each load path is
   searched as Dart Sass searches one: the URL is joined to it as written, and
-  the file system resolves its `..`. A load path that does not exist
-  therefore finds nothing, but through one that exists a `../x` that misses
-  beside its file can still be found: `<root>/node_modules/../x` is
-  `<root>/x`, as in plain Dart Sass.
+  the file system resolves its `..`. On macOS and Linux a load path that
+  does not exist therefore finds nothing, but through one that exists a
+  `../x` that misses beside its file can still be found:
+  `<root>/node_modules/../x` is `<root>/x`, as in plain Dart Sass. Windows
+  reads a `..` without the directory before it, so there a `../x` is found
+  through a load path that does not exist too, and a load path written as
+  `missing/../real` is `real`, for Dart Sass and UXDSL alike.
 - **Packages.** A package can ship `.uxdsl` partials: a bare path
   (`@use 'kit/scss/tokens'`) finds them under `node_modules`, and they `@use`
   each other relatively. `pkg:` URLs are Dart Sass's `NodePackageImporter`'s,

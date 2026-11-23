@@ -6,6 +6,7 @@ const fs = require('node:fs');
 const { temporaryDirectory } = require('../helpers/temporary-directory');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
+const { posixOutput } = require('../helpers/separators');
 
 const cli = path.join(__dirname, '..', '..', 'bin', 'uxdsl.js');
 
@@ -16,7 +17,7 @@ test('MIG-B9-13: a CSS error in an imported partial names the partial at its dec
   fs.writeFileSync(path.join(directory, 'src', 'a.uxdsl'), '@import "./partial.uxdsl";\n');
   fs.writeFileSync(path.join(directory, 'src', 'partial.uxdsl'), '.card {\n  color: red;\n  padding: density(16);\n}\n');
 
-  const result = spawnSync(process.execPath, [cli, 'build'], { cwd: directory, encoding: 'utf8' });
+  const result = posixOutput(spawnSync(process.execPath, [cli, 'build'], { cwd: directory, encoding: 'utf8' }));
   assert.equal(result.status, 1);
   // Dart Sass maps the start of a declaration, so the position is where `padding` starts.
   assert.match(result.stderr, /src\/partial\.uxdsl:3:3: UXD_DENSITY_REFERENCE: density\(16\) does not exist; available keys: 0–15\./);
@@ -37,7 +38,7 @@ test('MIG-B6-13: a theme error names the theme file and exact key path', () => {
   fs.writeFileSync(path.join(directory, 'uxdsl.theme.json'), JSON.stringify({ typography_details: { h1: { fontsize: '2rem' } } }));
   fs.writeFileSync(path.join(directory, 'src', 'a.uxdsl'), '.card { color: red; }\n');
 
-  const result = spawnSync(process.execPath, [cli, 'build'], { cwd: directory, encoding: 'utf8' });
+  const result = posixOutput(spawnSync(process.execPath, [cli, 'build'], { cwd: directory, encoding: 'utf8' }));
 
   assert.equal(result.status, 1);
   assert.match(result.stderr, /\[uxdsl\] Error: uxdsl\.theme\.json: UXD_TYPO_FIELD: Invalid h1\.fontsize \(at typography_details\.h1\.fontsize\)\./);
@@ -67,7 +68,7 @@ for (const [themeSnippet, expectedMessage] of [
     fs.writeFileSync(path.join(directory, 'uxdsl.theme.cjs'), `module.exports = ${JSON.stringify(themeSnippet)};`);
     fs.writeFileSync(path.join(directory, 'src', 'a.uxdsl'), '.card { color: red; }\n');
 
-    const result = spawnSync(process.execPath, [cli, 'build'], { cwd: directory, encoding: 'utf8' });
+    const result = posixOutput(spawnSync(process.execPath, [cli, 'build'], { cwd: directory, encoding: 'utf8' }));
 
     assert.equal(result.status, 1);
     assert.match(result.stderr, new RegExp(`\\[uxdsl\\] Error: uxdsl\\.theme\\.cjs: ${expectedMessage.replace(/[.()]/g, '\\$&')}`));
@@ -91,7 +92,7 @@ test("MIG-B9-14: a Sass error prints UXD_SASS at the author's position with Sass
   const single = mkSassProject('uxdsl-cli-sass-frame-');
   put(single, 'uxdsl.config.cjs', "module.exports = { entry: './src/a.uxdsl', outFile: './src/a.css' };");
   put(single, 'src/a.uxdsl', "@use './missing';\n");
-  const one = spawnSync(process.execPath, [cli, 'build'], { cwd: single, encoding: 'utf8' });
+  const one = posixOutput(spawnSync(process.execPath, [cli, 'build'], { cwd: single, encoding: 'utf8' }));
   assert.equal(one.status, 1, one.stderr);
   assert.equal(one.stdout, '');
   assert.equal(one.stderr, [
@@ -110,7 +111,7 @@ test("MIG-B9-14: a Sass error prints UXD_SASS at the author's position with Sass
   put(multi, 'uxdsl.config.cjs', "module.exports = { builds: [\n  { entry: './src/a.uxdsl', outFile: './out/a.css' },\n  { entry: './src/b.uxdsl', outFile: './out/b.css' },\n] };");
   put(multi, 'src/a.uxdsl', '.a { color: red; }\n');
   put(multi, 'src/b.uxdsl', "@use './gone';\n.b { color: blue; }\n");
-  const two = spawnSync(process.execPath, [cli, 'build'], { cwd: multi, encoding: 'utf8' });
+  const two = posixOutput(spawnSync(process.execPath, [cli, 'build'], { cwd: multi, encoding: 'utf8' }));
   assert.equal(two.status, 1, two.stderr);
   assert.equal(two.stderr, [
     "[uxdsl] Error: builds[1] (out/b.css): src/b.uxdsl:1:1: UXD_SASS: Can't find stylesheet to import.",
@@ -129,7 +130,7 @@ test("MIG-B9-14: a Sass error prints UXD_SASS at the author's position with Sass
   for (const file of ['heavy.uxdsl', '_mixins.uxdsl']) {
     fs.copyFileSync(path.join(__dirname, '..', 'core', 'fixtures', 'sass-maps', file), path.join(heavy, file));
   }
-  const h = spawnSync(process.execPath, [cli, 'build', '--entry', 'heavy.uxdsl', '--out', 'out.css'], { cwd: heavy, encoding: 'utf8' });
+  const h = posixOutput(spawnSync(process.execPath, [cli, 'build', '--entry', 'heavy.uxdsl', '--out', 'out.css'], { cwd: heavy, encoding: 'utf8' }));
   assert.equal(h.status, 1, h.stderr);
   const lines = h.stderr.split('\n');
   assert.match(lines[0], /^\[uxdsl\] Error: uxdsl: heavy\.uxdsl:18:66: UXD_SPACE_REFERENCE: space\(404\) does not exist/);
@@ -154,7 +155,7 @@ test("MIG-B9-14: the CLI's Sass frame shows the author's text, where error.cause
   assert.equal(error.code, 'UXD_SASS');
   assert.match(error.cause.message, /#\{"palette\(primary\.main\)"\}/);
 
-  const result = spawnSync(process.execPath, [cli, 'build'], { cwd: directory, encoding: 'utf8' });
+  const result = posixOutput(spawnSync(process.execPath, [cli, 'build'], { cwd: directory, encoding: 'utf8' }));
   assert.equal(result.status, 1, result.stderr);
   const lines = result.stderr.split('\n');
   assert.equal(lines[0], '[uxdsl] Error: src/a.uxdsl:1:74: UXD_SASS: Undefined variable.');

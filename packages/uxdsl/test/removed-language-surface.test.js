@@ -8,7 +8,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { spawnSync } = require('node:child_process');
+const { spawnNpmSync } = require('./helpers/npm');
 const postcss = require('postcss');
 
 const exported = require('../dist/plugin');
@@ -151,7 +151,7 @@ test('the legacy theme files and the ./theme/* glob export are gone; the two JSO
   // which node --test runs in parallel, are loading it (a module read
   // half-written fails as "enforceReferences is not a function"). The suite
   // has already built dist/.
-  const packed = spawnSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts'], { cwd: packageRoot, encoding: 'utf8' });
+  const packed = spawnNpmSync(['pack', '--dry-run', '--json', '--ignore-scripts'], { cwd: packageRoot, encoding: 'utf8' });
   assert.equal(packed.status, 0, packed.stderr);
   const files = JSON.parse(packed.stdout)[0].files.map((file) => file.path);
   assert.deepEqual(files.filter((file) => /theme\/default-|theme-manifest|\.uxdsl$/.test(file)), []);
