@@ -114,6 +114,9 @@
       "optional": true
     }
   },
+  "engines": {
+    "node": ">=20.19"
+  },
   "devDependencies": {
     "@types/node": "^20.11.30",
     "ajv": "8.20.0",

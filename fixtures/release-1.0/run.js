@@ -25,9 +25,16 @@
 //        re-pin the known contrast pairs (a deliberate, reviewed act: the
 //        diff of contrast-baseline.json is the review)
 //
+// Its temporary directories (the install, B7-15a's registry install, and those
+// of the fixtures it runs) are removed when it exits 0 and kept, their paths
+// printed, otherwise; `npm run verify:1.0` runs it through
+// scripts/tmpdir-guard.js, which fails a passing run that leaves anything in
+// its temporary directory.
+//
 // It does not publish, change dist-tags, or ask for secrets.
 
 const fs = require('node:fs');
+const net = require('node:net');
 const os = require('node:os');
 const path = require('node:path');
 const { execFileSync, spawnSync, spawn } = require('node:child_process');
@@ -35,6 +42,7 @@ const { createRequire } = require('node:module');
 const { pathToFileURL } = require('node:url');
 const { packAndInstall, REPO_ROOT, PACKAGE_DIR } = require('../lib/tarball-consumer');
 const { cascadedVariables } = require('../mig07-consumer/lib/css-cascade-compare');
+const { temporaryDirectory } = require('../../packages/uxdsl/test/helpers/temporary-directory');
 
 const args = new Set(process.argv.slice(2));
 const BASELINE = path.join(__dirname, 'contrast-baseline.json');
@@ -63,7 +71,7 @@ async function check(id, label, fn) {
 /** Not executed here — owner and mechanism named, never counted as a pass. */
 const DELEGATED = [
   ['B7-12', 'manual', 'Colors and completion in a real VS Code with the VSIX installed — owner; the VSIX itself is packaged by `npm run verify:vscode-extension`.'],
-  ['—', 'external', 'Validation in the owner\'s consuming project (story-radar) against this tarball: `npm i -D uxdsl`, `uxdsl build --watch` instead of `uxdsl watch`, the uxdsl.theme.config.* → uxdsl.theme.* rename.'],
+  ['—', 'external', 'Press Craftor (the owner\'s story-radar) moved to this version\'s tarball by the release record\'s migration steps: docs/features/FEAT-010/evidence/MIG-B9-03-press-craftor.md, section "On the beta.9 release candidate". Its database routes (`/` and the story pages) need DATABASE_URL and a sign-in and are not run.'],
   ['—', 'postpublish', 'dist-tags of `uxdsl`, and the five deprecated names resolving to their shims — verified only after the owner publishes.'],
 ];
 
@@ -73,7 +81,85 @@ const DROPPED = [
   ['B3 marker (beta.3), B4 marker (beta.4)', 'no entry carries the removed #uxdsl-bp-meta / @uxdsl-bp breakpoint marker', 'the marker was removed in stability phase 2; nothing can emit it (test/removed-language-surface.test.js and friends pin the removal in the package suite).'],
   ['UX-21 "all five declare files" (beta.6)', 'five tarballs', 'one tarball; I-4 checks its files.'],
   ['beta6 (beta.7)', 'the nested beta.6 gate', 'its checks run here directly, under their own ids.'],
+  ['B3-e (beta.8)', '`--no-include-theme` overrides every `builds[]` entry', 'the flag and the `includeTheme` key were removed: the theme is emitted only where `@uxdsl theme;` is written. B3-e now checks that the removed flag fails naming the marker; B3-a, B4-a and B2-b check the marker.'],
+  ['UX-12 (beta.8)', '`--no-include-theme` really suppresses :root', 'the same removal: UX-12 now checks that `@uxdsl theme;` alone emits :root, and that without it a build emits none and warns once.'],
 ];
+
+/** Rounds of UX-10: 400 and 800 blocks compiled in alternating order, after a warm-up. */
+const UX10_ROUNDS = 5;
+
+/**
+ * UX-10's verdict on `{ 400: [ms…], 800: [ms…] }`, one time per round for each
+ * size: the ratio of the fastest 800-block compile to the fastest 400-block
+ * one, which a load spike in some rounds cannot raise. Above 3 a doubling of
+ * the input costs more than near-linear work, and the check fails. `load`, the
+ * 1, 5 and 15 minute load averages, is printed with the result.
+ */
+function assertNearLinear(timings, load) {
+  const small = timings[400] || [];
+  const large = timings[800] || [];
+  if (!small.length || small.length !== large.length) throw new Error(`timings for ${small.length} and ${large.length} rounds; expected the same number of each, at least one`);
+  const fastestSmall = Math.min(...small);
+  const fastestLarge = Math.min(...large);
+  const growth = fastestLarge / fastestSmall;
+  const detail = `fastest of ${small.length} rounds: 400 blocks ${fastestSmall.toFixed(0)} ms, 800 blocks ${fastestLarge.toFixed(0)} ms${load ? `; load ${load.map((n) => n.toFixed(2)).join(' ')}` : ''}`;
+  if (!(growth <= 3)) throw new Error(`doubling cost x${growth.toFixed(2)} (${detail})`);
+  return `x${growth.toFixed(2)} per doubling (${detail})`;
+}
+
+/**
+ * I-7's verdict: `uxdsl` (its manifest) declares `engines.node`, and every
+ * other installed package (`packages`, their manifests) that declares one
+ * accepts every Node version uxdsl's range accepts, so npm never installs
+ * uxdsl where one of its dependencies refuses to run. `semver` is the
+ * instrument that compares the ranges.
+ */
+function assertEnginesCovered(uxdsl, packages, semver) {
+  const range = uxdsl.engines && uxdsl.engines.node;
+  if (!range) throw new Error('uxdsl declares no engines.node');
+  if (!semver.validRange(range)) throw new Error(`uxdsl's engines.node "${range}" is not a semver range`);
+  const declaring = packages.filter((pkg) => pkg.engines && typeof pkg.engines.node === 'string');
+  const refusing = declaring.filter((pkg) => !semver.validRange(pkg.engines.node) || !semver.subset(range, pkg.engines.node));
+  if (refusing.length) throw new Error(`uxdsl's engines.node "${range}" admits Node versions that ${refusing.map((pkg) => `${pkg.name}@${pkg.version} ("${pkg.engines.node}")`).join(', ')} refuse`);
+  return `uxdsl requires node ${range}; ${declaring.length} of ${packages.length} installed packages declare engines.node, each satisfied within it`;
+}
+
+/** The fields of packages/uxdsl/package.json that the playground lockfile's `../uxdsl` entry must record as they are. */
+const LOCK_FIELDS = ['version', 'dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies', 'engines'];
+
+/** A field's value for comparison: an object with its keys sorted, an empty or missing one as null. */
+function lockComparable(value) {
+  if (value === undefined || value === null) return null;
+  if (typeof value !== 'object') return value;
+  const keys = Object.keys(value).sort();
+  return keys.length ? Object.fromEntries(keys.map((key) => [key, value[key]])) : null;
+}
+
+/**
+ * LOCK-pg's verdict: packages/playground-nextjs/package-lock.json's
+ * `packages["../uxdsl"]`, the linked package `npm ci` installs there, records
+ * the manifest's version, dependencies of every kind and engines, so the
+ * playground's install follows what packages/uxdsl declares.
+ */
+function assertLockEntryMatches(manifest, entry) {
+  if (!entry) throw new Error('the playground lockfile has no packages["../uxdsl"] entry');
+  const differing = LOCK_FIELDS.filter((field) => JSON.stringify(lockComparable(manifest[field])) !== JSON.stringify(lockComparable(entry[field])));
+  if (differing.length) throw new Error(`the playground lockfile's packages["../uxdsl"] differs from packages/uxdsl/package.json in ${differing.join(', ')}; run npm install --package-lock-only in packages/playground-nextjs`);
+  return `the playground lockfile records uxdsl@${manifest.version} with packages/uxdsl/package.json's ${LOCK_FIELDS.slice(1).join(', ').replace(/, (?=[^,]*$)/, ' and ')}`;
+}
+
+/** A TCP port the OS reports free, for a server the caller starts right after (the playground walk's `next start`). */
+function freePort() {
+  return new Promise((resolve, reject) => {
+    const server = net.createServer();
+    server.unref();
+    server.once('error', reject);
+    server.listen(0, () => {
+      const { port } = server.address();
+      server.close(() => resolve(port));
+    });
+  });
+}
 
 const contrastSignature = (f) => [f.mode, f.family, f.component, f.tone, f.state, f.pair, f.background, f.breakpoint].join('|');
 const exceptedSignature = (e) => `${contrastSignature(e)}|${e.exception}`;
@@ -695,6 +781,13 @@ async function main() {
     if (!inputs.some((input) => input.includes('node_modules/uxdsl/'))) throw new Error('control: the bundle did not come from the installed package');
     return `${result.outputFiles[0].contents.length} bytes minified, ${inputs.length} modules`;
   });
+  await check('I-7', 'the installed uxdsl declares engines.node, and every installed package\'s engines.node accepts each Node version it admits', () => {
+    const listed = spawnSync('npm', ['ls', '--all', '--parseable'], { cwd: dir, encoding: 'utf8', maxBuffer: 1 << 26 });
+    const others = [...new Set((listed.stdout || '').trim().split('\n').slice(1))].filter((location) => fs.realpathSync(location) !== fs.realpathSync(pkgDir));
+    if (!others.length) throw new Error(`npm ls listed no installed package: ${(listed.stderr || '').trim().split('\n')[0] || `exit ${listed.status}`}`);
+    const manifest = (location) => JSON.parse(fs.readFileSync(path.join(location, 'package.json'), 'utf8'));
+    return assertEnginesCovered(manifest(pkgDir), others.map(manifest), instrument('semver'));
+  });
 
   // --- beta.2: CLI, PostCSS and runtime agree in an installed project ------
   console.log('\nCLI, PostCSS and the runtime agree (from verify:beta2):');
@@ -965,7 +1058,7 @@ async function main() {
       fs.rmSync(path.join(p.root, 'uxdsl.theme.cjs'));
       return `${report.failures.length} pairs, ${primary.length} on the overridden tone`;
     });
-    await check('UX-10', 'reference validation stays near-linear', async () => {
+    await check('UX-10', 'reference validation stays near-linear (the fastest of 5 interleaved rounds of 400 and 800 blocks)', async () => {
       const block = (i) => `.c-${i} { padding: density(2); color: palette(primary); background: palette(surface); border-radius: radius(2); }\n`;
       const timeFor = async (count) => {
         p.write(`src/perf-${count}.uxdsl`, `@uxdsl theme;\n${Array.from({ length: count }, (_, i) => block(i)).join('')}`);
@@ -974,9 +1067,11 @@ async function main() {
         return Number(process.hrtime.bigint() - started) / 1e6;
       };
       await timeFor(200);
-      const growth = (await timeFor(800)) / (await timeFor(400));
-      if (growth > 3) throw new Error(`doubling cost x${growth.toFixed(2)}`);
-      return `x${growth.toFixed(2)} per doubling`;
+      const timings = { 400: [], 800: [] };
+      for (let round = 0; round < UX10_ROUNDS; round += 1) {
+        for (const count of round % 2 === 0 ? [800, 400] : [400, 800]) timings[count].push(await timeFor(count));
+      }
+      return assertNearLinear(timings, os.loadavg());
     });
     await check('UX-16', '$vars in responsive values expand through compile()', async () => {
       p.write('src/vars.uxdsl', '$gap: xs(1rem) md(2rem);\n.a { gap: $gap; }\n');
@@ -1241,7 +1336,7 @@ async function main() {
   } else {
     await check('B7-15a', '`uxdsl theme` before (published 0.5.0-beta.6) and after (this tarball) can be compared', () => {
       const override = "module.exports = { typography_details: { h1: { fontWeight: '800' } } };\n";
-      const before = fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-1.0-upgrade-before-'));
+      const before = temporaryDirectory('uxdsl-1.0-upgrade-before-');
       fs.writeFileSync(path.join(before, 'package.json'), JSON.stringify({ name: 'before', version: '1.0.0', private: true }));
       fs.writeFileSync(path.join(before, 'uxdsl.theme.config.cjs'), override); // the name beta.6 reads
       // beta.6's `theme` command wants the conventional entry next to the theme file.
@@ -1339,13 +1434,18 @@ async function main() {
     if (gaps.length) throw new Error(`${gaps.length} recorded gaps remain`);
     return 'matrix complete, no recorded gaps';
   });
+  await check('LOCK-pg', '[repo] the playground lockfile records packages/uxdsl/package.json\'s version, dependencies and engines for ../uxdsl', () => {
+    const lock = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'packages/playground-nextjs/package-lock.json'), 'utf8'));
+    return assertLockEntryMatches(JSON.parse(fs.readFileSync(path.join(PACKAGE_DIR, 'package.json'), 'utf8')), lock.packages && lock.packages['../uxdsl']);
+  });
   if (args.has('--skip-playground-walk')) {
     DELEGATED.push(['B7-17E', 'skipped by flag', 'Run `npm run verify:playground-browser` (real Chrome walk of the built playground).']);
   } else {
-    await check('B7-17E', '[repo] real Chrome walk of the built playground (verify:playground-browser)', () => {
-      const out = repoNode('verify:playground-browser', ['fixtures/playground-browser/walk.js', '--build'], 1800000);
+    await check('B7-17E', '[repo] real Chrome walk of the built playground (verify:playground-browser), its server on a port the OS reports free', async () => {
+      const port = await freePort();
+      const out = repoNode('verify:playground-browser', ['fixtures/playground-browser/walk.js', '--build', '--port', String(port)], 1800000);
       const line = out.trim().split('\n').reverse().find((l) => /PASS|pages|routes/.test(l));
-      return line ? line.trim().slice(0, 160) : 'passed';
+      return `${line ? line.trim().slice(0, 160) : 'passed'} (port ${port})`;
     });
   }
 
@@ -1395,4 +1495,4 @@ async function main() {
 
 if (require.main === module) main().catch((error) => { console.error(error); process.exitCode = 1; });
 
-module.exports = { contrastSignature, exceptedSignature, contrastBaselineOf, assertContrastBaseline, auditLockfile, assertAuthorLocated, assertSassFramed, assertLocatedWarning, assertNearMissSuggested, assertDebugWarned, assertIsolationWarned, S7_ISOLATION_LINE, webpackAdapterRecord, assertWebpackAdapter, viteAdapterRecord, assertViteAdapter, assertMissingImport, mapIntegrityProblems, DROPPED, S8_BLOCK_SOURCE, S8_SHADOWED_SOURCE, S8_UNKNOWN_SOURCE, assertBreakpointBlock, assertBreakpointShadowed, assertBreakpointUnknown };
+module.exports = { contrastSignature, exceptedSignature, contrastBaselineOf, assertContrastBaseline, auditLockfile, assertAuthorLocated, assertSassFramed, assertLocatedWarning, assertNearMissSuggested, assertDebugWarned, assertIsolationWarned, S7_ISOLATION_LINE, webpackAdapterRecord, assertWebpackAdapter, viteAdapterRecord, assertViteAdapter, assertMissingImport, mapIntegrityProblems, DROPPED, S8_BLOCK_SOURCE, S8_SHADOWED_SOURCE, S8_UNKNOWN_SOURCE, assertBreakpointBlock, assertBreakpointShadowed, assertBreakpointUnknown, assertNearLinear, assertEnginesCovered, assertLockEntryMatches, freePort };

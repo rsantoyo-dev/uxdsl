@@ -22,6 +22,61 @@ the entries of FEAT-009's beta.7 stories (marked "FEAT-009, MIG-B7-…"), which
 reached npm first in `0.5.0-beta.8` under the former names; MIG-B9-52 moves
 them. See `docs/releases/0.5.0-beta.9.md`.
 
+### What changes for you
+
+- One package: `npm i -D uxdsl` replaces `postcss-uxdsl`, `uxdsl-core`,
+  `uxdsl-cli`, `vite-plugin-uxdsl` and `uxdsl-webpack-loader`. Imports move to
+  `uxdsl`, `uxdsl/postcss`, `uxdsl/vite`, `uxdsl/webpack`, `uxdsl/runtime` and
+  `uxdsl/theme`, and it needs Node 20.19 or later.
+- `.uxdsl` files compile with real Dart Sass: variables, maps, mixins,
+  functions, `@use` and control rules behave as Sass defines them, and the
+  compiled CSS takes Dart Sass's formatting.
+- The theme is written only where `@uxdsl theme;` appears: put it once in your
+  global stylesheet. The `includeTheme` option and the `--include-theme` flags
+  are gone.
+- The theme file is `uxdsl.theme.json` or `uxdsl.theme.js`/`.cjs` and exports
+  the theme itself; `references` moves to `uxdsl.config.cjs`, and
+  `uxdsl watch` becomes `uxdsl build --watch`.
+- One spelling per construct: `palette(family.variant)`,
+  `color(family.shade)`, `@ds-button(role tone size)`. The shipped codemod
+  rewrites the old spellings, and a misspelled function name is an error that
+  suggests the right one.
+- `@media (--lg) { … }` applies a block from a theme breakpoint up and moves
+  with the theme.
+- In the browser, `applyTheme` and the rest of `uxdsl/runtime`'s theme API
+  replace the per-token setters.
+- Some colors, focus rings and disabled states of the base theme change: read
+  the `Visual changes` tables before upgrading.
+
+### The release candidate: Node 20.19 or later, and the release gate (MIG-B9-91)
+
+#### Breaking
+
+- **`uxdsl` declares `"engines": { "node": ">=20.19" }`.** It is the range
+  its dependencies already required: `sass` 1.107 and the `chokidar` 5 and
+  `readdirp` 5 that `sass` installs declare `>=20.19.0`. On an older Node,
+  npm now warns when it installs `uxdsl` (and refuses with `engine-strict`),
+  where before it installed and the first compile could fail inside `sass`.
+
+#### Changed
+
+- **The two earlier passages of this section that describe `includeTheme`
+  as current are superseded** by "The theme is emitted only at
+  `@uxdsl theme;`; `includeTheme` is removed" above: the bullet "`init`'s
+  entry" in "The CLI, Vite and webpack on the Sass pipeline", and "Added:
+  `@uxdsl theme;`". The Next.js setup is `'uxdsl/postcss': {}` in
+  `postcss.config.js` plus `@uxdsl theme;` once in the global stylesheet.
+- **`npm run verify:1.0`** (the release gate, in this repository) checks the
+  `engines` field against every installed package's, checks that the
+  playground's lockfile records the package's dependencies, measures its
+  near-linearity check on the fastest of five interleaved rounds, gives the
+  playground walk a free port, and removes its temporary directories when it
+  passes.
+
+#### Visual changes
+
+None: no compiled output changes.
+
 ### Breakpoint media queries: @media (--<breakpoint>) (MIG-B9-30)
 
 #### Added

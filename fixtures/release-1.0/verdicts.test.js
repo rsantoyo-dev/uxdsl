@@ -11,8 +11,11 @@ const { pathToFileURL } = require('node:url');
 const {
   assertAuthorLocated, assertSassFramed, assertLocatedWarning, assertNearMissSuggested, assertDebugWarned, assertIsolationWarned, S7_ISOLATION_LINE, webpackAdapterRecord, assertWebpackAdapter, viteAdapterRecord, assertViteAdapter, assertMissingImport,
   S8_BLOCK_SOURCE, S8_SHADOWED_SOURCE, S8_UNKNOWN_SOURCE, assertBreakpointBlock, assertBreakpointShadowed, assertBreakpointUnknown,
+  assertNearLinear, assertEnginesCovered, assertLockEntryMatches, freePort, DROPPED,
 } = require('./run');
-const { PACKAGE_DIR } = require('../lib/tarball-consumer');
+const { PACKAGE_DIR, REPO_ROOT } = require('../lib/tarball-consumer');
+const net = require('node:net');
+const semver = createRequire(path.join(PACKAGE_DIR, 'package.json'))('semver');
 
 // The release gate's S-3 to S-6 and N-02 verdicts, on the output they must
 // accept and on the failures they exist to catch. The gate applies them to the
@@ -333,5 +336,80 @@ test('MIG-B9-30: S-8 rejects BASE\'s pass-through of (--lg), a missing, doubled 
     [{ status: 1, stderr: `${head}\n` }, /no frame line/],
   ]) {
     assert.throws(() => assertBreakpointUnknown(built), { message: reason }, built.stderr);
+  }
+});
+
+/** A stale `../uxdsl` entry of the playground lockfile: it lists postcss-import and postcss-scss, which the manifest no longer has, lacks sass and source-map-js, and has no engines. */
+const STALE_PLAYGROUND_LOCK_ENTRY = JSON.parse('{"version":"0.5.0-beta.9","license":"MIT","dependencies":{"chokidar":"^4.0.3","minimist":"^1.2.8","picomatch":"^4.0.7","postcss-import":"^16.1.0","postcss-scss":"^4.0.9","postcss-value-parser":"^4.2.0"},"bin":{"uxdsl":"bin/uxdsl.js"},"devDependencies":{"@types/node":"^20.11.30","ajv":"8.20.0","css-loader":"^7.1.5","css-tree":"^3.1.0","esbuild":"^0.25.12","mini-css-extract-plugin":"^2.10.2","postcss":"^8.5.6","sass":"^1.107.0","source-map-js":"^1.2.1","style-loader":"^4.0.0","typescript":"^5.9.3","vite":"^7.3.7","webpack":"^5.102.1"},"peerDependencies":{"postcss":"^8.4.31","vite":">=4.0.0","webpack":"^5.0.0"},"peerDependenciesMeta":{"vite":{"optional":true},"webpack":{"optional":true}}}');
+
+const readJson = (file) => JSON.parse(fs.readFileSync(file, 'utf8'));
+
+test('MIG-B9-91: UX-10 accepts near-linear timings, and a load spike in one round, by the fastest of the interleaved rounds', () => {
+  assert.match(assertNearLinear({ 400: [100, 110, 105, 120, 101], 800: [200, 230, 210, 205, 240] }, [7.5, 7.4, 7.5]), /^x2\.00 per doubling \(fastest of 5 rounds: 400 blocks 100 ms, 800 blocks 200 ms; load 7\.50 7\.40 7\.50\)$/);
+  // One round under load (x3.27) among quiet ones.
+  assert.match(assertNearLinear({ 400: [100, 102, 101, 99, 100], 800: [327, 205, 210, 201, 204] }), /^x2\.03 per doubling/);
+});
+
+test('MIG-B9-91: UX-10 rejects quadratic timings, unequal or missing rounds and a NaN (negative control)', () => {
+  assert.throws(() => assertNearLinear({ 400: [100, 110, 105, 120, 101], 800: [400, 440, 420, 480, 404] }), { message: /^doubling cost x4\.00 \(fastest of 5 rounds: 400 blocks 100 ms, 800 blocks 400 ms\)$/ });
+  assert.throws(() => assertNearLinear({ 400: [100, 110], 800: [200] }), { message: /2 and 1 rounds/ });
+  assert.throws(() => assertNearLinear({}), { message: /0 and 0 rounds/ });
+  assert.throws(() => assertNearLinear({ 400: [100], 800: [Number.NaN] }), { message: /doubling cost xNaN/ });
+});
+
+test('MIG-B9-91: I-7 accepts this checkout\'s uxdsl with the engines.node of its installed sass, chokidar and readdirp', () => {
+  const manifest = readJson(path.join(PACKAGE_DIR, 'package.json'));
+  const modules = path.join(PACKAGE_DIR, 'node_modules');
+  const installed = ['sass', 'sass/node_modules/chokidar', 'sass/node_modules/readdirp', 'chokidar', 'picomatch', 'postcss', 'minimist']
+    .map((dir) => readJson(path.join(modules, dir, 'package.json')));
+  assert.equal(manifest.engines.node, '>=20.19');
+  assert.match(assertEnginesCovered(manifest, installed, semver), /^uxdsl requires node >=20\.19; 6 of 7 installed packages declare engines\.node, each satisfied within it$/);
+});
+
+test('MIG-B9-91: I-7 rejects a uxdsl without engines.node and a range wider than a dependency\'s (negative control)', () => {
+  const sass = { name: 'sass', version: '1.107.0', engines: { node: '>=20.19.0' } };
+  const chokidar = { name: 'chokidar', version: '5.0.0', engines: { node: '>= 20.19.0' } };
+  assert.throws(() => assertEnginesCovered({ name: 'uxdsl' }, [sass], semver), { message: /^uxdsl declares no engines\.node$/ });
+  assert.throws(() => assertEnginesCovered({ name: 'uxdsl', engines: { node: '>=20' } }, [sass, chokidar], semver), { message: /^uxdsl's engines\.node ">=20" admits Node versions that sass@1\.107\.0 \(">=20\.19\.0"\), chokidar@5\.0\.0 \(">= 20\.19\.0"\) refuse$/ });
+  assert.throws(() => assertEnginesCovered({ name: 'uxdsl', engines: { node: 'twenty' } }, [sass], semver), { message: /not a semver range/ });
+  assert.throws(() => assertEnginesCovered({ name: 'uxdsl', engines: { node: '>=20.19' } }, [{ name: 'odd', version: '1.0.0', engines: { node: 'node 20' } }], semver), { message: /odd@1\.0\.0 \("node 20"\)/ });
+});
+
+test('MIG-B9-91: LOCK-pg accepts the playground lockfile\'s ../uxdsl entry as this checkout records it', () => {
+  const manifest = readJson(path.join(PACKAGE_DIR, 'package.json'));
+  const lock = readJson(path.join(REPO_ROOT, 'packages/playground-nextjs/package-lock.json'));
+  assert.equal(assertLockEntryMatches(manifest, lock.packages['../uxdsl']), `the playground lockfile records uxdsl@${manifest.version} with packages/uxdsl/package.json's dependencies, devDependencies, peerDependencies, optionalDependencies and engines`);
+});
+
+test('MIG-B9-91: LOCK-pg rejects a stale entry, a missing entry and another version (negative control)', () => {
+  const manifest = readJson(path.join(PACKAGE_DIR, 'package.json'));
+  assert.throws(() => assertLockEntryMatches(manifest, STALE_PLAYGROUND_LOCK_ENTRY), { message: /^the playground lockfile's packages\["\.\.\/uxdsl"\] differs from packages\/uxdsl\/package\.json in dependencies, devDependencies, engines; run npm install --package-lock-only in packages\/playground-nextjs$/ });
+  assert.throws(() => assertLockEntryMatches(manifest, undefined), { message: /no packages\["\.\.\/uxdsl"\] entry/ });
+  const lock = readJson(path.join(REPO_ROOT, 'packages/playground-nextjs/package-lock.json'));
+  assert.throws(() => assertLockEntryMatches(manifest, { ...lock.packages['../uxdsl'], version: '0.5.0-beta.8' }), { message: /differs from packages\/uxdsl\/package\.json in version;/ });
+});
+
+test('MIG-B9-91: the walk\'s port is one the OS reports free, never one a listener holds', async () => {
+  const held = net.createServer();
+  await new Promise((resolve) => held.listen(0, resolve));
+  try {
+    const port = await freePort();
+    assert.equal(typeof port, 'number');
+    assert.notEqual(port, held.address().port);
+    const probe = net.createServer();
+    await new Promise((resolve, reject) => { probe.once('error', reject); probe.listen(port, resolve); });
+    await new Promise((resolve) => probe.close(resolve));
+  } finally {
+    await new Promise((resolve) => held.close(resolve));
+  }
+});
+
+test('MIG-B9-91: DROPPED names the beta.8 meanings of B3-e and UX-12, which the marker checks replaced', () => {
+  const ids = DROPPED.map(([id]) => id);
+  assert.ok(ids.includes('B3-e (beta.8)'), ids.join(', '));
+  assert.ok(ids.includes('UX-12 (beta.8)'), ids.join(', '));
+  for (const [id, what, why] of DROPPED.filter(([entry]) => /^(B3-e|UX-12) \(beta\.8\)$/.test(entry))) {
+    assert.match(what, /--no-include-theme/, id);
+    assert.match(why, /@uxdsl theme;/, id);
   }
 });
