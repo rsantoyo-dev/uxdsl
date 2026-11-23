@@ -155,7 +155,42 @@ checkout of `main`.
 
 ## 14. Closure record
 
-To be filled in the delivering PR, with both gate summaries.
+Delivered on `feat/b9-91-gate`, branched from `6d38d19` (`feat/beta9` at
+`6cdadaf` plus the owner decisions of 2026-11-23, PR #105). The gate ran on
+`3267c93`; the record and this closure are docs-only commits after it, so
+the tarball the gate verified is the one the branch carries. Environment:
+macOS 27.0, MacBookPro18,3, Node v20.19.0, npm 11.21.1, Google Chrome
+158.0.8127.37; every run with `TMPDIR` in the session's scratch directory.
+Figures are pasted from the logs.
+
+| Criterion | Evidence | Result |
+| --- | --- | --- |
+| G1 | `npm run verify:1.0` on `3267c93`: the 74 checks of `6cdadaf` under their ids plus `I-7` and `LOCK-pg`; DROPPED names `B3-e (beta.8)` and `UX-12 (beta.8)`; DELEGATED's external line names the Press Craftor evidence | "76/76 automated checks passed." |
+| G2, local | the same run, alone, 18:50:03–18:56:22 UTC, load 6.78 → 5.95 | exit 0; its `TMPDIR` held 0 entries afterwards |
+| G2, CI | the gate PR's run | pending: the gate PR's run, recorded when it finishes |
+| G3 | `docs/releases/0.5.0-beta.9.md` rewritten from the logs; `node --test scripts/docs-provenance.test.js scripts/version-mentions.test.js scripts/docs-shape.test.js` | exit 0, 16 tests, 16 pass |
+| G4 | CHANGELOG heading "0.5.0-beta.9 — unreleased"; `README.md` "(0.5.0-beta.9: this branch's release candidate, not published yet)"; releases index "release candidate, not published" | T2 above |
+| G5 | `chore/after-beta9-publish`, one commit, pushed, no PR (§15, "Delivery of 2026-11-23") | see there |
+| AC1 | the gate (above) and CI | local exit 0; CI pending: the gate PR's run, recorded when it finishes |
+| AC2 | the record | every G3 section, figures from the logs |
+| AC3 | `node scripts/release.js --version 0.5.0-beta.9 --tag latest --dry-run --skip-build` | exit 0, "uxdsl: 299.8KB / 300KB budget — ok", "Release complete." |
+| AC4 | `npm test` on `3267c93` | exit 0 on `3267c93`: the 29 `node --test` runs it holds report 1,727 tests, 1,718 pass, 0 fail, 9 skipped (the base `6d38d19`: 1,718, 1,709, 0, 9), and its other steps (parity, the CLI `init` fixture, the generated-artifact checks) exit 0; `scripts/tmpdir-guard.js` found its temporary directory empty |
+| D9 (P10) | `node fixtures/sass-corpus/run.js` three times, alone, at `3e1e269` (the package as at `3267c93`) | exit 0 each; byte-identical; 1.19x, 1.28x, 1.47x; load 4.04, 4.84, 4.93 |
+| The budget fixture | `node fixtures/mig-b9-23-compile-budget/run.js --base <a build of 6cdadaf>` at `3e1e269` | exit 0, "All checks ok."; T3 −2.4 ms |
+| D10 | `engines` in `packages/uxdsl/package.json` and its lockfile (written by `npm install --package-lock-only`); `I-7` and its verdict tests | gate `I-7` ok |
+| D19 | the playground lockfile's `../uxdsl` entry refreshed (diff limited to that entry); `npm ci --ignore-scripts` there; `LOCK-pg` | exit 0 ("added 1133 packages"); gate `LOCK-pg` ok |
+| D13 (external) | Press Craftor on the candidate: `evidence/MIG-B9-91-press-craftor.md` | built after finding 1's wrapper change; Chrome as MIG-B9-03 recorded |
+
+Failing-first: the eight verdict tests for `UX-10`, `I-7`, `LOCK-pg`, the
+free port and DROPPED failed before the code (`assertNearLinear is not a
+function`, …; 8 of 8 failing), and the test for `installedManifests` failed
+with `installedManifests is not a function` before it existed. Each verdict
+has its negative control in `fixtures/release-1.0/verdicts.test.js`.
+
+Not run or not a pass: the CI run of the release commit itself (the owner's
+`feat/beta9` → `main` PR); `verify:1.0` on Windows (decision 16 of
+2026-11-10); the VS Code VSIX check (manual, the owner's); the postpublish
+checks; Press Craftor's database routes.
 
 ## 15. Findings and follow-ups
 
@@ -362,3 +397,55 @@ may override any of them.
 10. **Scope of G5's bump commit.** (a): the version only; the CHANGELOG date
     and the record's status are the owner's post-publish edits, listed in the
     record.
+
+### Delivery of 2026-11-23
+
+What the implementation found, and the owner flags it raised, each answered
+with its recommended option under the owner's standing instruction of
+2026-11-10 ("fusiona todo.. y preguntas como recomendadas, y sgeuimos"),
+reaffirmed on 2026-11-13 ("haz todo como recomendado"); the owner may
+override any of them. None changes the release cut or publishes anything.
+
+- **Flag 11 — `uxdsl/postcss`'s plugin object has `prepare`, not `Once`
+  (the Press Craftor run's finding 1).** Since MIG-B9-27 (`d049f2f`) the
+  plugin returns `{ postcssPlugin, prepare }`; Press Craftor's
+  `postcss-uxdsl-source.cjs` called `plugin.Once(root, helpers)` itself, so
+  `next build` failed ("TypeError: plugin.Once is not a function"). A plugin
+  listed in `postcss.config.js` is unaffected. MIG-B9-27's CHANGELOG entry
+  does not say the property is gone. Options: (a) document it in
+  `0.5.0-beta.9` (a `Breaking` item of this story's CHANGELOG subsection,
+  the record's table row and migration step 6 with the forwarding wrapper)
+  and change no code; (b) add a compatibility `Once` to the plugin object in
+  `0.5.0-beta.9`, a product change after the cut. **Recommended and taken:
+  (a)**; the compatibility `Once` is offered to `0.5.0-beta.10` as a
+  follow-up (proposed: MIG-B9-92's re-baseline routes it, or a new story).
+  The owner's Press Craftor patch (D17) needs the wrapper hunk the evidence
+  file shows.
+- **`npm ls --parseable` prints a path with a segment replaced by `***`.**
+  In this session, npm 11.21.1 replaced the session's UUID-like directory
+  name in every path it printed, so `I-7`'s first version, which read those
+  paths, failed the gate's first final run with ENOENT (75/76 at
+  `82b676d`). `I-7` now reads `node_modules` itself (`installedManifests`,
+  exported, with a planted tree as its test). The gate's "packages installed
+  with uxdsl" measurement still counts `npm ls`'s lines, which redaction does
+  not change.
+- **A leftover seen once.** One run of `node --test
+  fixtures/release-1.0/verdicts.test.js` (the first after the
+  `installedManifests` test was added) left its new test's directory,
+  `uxdsl-gate-verdicts-…`, in the `TMPDIR` it was given; three runs after it
+  (two of the file, one of the test alone) and the final `npm test` (under
+  `scripts/tmpdir-guard.js`) left nothing. Not reproduced; recorded, not
+  fixed.
+- **P10's third run at 1.47x** (Dart Sass 337 ms, `compile()` 494 ms; warm
+  `compile()` runs 494, 438, 556 ms), under the 1.5x budget with load 4.93.
+  Not a failure, so not re-run; the margin is small on a machine with other
+  work.
+- **The gate's two runs and the load.** The machine ran other agents' work
+  (load average 6 to 9). `UX-10` passed in both final runs, x1.74 and x1.70,
+  on the fastest of five rounds.
+- **npm 11.21.1 warns `install-scripts … not yet covered by allowScripts`**
+  for `@parcel/watcher@2.6.0`, an optional dependency of `sass`, on every
+  install in Press Craftor; its prebuilt platform package is installed and
+  nothing failed. Recorded for the documentation review.
+
+**G5, the bump commit.** Pending: prepared on this branch's last commit, after the CI run is recorded.
