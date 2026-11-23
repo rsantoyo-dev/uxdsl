@@ -86,4 +86,37 @@
     font-size: 0.85em;
     color: palette(primary.dark);
   }
+
+  /* Breakpoint blocks: each chip is outlined below its breakpoint and takes the contained
+     primary role from it up. (--sm) … (--xl) are the theme's queries, so the chips follow
+     the theme's thresholds. */
+  .bp-blocks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: density(2);
+    margin-block: density(3);
+    padding: 0;
+    list-style: none;
+  }
+
+  .bp-chip {
+    @ds-surface(outlined primary 1);
+    @ds-typo(code);
+  }
+
+  .bp-chip--sm {
+    @media (--sm) { @ds-surface(contained primary 1); }
+  }
+
+  .bp-chip--md {
+    @media (--md) { @ds-surface(contained primary 1); }
+  }
+
+  .bp-chip--lg {
+    @media (--lg) { @ds-surface(contained primary 1); }
+  }
+
+  .bp-chip--xl {
+    @media (--xl) { @ds-surface(contained primary 1); }
+  }
 }

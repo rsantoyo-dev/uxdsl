@@ -397,6 +397,118 @@ gone.) To ask what a responsive value resolves to at a given width without a
 document — an editor, an inspector — use `inspectResponsiveValue` from
 `uxdsl/language`.
 
+### Breakpoint blocks: `@media (--<breakpoint>)`
+
+A block that applies from a breakpoint up names the breakpoint in its
+`@media` prelude, in the CSS custom-media syntax. `(--lg)` compiles to the
+query `lg()` emits, read from the effective theme, so the block moves when
+the theme's `lg` moves; only that token changes, and the rest of the prelude
+stays as written. It works anywhere an `@media` may be written, on both paths
+(`compile()` and `uxdsl/postcss` alone), and combines with other conditions.
+
+```css
+@media (--lg) { .nav { display: flex; } }
+@media print and (--md) { .nav { display: none; } }
+@media (--xs) { .nav { color: red; } }  /* UXD_BREAKPOINT_CONTEXT: the base breakpoint has no query */
+```
+
+Theme names match in any case (`(--LG)` is `lg`). A literal query such as
+`@media (min-width: 1024px)` is plain CSS and is never rewritten. The base
+breakpoint (`xs`) has no query, so `(--xs)` fails; so does `@media (--lg)`
+under `@keyframes` (or `@font-face`, `@page`, `@counter-style`), and a
+breakpoint name outside parentheses (`@media --lg`, what Sass prints for an
+unquoted `$query: (--lg)`; quote it). Only `@media` preludes are rewritten:
+`(--lg)` in an `@import` media list or an `@container` prelude is left as
+written.
+
+What is written by hand wins: a `@custom-media` at the top level of the
+stylesheet that names a theme breakpoint replaces it in that stylesheet,
+with one `UXD_BREAKPOINT_SHADOWED` warning located at the definition, which
+stays in the output. `lg()` and stylesheets compiled apart keep the theme's
+query; to move `lg` everywhere, change `breakpoints.lg` in the theme.
+
+```css
+@custom-media --lg (min-width: 900px);
+@media (--lg) { .nav { display: flex; } }
+```
+
+Inside a compound prelude (`print and (--lg)`) the definition must be a
+condition such as `(min-width: 900px)`; one with a media type, a keyword or a
+list fails there, and so does a `@custom-media` for a breakpoint the
+stylesheet uses written inside a rule. A `@custom-media` for a name that is
+not a breakpoint is the author's CSS, left as written with its uses. With
+`uxdsl/postcss` alone, each file is compiled on its own, so only the
+definitions in that file are seen.
+
+A `(--name)` in an `@media` prelude that is neither a breakpoint of the
+theme nor a `@custom-media` of the stylesheet fails with
+`UXD_BREAKPOINT_UNKNOWN`, which lists the breakpoints usable in `@media` and
+suggests the closest name. It is judged once every plugin of the PostCSS
+run has had its turn, so a plugin such as `postcss-custom-media` that
+resolves the stylesheet's custom media may be listed before or after
+`uxdsl/postcss`.
+
+```css
+@media (--lgg) { .nav { display: flex; } }  /* UXD_BREAKPOINT_UNKNOWN: did you mean "(--lg)"? */
+```
+
+With `uxdsl/postcss` alone, CSS nesting keeps an `@media (--lg)` block
+nested in a rule where it is written, so a responsive value directly inside
+such a block fails with `UXD_BREAKPOINT_CONTEXT`: write the value on the
+rule, put the rule inside a top-level `@media (--lg)`, or compile the file
+with `compile()`, where Dart Sass moves the block out of the rule. On the
+same property, the cascade between a block and `lg()` is CSS's: through
+`compile()` the one written later wins; with the plugin alone `lg()`'s
+`@media` follows the rule, so it wins over a nested block.
+
+This is also a difference from plain Dart Sass for a renamed `.scss` that
+uses custom media: Dart Sass keeps `@media (--name)` as written, while
+`compile()` rewrites a theme breakpoint, warns on a project `@custom-media`
+of a breakpoint name and fails on any other undefined `(--name)`. A dashed
+name inside a function in a prelude, `var(--lg)`, is not a media feature and
+is left as written.
+
+A directive styles a whole rule, so a role from a breakpoint up is the rule
+inside the block, which works on both paths; in a `.uxdsl` file compiled by
+`compile()` the block may also be nested in the rule. With `uxdsl/postcss`
+alone, a directive in a block nested in its rule is `UXD_DIRECTIVE_CONTEXT`,
+whose message shows the form to write.
+
+```css
+@media (--md) { .card { @ds-surface(contained); } }
+.panel { @media (--md) { @ds-surface(contained); } }  /* UXD_DIRECTIVE_CONTEXT: with uxdsl/postcss alone, put the rule inside the block */
+```
+
+In the editor, `uxdsl-vscode` highlights `(--sm)`, `(--md)`, `(--lg)` and
+`(--xl)` in an `@media` prelude, at the top level and nested in a rule; the
+names come from `LANGUAGE_COMPLETIONS.customMedia` (`uxdsl/language`), the
+default breakpoints that have a query, so the base and a project's own
+breakpoint names are not highlighted.
+
+In a `.uxdsl` file the block may sit inside the rule it styles: Dart Sass
+moves it out around the rule, so a directive in it applies from the
+breakpoint up.
+
+```scss
+.nav {
+  display: none;
+  @media (--lg) {
+    display: block;
+    @ds-surface(flat);
+  }
+}
+```
+
+In a PostCSS chain that also runs `postcss-custom-media` or
+`postcss-preset-env`, list `uxdsl/postcss` before them when a project
+`@custom-media` redefines a breakpoint name: in the other order they remove
+the definition in their `Once`, before `uxdsl/postcss` can see it, and
+`(--lg)` compiles to the theme's query with no warning.
+
+At the end of the run only a media feature is judged: once another plugin
+has replaced `(--gutter)` in a prelude, a `var(--gutter)` left in the same
+prelude does not make it fail.
+
 <p align="center">
   <a href="https://uxdsl.vercel.app/docs/home">
     <strong>Explore the Full Docs &rarr;</strong>

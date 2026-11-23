@@ -32,7 +32,7 @@ Design decisions — spacing, type, color, borders, shadows, and how each of the
 ## What UXDSL is not
 
 - **Not a Sass of its own.** Dart Sass itself compiles the SCSS; UXDSL resolves its tokens and directives in Dart Sass's output.
-- **Not free of media queries.** The output is media queries; you stop writing them in components. They are viewport `min-width` queries: there are no container queries — use native `@container` next to UXDSL.
+- **Not free of media queries.** The output is media queries; you stop writing their thresholds in components: a block from a breakpoint up is `@media (--md)`, the theme's query. They are viewport `min-width` queries: there are no container queries — use native `@container` next to UXDSL.
 - **Not typed.** The theme has a JSON Schema and every reference is checked at build time; the CSS itself is not type-checked.
 - **Not fluid.** Values step at breakpoints. The base theme has no `clamp()` scales (a `clamp()` is still a valid literal value).
 - **Not a runtime styling library.** Nothing needs JavaScript at run time. The optional runtime changes token *values* without a rebuild; a *structural* change — a new typography field, a new state, a moved threshold — is refused with `UXD_THEME_STRUCTURE` instead of half-applied.

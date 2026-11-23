@@ -72,6 +72,23 @@ const grammar = {
   // `content: "@ds-button xs(1rem)"` highlighted the text inside the
   // string as if it were a real directive and function call.
   patterns: [{ include: '#comments' }, { include: '#strings' }, { include: '#directives' }, { include: '#functions' }, { include: 'source.css' }],
+  // `(--lg)` in an @media prelude names a breakpoint. source.css owns both places it is
+  // written, so the pattern is injected into them: a top-level @media header, and a rule's
+  // property list, where VS Code's CSS grammar does not recognize a nested @media (it reads
+  // `media` as a property name), so the injection opens its own @media prelude there. The
+  // names are the default breakpoints with a query (LANGUAGE_COMPLETIONS.customMedia); a
+  // project's own names are not highlighted.
+  injections: {
+    'L:meta.at-rule.media.header.css': { patterns: [{ include: '#breakpointMedia' }] },
+    'L:meta.property-list.css -meta.property-value.css -comment -string': {
+      patterns: [{
+        name: 'meta.at-rule.media.header.uxdsl',
+        begin: '(?i)(?<![\\w-])@media\\b',
+        end: '(?=\\s*[{;])',
+        patterns: [{ include: '#breakpointMedia' }],
+      }],
+    },
+  },
   repository: {
     comments: { patterns: [{ name: 'comment.block.uxdsl', begin: '/\\*', end: '\\*/' }] },
     strings: {
@@ -82,6 +99,13 @@ const grammar = {
     },
     directives: { patterns: [{ name: 'keyword.control.at-rule.uxdsl', match: `@(${LANGUAGE_COMPLETIONS.directives.join('|')})\\b` }] },
     functions: { patterns: [{ match: `\\b(${LANGUAGE_COMPLETIONS.functions.join('|')})\\s*(?=\\()`, name: 'support.function.uxdsl' }] },
+    breakpointMedia: {
+      patterns: [{
+        name: 'meta.media-feature.breakpoint.uxdsl',
+        match: `(?:(?<=@(?i:media))|(?<![\\w-]))\\(\\s*(--(?i:${LANGUAGE_COMPLETIONS.customMedia.map((name) => name.slice(2)).join('|')}))\\s*\\)`,
+        captures: { 1: { name: 'support.constant.breakpoint.uxdsl' } },
+      }],
+    },
   },
 };
 

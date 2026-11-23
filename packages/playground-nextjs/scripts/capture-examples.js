@@ -64,6 +64,13 @@ const EXAMPLES = [
     tokens: ['--uxdsl__density__3'],
   },
   {
+    // A block from a breakpoint up: (--md) is the theme's md query, so it moves with the theme.
+    id: 'breakpoint-blocks',
+    theme: json({ breakpoints: { md: 800 } }),
+    source: uxdsl('.nav {\n  display: none;\n  @media (--md) {\n    display: block;\n    @ds-surface(flat);\n  }\n}\n@media print and (--md) {\n  .nav { display: none; }\n}\n'),
+    tokens: ['--uxdsl__surface__flat-padding'],
+  },
+  {
     id: 'spacing',
     theme: json({ spacing: { 4: '0.75rem', 5: '1rem', 6: '1.5rem' }, densities: { 4: 'xs(space(4)) md(space(5)) xl(space(6))' } }),
     source: uxdsl('.card { padding: density(4); }\n.toolbar { gap: space(4); }\n'),

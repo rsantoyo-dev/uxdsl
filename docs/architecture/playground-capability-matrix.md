@@ -6,13 +6,14 @@ What UXDSL can do, **derived** from its own sources (language metadata, theme-fa
 
 Levels: **live** — executed on the page (compiled `.uxdsl`, a call to the runtime API, output of the real tool); **documented** — example code or prose only; **none** — not mentioned. The detection reads source text, not rendered pages, so it is a **lower bound** on what the playground shows. A capability is a **gap** when its level is below the one it requires (`live` for nearly everything; `documented` for deprecated syntax and CLI-only options). `capability-evidence.json` in the playground records the evidence text cannot find and the gaps accepted for now.
 
-**120 capabilities · 120 shown at the level they require · 0 gaps.**
+**124 capabilities · 124 shown at the level they require · 0 gaps.**
 
 | Kind | Capabilities | live | documented | none | gaps |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | Directives | 4 | 4 | 0 | 0 | 0 |
 | Value functions | 7 | 7 | 0 | 0 | 0 |
 | Breakpoint functions | 5 | 5 | 0 | 0 | 0 |
+| Breakpoint media queries | 4 | 4 | 0 | 0 | 0 |
 | Theme families | 14 | 14 | 0 | 0 | 0 |
 | Roles | 9 | 9 | 0 | 0 | 0 |
 | Interaction states | 12 | 12 | 0 | 0 | 0 |
@@ -34,7 +35,7 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 
 | Measure | Now | Baseline |
 | --- | ---: | ---: |
-| handWrittenMediaQueries | 2 | 2 |
+| handWrittenMediaQueries | 1 | 1 |
 | hexColorsInUxdsl | 0 | 0 |
 | rgbHslInUxdsl | 0 | 0 |
 | cssModuleFiles | 0 | 0 |
@@ -48,7 +49,7 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | `ds-button` | live | live | `src/app/page.uxdsl`, `src/components/AIPrompt.uxdsl`, `src/components/CapabilityDocs.uxdsl` |
 | `ds-input` | live | live | `src/components/CapabilityDocs.uxdsl`, `src/components/DemoBorders.uxdsl`, `src/components/DemoColors.uxdsl` |
 | `ds-surface` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/not-found.uxdsl`, `src/app/page.uxdsl` |
-| `ds-typo` | live | live | `src/app/not-found.uxdsl`, `src/app/page.uxdsl`, `src/app/typography-roles.uxdsl` |
+| `ds-typo` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/not-found.uxdsl`, `src/app/page.uxdsl` |
 
 ## Value functions
 
@@ -72,6 +73,15 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | `xl` | live | live | `src/app/page.uxdsl`, `src/components/CapabilityDocs.uxdsl`, `src/components/SurfaceGrid.uxdsl` |
 | `xs` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/layout.uxdsl`, `src/app/page.uxdsl` |
 
+## Breakpoint media queries
+
+| Capability | Requires | Level | Evidence |
+| --- | --- | --- | --- |
+| `--lg` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/components/SideNav.uxdsl` |
+| `--md` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl` |
+| `--sm` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl` |
+| `--xl` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl` |
+
 ## Theme families
 
 | Capability | Requires | Level | Evidence |
@@ -81,7 +91,7 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | `buttons` | live | live | `src/app/page.uxdsl`, `src/components/AIPrompt.uxdsl`, `src/components/CapabilityDocs.uxdsl` |
 | `colors` | live | live | `src/components/AgentGuidance.uxdsl`, `src/components/AIPrompt.uxdsl`, `src/components/AppHeader.uxdsl` |
 | `densities` | live | live | `src/app/app.uxdsl`, `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/not-found.uxdsl` |
-| `fonts` | live | live | `src/app/layout.uxdsl`, `src/app/not-found.uxdsl`, `src/app/page.uxdsl` |
+| `fonts` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/layout.uxdsl`, `src/app/not-found.uxdsl` |
 | `inputs` | live | live | `src/components/CapabilityDocs.uxdsl`, `src/components/DemoBorders.uxdsl`, `src/components/DemoColors.uxdsl` |
 | `modes` | live | live | `src/app/docs/theme/page.tsx`, `src/components/CodeBlock.tsx`, `src/components/ColorDocumentation.tsx` |
 | `palette` | live | live | `src/app/app.uxdsl`, `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/layout.uxdsl` |
@@ -89,7 +99,7 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | `shadows` | live | live | `src/app/app.uxdsl`, `src/app/not-found.uxdsl`, `src/components/AgentGuidance.uxdsl` |
 | `spacing` | live | live | `src/app/layout.uxdsl`, `src/app/page.uxdsl`, `src/components/AgentGuidance.uxdsl` |
 | `surfaces` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/not-found.uxdsl`, `src/app/page.uxdsl` |
-| `typography_details` | live | live | `src/app/not-found.uxdsl`, `src/app/page.uxdsl`, `src/app/typography-roles.uxdsl` |
+| `typography_details` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/not-found.uxdsl`, `src/app/page.uxdsl` |
 
 ## Roles
 
@@ -101,7 +111,7 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | `input.contained` | live | live | `src/components/InputDemo.tsx`, `src/components/RuntimeEngines.tsx` |
 | `input.outlined` | live | live | `src/components/CapabilityDocs.uxdsl`, `src/components/DemoBorders.uxdsl`, `src/components/DemoColors.uxdsl` |
 | `input.underline` | live | live | `src/components/InputDemo.tsx`, `src/components/RuntimeEngines.tsx` |
-| `surface.contained` | live | live | `src/app/not-found.uxdsl`, `src/components/CapabilityDocs.uxdsl`, `src/components/DemoBreakpointsCards.uxdsl` |
+| `surface.contained` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/not-found.uxdsl`, `src/components/CapabilityDocs.uxdsl` |
 | `surface.flat` | live | live | `src/components/DemoSurfaces.tsx`, `src/components/SideNav.uxdsl`, `src/components/SurfaceGrid.tsx` |
 | `surface.outlined` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/page.uxdsl`, `src/components/CapabilityDocs.uxdsl` |
 

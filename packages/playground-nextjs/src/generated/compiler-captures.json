@@ -104,7 +104,7 @@
         "dist/example.css"
       ],
       "exit": 1,
-      "stderr": "[uxdsl] Error: uxdsl: src/example.uxdsl:2:3: UXD_DIRECTIVE_CONTEXT: Directives apply to a whole rule and are not responsive; use responsive values on the properties instead, e.g. padding: xs(…) md(…).\n  1 | @media (min-width: 768px) {\n> 2 |   @ds-surface(contained);\n    |   ^\n  3 | }\n  4 | \n"
+      "stderr": "[uxdsl] Error: uxdsl: src/example.uxdsl:2:3: UXD_DIRECTIVE_CONTEXT: @ds-surface must be a direct child of the rule it styles. To apply a role from a breakpoint up, put the rule inside the block, @media (--md) { .card { @ds-surface(…); } }, which works on both paths (in a .uxdsl file compiled by compile() the block may also be nested in the rule); to change one property, use a responsive value, padding: xs(…) md(…).\n  1 | @media (min-width: 768px) {\n> 2 |   @ds-surface(contained);\n    |   ^\n  3 | }\n  4 | \n"
     },
     {
       "code": "UXD_DIRECTIVE_UNKNOWN",

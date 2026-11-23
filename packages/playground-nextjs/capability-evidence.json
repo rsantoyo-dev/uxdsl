@@ -39,7 +39,7 @@
   ],
   "knownGaps": [],
   "dogfoodingBaseline": {
-    "handWrittenMediaQueries": 2,
+    "handWrittenMediaQueries": 1,
     "hexColorsInUxdsl": 0,
     "rgbHslInUxdsl": 0,
     "cssModuleFiles": 0,

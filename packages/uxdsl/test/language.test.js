@@ -100,3 +100,15 @@ test('validateResponsiveExpression still rejects an unknown top-level function',
 test('validateResponsiveExpression does not misread log() as a typo of lg (known trap this list exists to avoid)', () => {
   assert.doesNotThrow(() => language.validateResponsiveExpression('xs(1px) lg(log(2, 3))', language.DEFAULT_BREAKPOINTS));
 });
+
+test('MIG-B9-30: LANGUAGE_COMPLETIONS.customMedia lists the default breakpoints usable in @media', () => {
+  const { LANGUAGE_COMPLETIONS, DEFAULT_BREAKPOINTS } = language;
+  assert.deepEqual([...LANGUAGE_COMPLETIONS.customMedia], ['--sm', '--md', '--lg', '--xl']);
+  // Derived, not typed: every breakpoint with a query, in the theme's order, and not the base.
+  assert.deepEqual([...LANGUAGE_COMPLETIONS.customMedia], Object.entries(DEFAULT_BREAKPOINTS).filter(([, width]) => width > 0).map(([name]) => `--${name}`));
+  // Negative control: the base breakpoint has no query, so (--xs) is not offered.
+  assert.equal(LANGUAGE_COMPLETIONS.customMedia.includes('--xs'), false);
+  // The other keys keep their contents.
+  assert.deepEqual([...LANGUAGE_COMPLETIONS.directives], ['ds-surface', 'ds-typo', 'ds-button', 'ds-input']);
+  assert.deepEqual([...LANGUAGE_COMPLETIONS.functions], ['palette', 'color', 'radius', 'border', 'density', 'shadow', 'space', 'xs', 'sm', 'md', 'lg', 'xl']);
+});

@@ -22,6 +22,105 @@ the entries of FEAT-009's beta.7 stories (marked "FEAT-009, MIG-B7-…"), which
 reached npm first in `0.5.0-beta.8` under the former names; MIG-B9-52 moves
 them. See `docs/releases/0.5.0-beta.9.md`.
 
+### Breakpoint media queries: @media (--<breakpoint>) (MIG-B9-30)
+
+#### Added
+
+- **`@media (--<breakpoint>)`.** In an `@media` prelude, `(--<bp>)` names a
+  breakpoint of the effective theme and compiles to the query `<bp>()` emits,
+  `(min-width: <px>px)`, on both paths: `@media (--lg) { … }` applies from
+  `lg` up and moves with the theme. Only that token changes; the rest of the
+  prelude (media types, `and`/`not`/`only`, other features, lists, comments)
+  stays as written, at any depth. Names match in any case, as the functions
+  do. Through `compile()`, Dart Sass bubbles a nested
+  `.nav { @media (--lg) { @ds-surface(flat); } }` out of its rule, so the
+  directive applies from `lg` up; Sass's merge of nested queries
+  (`@media print { .a { @media (--lg) {…} } }` → `print and (min-width: 1024px)`)
+  is pinned by a test. A literal query is never rewritten, and every
+  stylesheet whose `@media` preludes hold no `--` compiles to the same bytes
+  as before (a breakpoint name without its parentheses, `@media --lg`, is now
+  `UXD_BREAKPOINT_CONTEXT`; a dashed name inside a function, `var(--lg)`, is
+  left as written).
+- **`UXD_BREAKPOINT_CONTEXT` for a breakpoint where it cannot apply:**
+  `(--xs)`, the base breakpoint, which has no query; `@media (--bp)` under
+  `@keyframes`, `@font-face`, `@page` or `@counter-style`; and a breakpoint
+  name outside parentheses in an `@media` prelude (`@media --lg`, what Dart
+  Sass prints for an unquoted `$q: (--lg); @media #{$q}`).
+- **`UXD_BREAKPOINT_SHADOWED`, a warning.** A `@custom-media --<bp> <query>;`
+  at the top level of the stylesheet, for a theme breakpoint's name in any
+  case, replaces that breakpoint in every `(--<bp>)` of the compilation:
+  wherever it is written (after its use, or in a `@use`d partial through
+  `compile()`), the last definition of a name winning, each definition
+  warning once, located at it. The `@custom-media` stays in the output, and
+  `<bp>()` and stylesheets compiled apart keep the theme's query. Its query
+  replaces a token that is a whole item of the prelude's list as written
+  (`true` → `all`, `false` → `not all`), and is wrapped in parentheses inside
+  a compound item when it is a condition; a query with a media type, a
+  keyword or a list there is `UXD_BREAKPOINT_CONTEXT`, and so is a
+  `@custom-media` for a breakpoint the stylesheet uses written inside a rule
+  or an at-rule. A `@custom-media` for any other name is left as written,
+  with its uses.
+- **`UXD_BREAKPOINT_CONTEXT` for a responsive value directly in an
+  `@media (--bp)` block nested in a rule, with `uxdsl/postcss` alone.** CSS
+  nesting keeps such a block inside its rule, and the media block each
+  breakpoint of the value would get has no selector to carry. The message
+  shows the prelude as written and the three forms that work (the value on
+  the rule, the rule inside a top-level block, or `compile()`, where Dart
+  Sass moves the block out of the rule). A literal nested `@media` with a
+  responsive value compiles to the same bytes as before. The cascade
+  between a block and `<bp>()` on the same property is pinned by a test:
+  through `compile()` the one written later wins; with the plugin alone
+  `<bp>()`'s `@media` follows the rule and wins.
+- **`LANGUAGE_COMPLETIONS.customMedia`** (`uxdsl/language`): the default
+  breakpoints an `@media` prelude can name, derived from
+  `DEFAULT_BREAKPOINTS` without the zero-width base,
+  `['--sm', '--md', '--lg', '--xl']`. `.functions` and `.directives` are
+  unchanged, and so are the entries' export lists.
+- **Highlighting of `(--<breakpoint>)` in `uxdsl-vscode`.** The generated
+  grammar gains a `breakpointMedia` entry (scope
+  `support.constant.breakpoint.uxdsl`, any case) and `injections` into VS
+  Code's CSS `@media` header and rule body, so `(--lg)` is highlighted in a
+  top-level `@media` and in one nested in a rule; `var(--lg)`, `--lg: 1px`,
+  `@container (--lg)`, `(--xs)` and a name that is not a default breakpoint
+  are not.
+
+#### Changed
+
+- **An unknown `(--name)` in an `@media` prelude fails.** One that is
+  neither a breakpoint of the theme nor a top-level `@custom-media` of the
+  stylesheet, which passed through as written (a block no browser applies),
+  is now `UXD_BREAKPOINT_UNKNOWN`, listing the breakpoints usable in `@media`
+  and, when one is close, `Did you mean "(--lg)"?`. It is judged at the
+  plugin's `OnceExit`, after every plugin's visitors, so a plugin that
+  resolves custom media in the same PostCSS run (`postcss-custom-media`,
+  `postcss-preset-env`) may be listed before or after `uxdsl/postcss`. With
+  `uxdsl/postcss` alone each file is compiled on its own: a custom media
+  defined in another file is unknown there. The function form's message is
+  unchanged.
+- **`UXD_DIRECTIVE_CONTEXT`'s message, meaning and fix.** The message said
+  directives "are not responsive"; it now names the directive, says it must
+  be a direct child of the rule it styles, and shows the form that applies
+  a role from a breakpoint up on both paths,
+  `@media (--md) { .card { @ds-surface(…); } }` (in a `.uxdsl` file compiled
+  by `compile()` the block may also be nested in the rule), next to a
+  responsive value for one property. The code and when it is raised are
+  unchanged.
+- **A project `@custom-media` named like a breakpoint is applied, with a
+  warning.** One that passed through as written (and that no browser
+  applies) now replaces the theme's breakpoint for `(--<bp>)` in that
+  stylesheet, with `UXD_BREAKPOINT_SHADOWED`. In a PostCSS chain with
+  `postcss-custom-media` or `postcss-preset-env`, list `uxdsl/postcss` before
+  them for that: in the other order they remove the definition first and
+  `(--<bp>)` gets the theme's query with no warning (pinned by a test).
+
+#### Visual changes
+
+- None in the package. Every stylesheet whose `@media` preludes hold no
+  `--` compiles to the same bytes, and so do the Bootstrap corpus and
+  the theme CSS. In the playground, SideNav's `@media (min-width: 1024px)`
+  became `@media (--lg)` and compiles to the same query; `/docs/breakpoints`
+  gains a live block-form demo.
+
 ### CI on Windows (MIG-B9-28)
 
 #### Changed

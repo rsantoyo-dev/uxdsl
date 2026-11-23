@@ -13,7 +13,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { ROOT, deriveCapabilities, dogfoodingCounts, manualEvidence, FAMILY_CONSUMERS } = require('./lib/capabilities');
+const { ROOT, breakpointBlock, deriveCapabilities, dogfoodingCounts, manualEvidence, FAMILY_CONSUMERS } = require('./lib/capabilities');
 const { render, OUT } = require('./generate-capability-matrix');
 
 const rows = deriveCapabilities();
@@ -26,6 +26,7 @@ test('the capability list is derived from UXDSL\'s own sources, and covers every
   assert.equal(kinds('directive').length, language.directives.length);
   assert.equal(kinds('family').length, rt.KNOWN_THEME_FAMILIES.size, 'one row per registered theme family');
   assert.equal(kinds('function').length + kinds('breakpoint-function').length, language.functions.length);
+  assert.equal(kinds('custom-media').length, language.customMedia.length, 'one row per breakpoint an @media prelude can name');
   assert.equal(kinds('role').length, Object.keys(rt.DEFAULT_SURFACES).length + Object.keys(rt.DEFAULT_BUTTONS).length + Object.keys(rt.DEFAULT_INPUTS).length);
   assert.equal(kinds('state').length, Object.keys(rt.BUTTON_STATES).length + Object.keys(rt.INPUT_STATES).length);
   for (const kind of ['runtime', 'cli-command', 'cli-flag', 'package-export', 'diagnostics']) assert.ok(kinds(kind).length > 0, `no ${kind} capabilities were derived`);
@@ -77,4 +78,19 @@ test('dogfooding: the styling written around UXDSL may not grow, and an improvem
 
 test('the committed matrix is up to date with the sources (node scripts/generate-capability-matrix.js)', () => {
   assert.equal(fs.readFileSync(path.join(ROOT, OUT), 'utf8'), render());
+});
+
+test('MIG-B9-30: every breakpoint an @media prelude can name, (--sm) to (--xl), has a live @media (--name) block in the playground', () => {
+  const language = require(path.join(ROOT, 'packages/uxdsl/dist/language')).LANGUAGE_COMPLETIONS;
+  assert.deepEqual(kinds('custom-media').map((r) => r.name).sort(), [...language.customMedia].sort());
+  for (const row of kinds('custom-media')) assert.equal(row.level, 'live', `${row.name}: ${JSON.stringify(row)}`);
+  assert.ok(kinds('custom-media').find((r) => r.name === '--lg').files.includes('src/components/SideNav.uxdsl'), 'SideNav takes its sidebar from @media (--lg)');
+  assert.equal(evidence.dogfoodingBaseline.handWrittenMediaQueries, 1, 'the hand-written min-width query SideNav dropped stays dropped');
+});
+
+test('MIG-B9-30: a .uxdsl source counts as a live @media (--name) block only where the name is a media feature, not a dashed name inside a function', () => {
+  const lg = breakpointBlock('--lg');
+  for (const source of ['@media (--lg) {', '@media screen and ( --lg ) {', '@media(--lg){', '@MEDIA print and (--lg) {']) assert.ok(lg.test(source), source);
+  // Negative controls: var(--lg), env(--lg) and another name are not the --lg block.
+  for (const source of ['@media (min-width: var(--lg)) {', '@media (min-width: env(--lg)) {', '@media (--lgx) {', '@media (--lg-wide) {']) assert.ok(!lg.test(source), source);
 });

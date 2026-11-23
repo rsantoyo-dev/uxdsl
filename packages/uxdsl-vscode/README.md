@@ -14,6 +14,12 @@ Language support for **UXDSL** (User Experience Design System Language)
     default breakpoints (`xs()`, `sm()`, `md()`, `lg()`, `xl()`) — a
     breakpoint name your project's own theme adds is not highlighted as a
     UXDSL function or completed.
+  - Breakpoint media queries: `(--sm)`, `(--md)`, `(--lg)`, `(--xl)` in an
+    `@media` prelude, at the top level and nested in a rule (injected into
+    the CSS grammar's `@media` header and rule body). The base (`--xs`, which
+    has no query), a project's own names and a dashed name inside a
+    function (`var(--lg)`, which is not a media feature) are not
+    highlighted; completion inside a prelude is not implemented yet.
   - Standard CSS syntax, via the built-in `source.css` grammar.
 - **Context-aware completion** — functions only inside a declaration's
   value, directives only after `@`, and role/tone/size/override arguments

@@ -7045,9 +7045,9 @@ input[type=range]::-moz-range-thumb:hover {
 }
 #SideNav {
   /* --- Desktop Overrides (Media Query) --- */
-  /* A hand-written @media on purpose (MIG-B7-17 phase B): from lg the whole component becomes a
-     sticky sidebar and takes @ds-surface(flat), and a directive cannot be responsive, so this
-     cannot be lg() on each property. Keep 1024px equal to the theme's lg. */
+  /* From the theme's lg up the whole component becomes a sticky sidebar and the menu takes
+     @ds-surface(flat): one block, because a directive applies to a whole rule, not to one
+     property. (--lg) is the theme's lg query, so the sidebar follows the theme's threshold. */
 }
 @media (min-width: 1024px) {
   #SideNav {
@@ -7669,6 +7669,74 @@ input[type=range]::-moz-range-thumb:hover {
   font-family: font(code);
   font-size: 0.85em;
   color: var(--uxdsl__palette__primary-dark);
+}
+#BreakpointsPage {
+  /* Breakpoint blocks: each chip is outlined below its breakpoint and takes the contained
+     primary role from it up. (--sm) … (--xl) are the theme's queries, so the chips follow
+     the theme's thresholds. */
+}
+#BreakpointsPage .bp-blocks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--uxdsl__density__2);
+  margin-block: var(--uxdsl__density__3);
+  padding: 0;
+  list-style: none;
+}
+#BreakpointsPage .bp-chip {
+  padding: var(--uxdsl__density__1);
+  border-radius: var(--uxdsl__radius__1);
+  background: transparent;
+  color: var(--uxdsl__palette__primary-main);
+  border: 1px solid var(--uxdsl__palette__primary-main);
+  box-shadow: var(--uxdsl__surface__outlined-shadow);
+  font-family: var(--uxdsl__typography__code-font-family);
+  font-size: var(--uxdsl__typography__code-font-size);
+  line-height: var(--uxdsl__typography__code-line-height);
+  font-weight: var(--uxdsl__typography__code-font-weight);
+  letter-spacing: var(--uxdsl__typography__code-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__code-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__code-margin-block-end);
+}
+@media (min-width: 480px) {
+  #BreakpointsPage .bp-chip--sm {
+    padding: var(--uxdsl__density__1);
+    border-radius: var(--uxdsl__radius__1);
+    background: var(--uxdsl__palette__primary-main);
+    color: var(--uxdsl__palette__primary-contrast);
+    border: var(--uxdsl__surface__contained-border);
+    box-shadow: var(--uxdsl__surface__contained-shadow);
+  }
+}
+@media (min-width: 768px) {
+  #BreakpointsPage .bp-chip--md {
+    padding: var(--uxdsl__density__1);
+    border-radius: var(--uxdsl__radius__1);
+    background: var(--uxdsl__palette__primary-main);
+    color: var(--uxdsl__palette__primary-contrast);
+    border: var(--uxdsl__surface__contained-border);
+    box-shadow: var(--uxdsl__surface__contained-shadow);
+  }
+}
+@media (min-width: 1024px) {
+  #BreakpointsPage .bp-chip--lg {
+    padding: var(--uxdsl__density__1);
+    border-radius: var(--uxdsl__radius__1);
+    background: var(--uxdsl__palette__primary-main);
+    color: var(--uxdsl__palette__primary-contrast);
+    border: var(--uxdsl__surface__contained-border);
+    box-shadow: var(--uxdsl__surface__contained-shadow);
+  }
+}
+@media (min-width: 1280px) {
+  #BreakpointsPage .bp-chip--xl {
+    padding: var(--uxdsl__density__1);
+    border-radius: var(--uxdsl__radius__1);
+    background: var(--uxdsl__palette__primary-main);
+    color: var(--uxdsl__palette__primary-contrast);
+    border: var(--uxdsl__surface__contained-border);
+    box-shadow: var(--uxdsl__surface__contained-shadow);
+  }
 }
 
 /* /docs/palette. MIG-B7-17 phase B (4): were inline style={{}} in page.mdx. */

@@ -176,8 +176,8 @@ same pipeline and is gone: `compile({ entry: fileId }, config)` or
    at-rule, is `@ds-surface(contained)` again.
 4. **The UXDSL plugin** (`src/plugin.ts`), on Dart Sass's output with
    PostCSS's default parser: the theme, the directives, responsive values,
-   token functions and the reference check. Nothing else in Sass's output
-   changes.
+   token functions, `(--<breakpoint>)` in an `@media` prelude and the
+   reference check. Nothing else in Sass's output changes.
 
 ### Everything SCSS, as Dart Sass compiles it
 
@@ -232,8 +232,9 @@ compiles to:
 ```
 
 Apart from the recorded differences of functions named like UXDSL's
-([below](#functions-named-like-uxdsls)), three things differ from plain Dart
-Sass: `compile()` removes a top-level comment whose text starts with
+([below](#functions-named-like-uxdsls)) and of `(--name)` in an `@media`
+prelude ([below](#--name-in-an-media-prelude)), three things differ from
+plain Dart Sass: `compile()` removes a top-level comment whose text starts with
 `# sourceMappingURL=`, and two things fail, a `$variable` Sass keeps as
 written ([below](#a-variable-sass-keeps-as-written)) and text Sass prints
 that is not CSS ([below](#text-sass-prints-that-is-not-css)).
@@ -457,6 +458,22 @@ not found, so its calls keep the token; and in a build where a loaded file
 defines a function named `get-function` or `function-exists`, a call in some
 `@import`ed files keeps the token where Dart Sass calls the project's
 function.
+
+### `(--name)` in an `@media` prelude
+
+Dart Sass keeps a custom media feature, `@media (--lg)`, as written; the
+plugin stage reads it as a breakpoint, so a renamed `.scss` that uses
+custom media compiles differently. In an `@media` prelude, `(--<bp>)` for a
+breakpoint of the effective theme becomes the query `<bp>()` emits,
+`(min-width: 1024px)` for `lg`; a top-level `@custom-media` named like a
+breakpoint replaces it in that compilation, with one
+`UXD_BREAKPOINT_SHADOWED` warning at the definition, and stays in the
+output; a `@custom-media` of any other name is left, with its uses, as
+written; any other `(--name)` fails as `UXD_BREAKPOINT_UNKNOWN`, and a
+breakpoint name outside parentheses (`@media --lg`, what Sass prints for an
+unquoted `$q: (--lg)`) as `UXD_BREAKPOINT_CONTEXT`. A dashed name inside a
+function, `var(--lg)`, is not a media feature and stays. Every other
+at-rule's prelude is left as Dart Sass prints it.
 
 ### A `$variable` Sass keeps as written
 

@@ -31,7 +31,8 @@ export default function LanguagePage() {
           <code>.a {'{'} .b {'{'} {'}'} {'}'}</code> is <code>.a .b</code>), a <code>@media</code> nested in a rule moves out
           around the rule, and values are written as Dart Sass writes them (<code>calc(1px + 2px)</code> is <code>3px</code>).
           The PostCSS plugin used alone, <code>uxdsl/postcss</code>, passes what is not one of the constructs through unchanged:
-          selectors, properties, <code>calc()</code>, <code>@media</code>, <code>@container</code>, <code>@layer</code>, and
+          selectors, properties, <code>calc()</code>, <code>@media</code> (but for a breakpoint, <code>(--md)</code>, in its
+          condition), <code>@container</code>, <code>@layer</code>, and
           native nesting, forwarded to the browser as written. Names are
           case-insensitive (<code>Space(1)</code> compiles like <code>space(1)</code>). Every reference is checked against the
           effective theme when it is rewritten; an unknown one stops the build with a <code>UXD_*</code> code and a suggestion.
@@ -88,10 +89,12 @@ export default function LanguagePage() {
           after the directive wins over the role’s.
         </p>
         <p>
-          Inside <code>@media</code> or <code>@supports</code> under its rule, the two paths differ. Through{' '}
-          <code>compile()</code>, Dart Sass moves the at-rule out around the rule, and the directive applies to the rule inside
-          it. With <code>uxdsl/postcss</code> alone it is <code>UXD_DIRECTIVE_CONTEXT</code>. Otherwise a directive is not
-          itself responsive: put a responsive value on a property instead.
+          A directive applies to a whole rule. To apply a role from a breakpoint up, write the rule inside{' '}
+          <code>@media (--md)</code>, the theme’s <code>md</code> query (see <Link href="/docs/breakpoints">Breakpoints</Link>);
+          to change one property, put a responsive value on it instead. Inside <code>@media</code> or <code>@supports</code>{' '}
+          under its rule, the two paths differ. Through <code>compile()</code>, Dart Sass moves the at-rule out around the rule,
+          and the directive applies to the rule inside it. With <code>uxdsl/postcss</code> alone it is{' '}
+          <code>UXD_DIRECTIVE_CONTEXT</code>: put the rule inside the block.
         </p>
         <div className="doc-section__table-wrap">
           <table>
@@ -108,15 +111,19 @@ export default function LanguagePage() {
 .cta { @ds-button(contained); @ds-button(outlined); }  /* UXD_DIRECTIVE_DUPLICATE: one control directive per rule */
 .panel { @ds-surface(glass); }  /* UXD_SURFACE_REFERENCE: the role is not in the theme */`}</code></pre>
         <p>
-          Through <code>compile()</code>, this panel takes the contained role from {DEFAULT_BREAKPOINTS.md}px, the base theme’s{' '}
-          <code>md</code>, and the flat role below it:
+          Through <code>compile()</code>, this panel takes the contained role from the theme’s <code>md</code> ({DEFAULT_BREAKPOINTS.md}px
+          in the base theme), and the flat role below it:
         </p>
         <pre><code className="language-scss">{`.panel {
   @ds-surface(flat);
-  @media (min-width: 768px) { @ds-surface(contained); }
+  @media (--md) { @ds-surface(contained); }
 }`}</code></pre>
-        <p>The same directive with the PostCSS plugin alone, and a directive at the root of a file on either path:</p>
-        <pre><code className="language-css">{`.panel { @media (min-width: 768px) { @ds-surface(contained); } }  /* UXD_DIRECTIVE_CONTEXT: with the plugin alone */
+        <p>
+          The same directive with the PostCSS plugin alone, the form that works on both paths (the rule inside the block), and a
+          directive at the root of a file on either path:
+        </p>
+        <pre><code className="language-css">{`.panel { @media (--md) { @ds-surface(contained); } }  /* UXD_DIRECTIVE_CONTEXT: with the plugin alone */
+@media (--md) { .panel { @ds-surface(contained); } }
 @ds-surface(contained);  /* UXD_DIRECTIVE_CONTEXT: at the root of a file */`}</code></pre>
 
         <h2 id="theme-marker"><code>@uxdsl theme;</code></h2>

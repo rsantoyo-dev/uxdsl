@@ -115,3 +115,70 @@ test('MIG-B6-26: every directive name in the generated completions list tokenize
     assert.ok(directiveToken && directiveToken.scopes.includes('keyword.control.at-rule.uxdsl'), `@${name} did not tokenize as a directive: ${JSON.stringify(tokens)}`);
   }
 });
+
+// A stand-in for VS Code's own source.css, emitting the scope names its real grammar gives:
+// a top-level @media header is meta.at-rule.media.header.css, a rule's body is
+// meta.property-list.css (where the real grammar does not recognize a nested @media, and
+// reads `media` as a property name), and a value is meta.property-value.css.
+const CSS_STUB = {
+  scopeName: 'source.css',
+  patterns: [{ include: '#media' }, { include: '#rule' }],
+  repository: {
+    media: {
+      begin: '(?i)(?=@media\\b)',
+      end: '(?<=\\})',
+      patterns: [
+        { begin: '(?i)\\G@media', end: '(?=\\s*[{;])', name: 'meta.at-rule.media.header.css' },
+        { begin: '\\{', end: '\\}', name: 'meta.at-rule.media.body.css', patterns: [{ include: '$self' }] },
+      ],
+    },
+    rule: { begin: '\\{', end: '\\}', name: 'meta.property-list.css', patterns: [{ include: '#rule' }, { include: '#value' }] },
+    value: { begin: ':', end: '(?=[;}])', name: 'meta.property-value.css' },
+  },
+};
+
+async function tokenizeWithCss(line, { withoutInjections = false } = {}) {
+  await getRegistry(); // loads the WASM once
+  const raw = JSON.parse(fs.readFileSync(GRAMMAR_PATH, 'utf8'));
+  if (withoutInjections) delete raw.injections;
+  const registry = new Registry({
+    onigLib: Promise.resolve({
+      createOnigScanner: (patterns) => new oniguruma.OnigScanner(patterns),
+      createOnigString: (s) => new oniguruma.OnigString(s),
+    }),
+    loadGrammar: async (scopeName) => {
+      if (scopeName === 'source.uxdsl') return parseRawGrammar(JSON.stringify(raw), GRAMMAR_PATH);
+      if (scopeName === 'source.css') return parseRawGrammar(JSON.stringify(CSS_STUB), 'css.json');
+      return null;
+    },
+  });
+  const grammar = await registry.loadGrammar('source.uxdsl');
+  const result = grammar.tokenizeLine(line, null);
+  return result.tokens.map((t) => ({ text: line.slice(t.startIndex, t.endIndex), scopes: t.scopes }));
+}
+
+const BREAKPOINT_SCOPE = 'support.constant.breakpoint.uxdsl';
+const uxdslScoped = (tokens) => tokens.filter((t) => t.scopes.some((s) => s !== 'source.uxdsl' && s.endsWith('.uxdsl')));
+
+test('MIG-B9-30: (--<breakpoint>) is highlighted in an @media prelude, top level and nested, under Oniguruma', async () => {
+  for (const line of ['@media (--lg) { .a { color: red; } }', '@media(--lg) { }', '@media print and ( --LG ), screen { }', '.a { @media (--lg) { color: red; } }', '.a { color: red; @media screen and (--md) { color: blue; } }']) {
+    const tokens = await tokenizeWithCss(line);
+    const name = tokens.find((t) => /^--(lg|LG|md)$/.test(t.text));
+    assert.ok(name && name.scopes.includes(BREAKPOINT_SCOPE), `${line}: ${JSON.stringify(tokens)}`);
+  }
+  const { completions } = require('../out/generated-completions');
+  for (const name of completions.customMedia) {
+    const tokens = await tokenizeWithCss(`@media (${name}) { }`);
+    assert.ok(tokens.some((t) => t.text === name && t.scopes.includes(BREAKPOINT_SCOPE)), `${name}: ${JSON.stringify(tokens)}`);
+  }
+});
+
+test('MIG-B9-30: no breakpoint scope without the injections, outside an @media prelude, or for a name that is not a breakpoint with a query (negative control)', async () => {
+  for (const line of ['@media (--lg) { }', '.a { @media (--lg) { color: red; } }']) {
+    assert.deepEqual(uxdslScoped(await tokenizeWithCss(line, { withoutInjections: true })), [], line);
+  }
+  for (const line of ['.a { color: var(--lg); }', '.a { --lg: 1px; }', '@container (--lg) { }', '.a { @container (--lg) { } }', '@media (--lgg) { }', '@media (--xs) { }', '.a { @media (--xs) { } }', '@media (min-width: var(--lg)) { }', '.a { @media (min-width: env(--md)) { } }']) {
+    const tokens = await tokenizeWithCss(line);
+    assert.deepEqual(tokens.filter((t) => t.scopes.includes(BREAKPOINT_SCOPE)), [], `${line}: ${JSON.stringify(tokens)}`);
+  }
+});

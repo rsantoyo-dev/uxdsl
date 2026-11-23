@@ -19,6 +19,29 @@
       "include": "source.css"
     }
   ],
+  "injections": {
+    "L:meta.at-rule.media.header.css": {
+      "patterns": [
+        {
+          "include": "#breakpointMedia"
+        }
+      ]
+    },
+    "L:meta.property-list.css -meta.property-value.css -comment -string": {
+      "patterns": [
+        {
+          "name": "meta.at-rule.media.header.uxdsl",
+          "begin": "(?i)(?<![\\w-])@media\\b",
+          "end": "(?=\\s*[{;])",
+          "patterns": [
+            {
+              "include": "#breakpointMedia"
+            }
+          ]
+        }
+      ]
+    }
+  },
   "repository": {
     "comments": {
       "patterns": [
@@ -66,6 +89,19 @@
         {
           "match": "\\b(palette|color|radius|border|density|shadow|space|xs|sm|md|lg|xl)\\s*(?=\\()",
           "name": "support.function.uxdsl"
+        }
+      ]
+    },
+    "breakpointMedia": {
+      "patterns": [
+        {
+          "name": "meta.media-feature.breakpoint.uxdsl",
+          "match": "(?:(?<=@(?i:media))|(?<![\\w-]))\\(\\s*(--(?i:sm|md|lg|xl))\\s*\\)",
+          "captures": {
+            "1": {
+              "name": "support.constant.breakpoint.uxdsl"
+            }
+          }
         }
       ]
     }
