@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 2 |
 | Decision gate | DEC-05 (decided 2026-10-23). Registered by decision D7 of 2026-11-04, on MIG-B9-13 §15, flag 8 (F3) |
-| Status | In review (PR #100) |
+| Status | Merged (PR #100) |
 | Size | S |
 | Depends on | MIG-B9-21 (D7: "after MIG-B9-21, since it edits `plugin.ts`"). Under README §7 also: MIG-B9-20, an earlier row of the `plugin.ts` and `migration.md` rows, which also removes the `includeTheme` option that `test/no-silent-output.test.js` passes 12 times; MIG-B9-25 (`test/no-silent-output.test.js`); MIG-B9-26 (`compile.md`, `migration.md`); MIG-B9-17 (`migration.md`, where both stories rewrite an item: decisions 6 and 31 of 2026-11-10) |
 | Blocks | MIG-B9-24, 30, 31 and 35 (later rows of README §7's `plugin.ts` row); MIG-B9-28 (`test/no-silent-output.test.js`); in `0.5.0-beta.10`, MIG-B9-52 (`migration.md`, which it restructures), and MIG-B9-60 there only if its re-baselined file rewrites a passage (decision 31 of 2026-11-10 makes `migration.md` append-only, so MIG-B9-30 to 36 no longer wait for this story on it); MIG-B9-91 (every story of waves 0 to 3) |
@@ -1095,3 +1095,9 @@ Follow-ups, each with a proposed story id:
    PostCSS's visitor walk for every run of the plugin (+4.4 ms on 332 KB).
    MIG-B9-24's fixed per-build costs should measure from this base.
 
+### Owner decisions of 2026-11-23, on the delivery's flags
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-23), as decisions 14 to 16, 40, 41 and 53 of 2026-11-23. On 2026-11-10 the owner gave a standing instruction for FEAT-010, verbatim, "fusiona todo.. y preguntas como recomendadas, y sgeuimos" ("merge everything, and the questions as recommended, and let's keep going"), and reaffirmed it on 2026-11-13, verbatim, "haz todo como recomendado" ("do everything as recommended"). This story was merged into `feat/beta9` as PR #100 (`dec40b1`) on 2026-11-16. Its flags 1 to 3 ("Owner decisions taken under the standing instruction of 2026-11-10 (2026-11-16)") were implemented as recommended and were not put to the owner one by one: each recommendation is the owner's decision of 2026-11-23, and the owner may still override any of them. On 2026-11-23 the owner also cut `0.5.0-beta.9` to what `feat/beta9` holds at `6cdadaf`, plus MIG-B9-91 (decision 1), so this story ships in `0.5.0-beta.9`. This record is in English. The header's Status reads Merged (PR #100).
+
+- **Flags 1 to 3 (decisions 14 to 16): (a) each**, as implemented: a Document's roots keep BASE's timing; chain inputs outside C4's set are accepted, recorded and documented; `compiler-structure.test.js` pins the new shape of named top-level steps.
+- **Follow-ups.** Proposed MIG-B9-100, `verify:1.0`'s five directories, is not registered: the item is MIG-B9-91's by decisions 26 and 44 of 2026-11-15, and the id is left unused (decision 40). Proposed MIG-B9-101, the timing test `MIG-B6-25: reference validation grows near-linearly` under load, is registered with that id for `0.5.0-beta.10` (decision 41). The note to MIG-B9-24 is carried out: it measured from `dec40b1` (decision 53).

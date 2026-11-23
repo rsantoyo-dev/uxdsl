@@ -1163,3 +1163,13 @@ owner's decision of 2026-11-14, and the owner may override either.
 - **Follow-ups.**
   - **MIG-B9-60** (proposed): F11 stays a known half rewrite (`${…}` after a function argument keeps BASE's bytes), as do the other directives the balanced pattern does not match. If `uxdsl doctor` loads the codemod as a module, its story file should list this file (F12).
   - **MIG-B9-25** (proposed): when its temporary-directory helper lands, this file's `tmp()` helper can move to it. Section 7 named a helper that did not exist yet.
+
+### Owner decisions of 2026-11-23, on the delivery's flags
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-23), as decisions 54 to 57 of 2026-11-23. On 2026-11-10 the owner gave a standing instruction for FEAT-010, verbatim, "fusiona todo.. y preguntas como recomendadas, y sgeuimos" ("merge everything, and the questions as recommended, and let's keep going"), and reaffirmed it on 2026-11-13, verbatim, "haz todo como recomendado" ("do everything as recommended"). This story was merged into `feat/beta9` as PR #91 (`f6c009d`) on 2026-11-15, before the record of that date (PR #98), which flipped its index row to Merged but did not carry its flags. They were answered with their recommended option in the block of 2026-11-14 above and were not put to the owner one by one: each is the owner's decision of 2026-11-23, and the owner may still override either. On 2026-11-23 the owner also cut `0.5.0-beta.9` to what `feat/beta9` holds at `6cdadaf`, plus MIG-B9-91 (decision 1), so this story ships in `0.5.0-beta.9`. This record is in English.
+
+- **Flag 1, F13 (decision 54): (b)**, as implemented: an unclosed directive parenthesis is final in run 1 (T4's `unclosed.css`).
+- **Flag 2, F11 (decision 55): (b)**, as implemented: T5's `h.css` pins BASE's half rewrite.
+- **Follow-up for MIG-B9-60 (decision 56): routed there**, as proposed; MIG-B9-60 carries a block of this date. F11's half rewrite is a known limitation of `0.5.0-beta.9`, which MIG-B9-91's record lists.
+- **Follow-up for MIG-B9-25 (decision 57): not taken.** MIG-B9-25 is merged, and this file's `tmp()` removes its directory itself; a later story that edits the test file may move it to `packages/uxdsl/test/helpers/temporary-directory.js`.
+- **Owner check (decision 58).** Decisions 54 and 55 are among the owner checks MIG-B9-91's record lists for the documentation review before publishing.

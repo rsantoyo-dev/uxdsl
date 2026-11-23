@@ -2,13 +2,13 @@
 
 | Field | Value |
 | --- | --- |
-| Feature · Release | FEAT-010 · `0.5.0-beta.9` |
+| Feature · Release | FEAT-010 · `0.5.0-beta.10` (DEC-03, revised 2026-11-23) |
 | Wave | 3 |
 | Decision gate | DEC-08 (decided 2026-10-23: palette modes match any element; palette-dependent composites re-declared per scope) |
 | Status | Ready |
 | Size | M |
 | Depends on | MIG-B9-13 |
-| Blocks | MIG-B9-40 |
+| Blocks | MIG-B9-40, MIG-B9-92 (it depends on the moved wave-3 stories, decision 1 of 2026-11-23) |
 | Base | `feat/beta9` after MIG-B9-13 |
 | Owns | `fixtures/scoped-palettes/**` (new: a page and a Chrome check), `packages/uxdsl/test/scoped-palettes.test.js` (new) |
 | Shares | `packages/uxdsl/src/foundations.ts`, `css-blocks.ts`, `reference-core.ts`, `reference-integrity.ts`, `typography.ts`, `control-engine.ts`, `edges.ts`, `shadows.ts`, `surfaces.ts`, `language.ts` (default selectors), `fixtures/parity/expected/**`, `fixtures/release-1.0/run.js`, `packages/uxdsl/CHANGELOG.md`, `AGENTS.md` |
@@ -219,3 +219,10 @@ Static review of the plan against `main` at `685c132`; not a change to the contr
 Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#2-decisions). Where they differ from this story's contract or from the review above, they rule.
 
 - **DEC-08, confirmed** with the review's conditions, now part of the contract: the dark selector is `:root[data-theme='dark'], [data-theme='dark']` (flag the change); only palette-dependent composites are re-declared per scope; `[data-theme='light']` re-declares only the palette; a test pins, and the docs state, that inside a scope the theme's composites win over a hand-written `:root` composite override (the documented place for an override is the theme JSON); style recalculation with many scoped elements is measured; T2's scan for `':root'` skips comments; the story also edits `control-engine.ts` and `surfaces.ts`.
+
+### Owner decisions of 2026-11-23
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-23), as decision 1 of 2026-11-23. On 2026-11-17 and on 2026-11-23 the owner asked for `0.5.0-beta.9` to be what is ready in code now, so that it can be shown and its documentation reviewed before publishing, and for whatever is still pending to go to `0.5.0-beta.10`; both messages are quoted verbatim there, with an English rendering. This record is in English. Where it differs from this story's contract or from an earlier block, it rules.
+
+- **Moved to `0.5.0-beta.10` (decision 1 of 2026-11-23, DEC-03's third revision).** This story had not started when `0.5.0-beta.9` was cut to what `feat/beta9` holds at `6cdadaf`, plus MIG-B9-91, so it ships in `0.5.0-beta.10`. Its contract, its decisions, its wave and its place in the index's §5 order do not change; it blocks MIG-B9-92, the beta.10 gate, instead of MIG-B9-91, and the header's Release follows. Its preconditions and baselines are re-run on the base it starts from (the index's §1, item 4). Where its text puts its CHANGELOG subsection, a migration note or a release-record line under `0.5.0-beta.9`, read `0.5.0-beta.10`, the release then unreleased.
+- **The gate and §1's clause 3.** Its `S-5` check is not in the beta.9 gate, and clause 3's gap in FEAT-010 §1 (a palette scoped to an element does not reach the composites) stays open in `0.5.0-beta.9`. Under the index's §7 it now waits for MIG-B9-91 on `fixtures/release-1.0/run.js`, whose row lists 91 before 31.

@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 2 |
 | Decision gate | DEC-17 (decided 2026-10-23), within which C5 stays. No DEC is open. Registered by decision 6 of 2026-11-10, which split MIG-B9-26 into MIG-B9-26 (C1 to C3) and this story (C4 to C6); its three questions, MIG-B9-26's Q4 to Q6, are answered by decisions 9 to 11 of 2026-11-10 (§15) |
-| Status | In review (PR #99) |
+| Status | Merged (PR #99) |
 | Size | M (decision 6 of 2026-11-10: "The M part, C4 to C6") |
 | Depends on | MIG-B9-26 (decision 6 of 2026-11-10: this story is its M part, and edits after it the files both share). As MIG-B9-26's file named them for C4 to C6: MIG-B9-14 (merged, PR #71: the CLI prints `compile()`'s warnings). Under README §7: MIG-B9-20 (`compile.ts`, `test/cli/**`, `fixtures/release-1.0/run.js`, `migration.md`, `cli.md`, `unified-engine-audit.md`, and the tests it rewrites when it removes `includeTheme`), MIG-B9-21 (`compile.ts`, `unified-engine-audit.md`) and MIG-B9-25 (`test/cli/**`, `fixtures/release-1.0/verdicts.test.js`); MIG-B9-26 also waits for all three |
 | Blocks | MIG-B9-91. Under README §7: MIG-B9-27 (`migration.md`, where both rewrite an item); MIG-B9-28, 19 and 06 (`test/cli/**`; MIG-B9-19 and 06 in MIG-B9-39's place, by decisions 28 and 29 of 2026-11-13); MIG-B9-30, 32, 33, 34, 35, 37 and 38 (`diagnostics.ts`); MIG-B9-30 and 31 (`fixtures/release-1.0/run.js`); in `0.5.0-beta.10`, MIG-B9-52 (`migration.md`), MIG-B9-60, 61 and 63 (`cli.md`) and, provisionally, MIG-B9-66 (`verdicts.test.js`; decision 15 of 2026-11-10) |
@@ -1195,3 +1195,11 @@ excluded):
   MIG-B9-91's re-baseline, as known limits only.
 - **`verify:1.0`'s consumer directories in `TMPDIR`.** Already MIG-B9-91's,
   by decision 44 of 2026-11-15; seen again at delivery.
+
+### Owner decisions of 2026-11-23, on the delivery's flags
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-23), as decisions 2 to 13, 39 and 40 of 2026-11-23. On 2026-11-10 the owner gave a standing instruction for FEAT-010, verbatim, "fusiona todo.. y preguntas como recomendadas, y sgeuimos" ("merge everything, and the questions as recommended, and let's keep going"), and reaffirmed it on 2026-11-13, verbatim, "haz todo como recomendado" ("do everything as recommended"). This story was merged into `feat/beta9` as PR #99 (`f254b24`) on 2026-11-16. Its flags F1 to F9 ("Owner flags of 2026-11-15, answered as recommended") and DB-1, DB-2 and CT-2 ("Delivery of 2026-11-16", "Owner flags of the review") were implemented as recommended and were not put to the owner one by one: each recommendation is the owner's decision of 2026-11-23, and the owner may still override any of them. On 2026-11-23 the owner also cut `0.5.0-beta.9` to what `feat/beta9` holds at `6cdadaf`, plus MIG-B9-91 (decision 1), so this story ships in `0.5.0-beta.9`. This record is in English. The header's Status reads Merged (PR #99).
+
+- **F1 to F9 (decisions 2 to 10): (a) each**, as implemented: the Shares widened to `protect.ts`, `protect.test.js`, `compile-sass.test.js`, `compile.md` and `diagnostics-catalog.test.js`; C4's own-file fix clause; both `compile.ts` comments; the isolation warnings carried by a later error; no C5 in a build that defines `get-function` or `function-exists`; the index's §7 rows updated at closure.
+- **DB-1 (decision 11): (a)**, never fold the `!default` twins into the shadowing probe. **DB-2 (decision 12): (a)**, the rename-first fix for a private member; the wording is the owner's to review. **CT-2 (decision 13): (a)**, the warning kept for `with ($x: null)`, documented as "unless the value is `null`".
+- **Follow-ups.** The isolation warnings' edge cases are registered as MIG-B9-99, the id proposed here, for `0.5.0-beta.10` (decision 39); until then MIG-B9-91's record lists them as known limitations. `verify:1.0`'s consumer directories stay MIG-B9-91's (decision 40, as this story's delivery said). The README sentence beyond the index's §7 allowance (DE-7) is not a decision; the owner may ask for the two sentences to be merged.
