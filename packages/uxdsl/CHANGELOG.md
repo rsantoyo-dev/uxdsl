@@ -57,6 +57,15 @@ them. See `docs/releases/0.5.0-beta.9.md`.
   `readdirp` 5 that `sass` installs declare `>=20.19.0`. On an older Node,
   npm now warns when it installs `uxdsl` (and refuses with `engine-strict`),
   where before it installed and the first compile could fail inside `sass`.
+- **The object `uxdsl/postcss` returns has `prepare`, not `Once`.** PostCSS
+  calls `prepare(result)` for each run and uses the `Once` and `OnceExit`
+  listeners it returns, so a plugin listed in `postcss.config.js` is
+  unaffected. A plugin of your own that wraps `uxdsl/postcss` and called its
+  `Once(root, helpers)` itself fails with `plugin.Once is not a function`:
+  call `plugin.prepare(result)` in your own `prepare(result)` and forward
+  both listeners, `OnceExit` included (it judges what `Once` held). This
+  changed with "uxdsl/postcss in a PostCSS chain" above; the release
+  candidate's check of a real project found it.
 
 #### Changed
 

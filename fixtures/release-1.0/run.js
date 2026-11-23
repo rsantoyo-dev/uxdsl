@@ -71,7 +71,7 @@ async function check(id, label, fn) {
 /** Not executed here — owner and mechanism named, never counted as a pass. */
 const DELEGATED = [
   ['B7-12', 'manual', 'Colors and completion in a real VS Code with the VSIX installed — owner; the VSIX itself is packaged by `npm run verify:vscode-extension`.'],
-  ['—', 'external', 'Press Craftor (the owner\'s story-radar) moved to this version\'s tarball by the release record\'s migration steps: docs/features/FEAT-010/evidence/MIG-B9-03-press-craftor.md, section "On the beta.9 release candidate". Its database routes (`/` and the story pages) need DATABASE_URL and a sign-in and are not run.'],
+  ['—', 'external', 'Press Craftor (the owner\'s story-radar) moved to this version\'s tarball by the release record\'s migration steps: docs/features/FEAT-010/evidence/MIG-B9-91-press-craftor.md. Its database routes (`/` and the story pages) need DATABASE_URL and a sign-in and are not run.'],
   ['—', 'postpublish', 'dist-tags of `uxdsl`, and the five deprecated names resolving to their shims — verified only after the owner publishes.'],
 ];
 
