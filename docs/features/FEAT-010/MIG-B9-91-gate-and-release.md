@@ -5,13 +5,13 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 7 |
 | Decision gate | DEC-03 (revised 2026-11-04: option (b), two releases; revised 2026-11-23: this story gates `0.5.0-beta.9`, with every story merged into `feat/beta9` at `6cdadaf`, and MIG-B9-92 gates `0.5.0-beta.10`) |
-| Status | Draft (re-baseline on `6cdadaf`, decision 1 of 2026-11-23) |
+| Status | In progress (re-baselined on `6cdadaf`, 2026-11-23, §15) |
 | Size | M |
 | Depends on | every story merged into `feat/beta9` at `6cdadaf`, MIG-B9-28 (CI on Windows) included (decision 1 of 2026-11-23, §15) |
 | Blocks | the owner's publish of `0.5.0-beta.9` |
 | Base | `feat/beta9` at `6cdadaf` or later, before any moved story merges |
 | Owns | `docs/releases/0.5.0-beta.9.md`, `fixtures/release-1.0/run.js` (the DROPPED list and the new checks' wiring), `fixtures/release-1.0/contrast-baseline.json` |
-| Shares | `packages/uxdsl/CHANGELOG.md` (the date), `README.md` (the status line), `packages/uxdsl/package.json` and `packages/uxdsl/package-lock.json` (the `engines` field; the owner's decision D10 of 2026-11-04, §15) |
+| Shares | `packages/uxdsl/CHANGELOG.md` ("What changes for you" and this story's subsection; the heading keeps "unreleased"), `README.md` (the status line), `docs/releases/README.md` (the index row), `packages/uxdsl/package.json` and `packages/uxdsl/package-lock.json` (the `engines` field; the owner's decision D10 of 2026-11-04, §15), root `package.json` (`verify:1.0` through `scripts/tmpdir-guard.js`), `fixtures/release-1.0/verdicts.test.js` (the new verdicts' controls), `fixtures/lib/tarball-consumer.js` (`packAndInstall`'s directory removed on success), `packages/playground-nextjs/package-lock.json` (the `../uxdsl` entry, decision D19) |
 | Output impact | none |
 
 ## 1. Goal
@@ -25,12 +25,15 @@ next. Nothing is published by this story.
 - `fixtures/release-1.0/run.js` (`npm run verify:1.0`): one tarball, installed
   the documented way; every check awaited; a check that cannot run is named
   with its owner; the DROPPED list; `--skip-upgrade`, `--skip-playground-walk`,
-  `--write-contrast-baseline`; Chrome from `UXDSL_CHROME_PATH`; 65 checks on
-  `main`.
-- The checks the stories add: `AUDIT-lock` (02), `S-1`…`S-3` (13), `S-4` (30),
-  `S-5` (31), `DR-1` (60), `AU-1` (61), `EX-1`/`EX-2` (54), `EU-1` (64),
-  `TX-1` (90), and the rewritten `B3-a`, `B3-e`, `B4-a`, `UX-12`, `B2-b`,
-  `N-02`, `UX-02`, `UX-16`, `UX-20`, `contrast`, `cssmod`.
+  `--write-contrast-baseline`; Chrome from `UXDSL_CHROME_PATH`; 74 checks on
+  `feat/beta9` at `6cdadaf` (72 on `main` at `8dacc8b`, 65 at the beta.8-era
+  gate `c737fa8`).
+- The checks the included stories added: `AUDIT-lock` (02), `S-1`…`S-3`
+  (13), `S-4`…`S-6` (14), `S-7` (26, 17), `S-8` (30); rewritten: `B2-b`,
+  `B3-a`, `B3-e`, `B4-a`, `UX-12`, `B7-14a` (20), `N-02`, `UX-20` (13),
+  `cssmod` (14). `UX-02`, `UX-16` and `contrast` keep their beta.8 labels.
+  Not in the beta.9 gate: MIG-B9-31's scoped-palette check, `B9-38`, `DR-1`,
+  `AU-1`, `EX-1`/`EX-2`, `EU-1`, `TX-1` (decision 1 of 2026-11-23).
 - `docs/releases/0.5.0-beta.9.md` (renamed by MIG-B9-01, figures to refresh);
   `scripts/release.js --version --tag --otp --dry-run --skip-build`;
   the audit's rule: "Prepublish, browser, external-consumer and postpublish
@@ -42,7 +45,7 @@ next. Nothing is published by this story.
 
 ```bash
 test -f docs/releases/0.5.0-beta.9.md
-test -f fixtures/test-exercise/run.js   # MIG-B9-90 merged
+git merge-base --is-ancestor 6cdadaf HEAD   # MIG-B9-90 ships in 0.5.0-beta.10
 git -C . log --oneline -1 origin/feat/beta9 >/dev/null
 ```
 
@@ -68,17 +71,17 @@ npm run verify:1.0 2>&1 | tail -5   # the count of checks and the result on the 
   summary with the check count, `npm test`'s count, `verify:doc-examples`'s
   count, the tarball size and file count against the 300 KB budget, the fresh
   install's `npm audit`, the dry run of `release.js`), browser (what the gate
-  walked), external (Press Craftor on the tarball: the MIG-B9-03/14/31
-  evidence), manual pending (VS Code with the VSIX installed), postpublish
+  walked), external (Press Craftor on the final tarball: this story's re-run,
+  compared with the MIG-B9-03 and MIG-B9-14 evidence), manual pending (VS Code with the VSIX installed), postpublish
   pending (dist-tags, a fresh `npm i -D uxdsl`, the StackBlitz links, the
   extension publish); publish steps for the owner (the exact commands with
   `--otp <code>` placeholders; the five former names: deprecate, optionally
-  the shims at beta.9); afterwards (bump to `0.5.0-beta.10-dev`); known
+  the shims at beta.9); afterwards (bump to `0.5.0-beta.9.dev`); known
   limitations (honest, from the stories' §15); moved to beta.10 (per DEC-03).
 - **G4 — Dates and versions.** The CHANGELOG's beta.9 heading keeps
   "unreleased" until the owner publishes; the record says so; `README.md`'s
   status line names beta.9 as the release candidate of the branch.
-- **G5 — The bump commit, prepared.** A commit that sets `0.5.0-beta.10-dev`
+- **G5 — The bump commit, prepared.** A commit that sets `0.5.0-beta.9.dev`
   in `packages/uxdsl/package.json` and the lockfile is prepared on a branch
   `chore/after-beta9-publish` for the owner to merge after publishing; it is
   not merged by the agent.
@@ -106,7 +109,7 @@ owner publishes (same commit).
 | Id | File | Title | Level | Proves | Negative control |
 | --- | --- | --- | --- | --- | --- |
 | T1 | `fixtures/release-1.0/run.js` | the full gate, locally and in CI | tarball + Chrome | G1, G2 | the gate's own negative controls |
-| T2 | `scripts/docs-provenance.test.js`, `scripts/changelog-shape.test.js`, `scripts/version-mentions.test.js` | the record and the CHANGELOG pass | docs | G3, G4 | — |
+| T2 | `scripts/docs-provenance.test.js`, `scripts/version-mentions.test.js`, `scripts/docs-shape.test.js` (`changelog-shape.test.js` is MIG-B9-52's, `0.5.0-beta.10`) | the record and the CHANGELOG pass | docs | G3, G4 | — |
 | T3 | `node scripts/release.js --version 0.5.0-beta.9 --tag latest --dry-run --skip-build` | the publish dry run | release | G3 | — |
 
 ## 9. Acceptance criteria
@@ -126,7 +129,7 @@ VSIX, verify the postpublish checks, merge the bump commit.
 
 | Artifact | Needed |
 | --- | --- |
-| contrast baseline | already re-pinned by MIG-B9-35; the gate verifies it |
+| contrast baseline | as at `6cdadaf` (0 failing, 111 excepted); the gate verifies it; MIG-B9-35's re-pin is `0.5.0-beta.10` |
 | playground captures | current (the gate's `B7-17` checks) |
 
 ## 11. Documentation
@@ -137,9 +140,9 @@ VSIX, verify the postpublish checks, merge the bump commit.
 ## 12. Verification
 
 ```bash
-npm run verify:1.0 2>&1 | tee /tmp/gate-beta9.log       # background; exit 0
+TMPDIR=<scratch>/tmp-<role>/ npm run verify:1.0 > <scratch>/gate-beta9.log 2>&1   # background; exit 0
 node scripts/release.js --version 0.5.0-beta.9 --tag latest --dry-run --skip-build   # exit 0
-node --test scripts/docs-provenance.test.js scripts/changelog-shape.test.js scripts/version-mentions.test.js   # exit 0
+node --test scripts/docs-provenance.test.js scripts/version-mentions.test.js scripts/docs-shape.test.js   # exit 0
 npm test                                                  # background; exit 0
 ```
 
@@ -242,3 +245,120 @@ Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-23), 
 - **`verify:1.0`'s leftovers stay this story's (decision 40).** MIG-B9-27's proposed MIG-B9-100 is not registered: the five directories and `packAndInstall`'s consumer directories are this story's by decisions 26 and 44 of 2026-11-15, seen again by MIG-B9-17, 24, 27 and 28's deliveries.
 - **The owner steps begin with the documentation review.** The record's owner steps start with "review the documentation with Claude before publishing", then the publish and the steps after it (§9's list). The publish itself, dist-tags, deprecations and the extension stay the owner's; this story publishes nothing.
 - **The owner checks the merged stories leave open are the review's inputs (decision 58).** The record lists each as pending and the owner's, never as PASS: MIG-B9-17's wording of the three `UXD_MODULE_ISOLATION` messages and their catalog entry, the rename-first fix for a private member included (DB-2), and its README "From SCSS" passage's two sentences (DE-7); MIG-B9-18's decisions 54 and 55; MIG-B9-28's win32 spellings in the CHANGELOG and the package README, and its G1, G3 and G4 (decisions 26, 28 and 29); MIG-B9-30's catalog entries (the new `UXD_BREAKPOINT_SHADOWED`, and the reworded `UXD_BREAKPOINT_UNKNOWN`, `UXD_BREAKPOINT_CONTEXT` and `UXD_DIRECTIVE_CONTEXT`) and the Press Craftor check of its `migration.md` entry (decision Q18).
+
+### Re-baseline of 2026-11-23 (apply before implementing)
+
+Run on `feat/b9-91-gate` at `6d38d19` (`6cdadaf` plus the owner decisions of
+2026-11-23), on the owner's Mac (MacBookPro18,3, macOS 27.0, Node v20.19.0,
+Google Chrome 158.0.8127.37), with `TMPDIR` in the session's scratch
+directory. Figures are pasted from the scout's logs.
+
+**Baseline.**
+
+- `npm run verify:1.0`, exit 0, 2026-11-23T18:04:51Z–18:11:17Z (6m26s, load
+  average about 7): "74/74 automated checks passed." and "PASS: the 1.0 gate
+  (automated portion) for uxdsl@0.5.0-beta.9. The items listed above
+  remain." Header: "uxdsl-0.5.0-beta.9.tgz (306943 bytes packed, 1131467
+  unpacked, 90 files)". `UX-10` "x2.39 per doubling"; `B7-16` "78 examples
+  and 24 theme excerpts checked across 101 documentation files."; `contrast`
+  "0 failing pairs, 111 excepted (listed, not passing), unchanged"; `AUDIT`
+  and `AUDIT-lock` "0 critical, 0 high, 0 moderate, 0 low"; "packages
+  installed with uxdsl: 20". It left five entries in its `TMPDIR`:
+  `uxdsl-1.0-gate-…`, `uxdsl-1.0-upgrade-before-…`,
+  `uxdsl-vite-adapter-5-…`, `uxdsl-vite-adapter-7-…`,
+  `uxdsl-webpack-adapter-…` (decision 26 of 2026-11-15's baseline).
+- `node scripts/release.js --version 0.5.0-beta.9 --tag latest --dry-run
+  --skip-build`, exit 0: "uxdsl: 299.7KB / 300KB budget — ok"; 307200 −
+  306943 = 257 bytes of headroom.
+- `node --test scripts/docs-provenance.test.js scripts/version-mentions.test.js
+  scripts/docs-shape.test.js`, exit 0: 16 tests, 16 pass.
+- P10 by decision D8's method, alone after the gate, three runs of
+  `node fixtures/sass-corpus/run.js`, each exit 0 and byte-identical
+  (276926 bytes): 1.39x (Dart Sass 331 ms, `compile()` 460 ms), 1.30x
+  (342/445), 1.35x (340/458); budget 1.5x; load 7.52, 7.40, 7.53.
+- `npm test` was not run by the re-baseline; this story runs it (AC4).
+
+**Stale corrections** (old → new; applied above in this commit, except in the block of 2026-11-13, which keeps its text as recorded and is corrected by this table).
+
+| Section | Old | New | Why |
+| --- | --- | --- | --- |
+| 3 | `test -f fixtures/test-exercise/run.js   # MIG-B9-90 merged` | `git merge-base --is-ancestor 6cdadaf HEAD   # MIG-B9-90 ships in 0.5.0-beta.10` | Decision 1 of 2026-11-23: the file does not exist on `6cdadaf`; the old line exits 1 by design of the cut. |
+| 2 | "Chrome from `UXDSL_CHROME_PATH`; 65 checks on `main`." | "… 74 checks on `feat/beta9` at `6cdadaf` (72 on `main` at `8dacc8b`, 65 at the beta.8-era gate `c737fa8`)." | Counted from `await check('` and confirmed by the baseline's "74/74". |
+| 2 | "The checks the stories add: `AUDIT-lock` (02), `S-1`…`S-3` (13), `S-4` (30), `S-5` (31), `DR-1` (60), …" | The checks the included stories added, by id and story, and those not in the beta.9 gate. | `git diff c737fa8..HEAD` of `run.js`'s labels; decision 1 of 2026-11-23. |
+| 5, G3 | "external (Press Craftor on the tarball: the MIG-B9-03/14/31 evidence)" | "external (Press Craftor on the final tarball: this story's re-run, compared with the MIG-B9-03 and MIG-B9-14 evidence)" | MIG-B9-31 moved to `0.5.0-beta.10`; D13 puts the re-run in this story. |
+| 5, G3 and G5 | `0.5.0-beta.10-dev` | `0.5.0-beta.9.dev` | Review of 2026-10-11 and D13: with `semver` 7.8.5, `0.5.0-beta.10-dev` and `0.5.0-beta.9-dev` sort above `0.5.0-beta.10`; `0.5.0-beta.9.dev` sorts between `0.5.0-beta.9` and `0.5.0-beta.10`. |
+| 8, T2 | `scripts/docs-provenance.test.js`, `scripts/changelog-shape.test.js`, `scripts/version-mentions.test.js` | `scripts/docs-provenance.test.js`, `scripts/version-mentions.test.js`, `scripts/docs-shape.test.js` | `changelog-shape.test.js` is MIG-B9-52's, in `0.5.0-beta.10`; absent on `6cdadaf`. |
+| 10 | "contrast baseline: already re-pinned by MIG-B9-35; the gate verifies it" | "as at `6cdadaf` (0 failing, 111 excepted); … MIG-B9-35's re-pin is `0.5.0-beta.10`" | Decision 1 of 2026-11-23 and the baseline. |
+| 12 | `npm run verify:1.0 2>&1 \| tee /tmp/gate-beta9.log` | `TMPDIR=<scratch>/tmp-<role>/ npm run verify:1.0 > <scratch>/gate-beta9.log 2>&1` | The session's rule: temporary files go to the scratch directory, never to `/tmp`. |
+| 15, block of 2026-11-13 | `packages/uxdsl/CHANGELOG.md:423–425` and `:1025–1033` | On `6cdadaf`: line 957 (MIG-B9-14's subsection, heading at line 894, the bullet on `init`'s entry) and lines 1562–1568 (DE-9's "Added: `@uxdsl theme;`", heading at 1562) | Positions moved with later subsections (`grep -n includeTheme`). |
+| Header, Shares | the CHANGELOG, `README.md`, `packages/uxdsl/package.json` and its lockfile | also `docs/releases/README.md`, root `package.json`, `fixtures/release-1.0/verdicts.test.js`, `fixtures/lib/tarball-consumer.js`, `packages/playground-nextjs/package-lock.json` | The amended contract below edits them; the index's §7 follows. |
+
+**The contract as amended** (where it differs from §5, this rules).
+
+- **G1.** `npm run verify:1.0` runs the 74 checks `run.js` names on `6cdadaf`
+  under their ids, plus `I-7` (the installed `uxdsl` declares `engines.node`
+  and every installed package's `engines.node` contains it) and `LOCK-pg`
+  (the playground lockfile's `../uxdsl` entry agrees with
+  `packages/uxdsl/package.json`), and no check of a moved story. DROPPED
+  gains the beta.8 meanings of `B3-e` ("`--no-include-theme` overrides every
+  `builds[]` entry") and `UX-12` ("`--no-include-theme` really suppresses
+  `:root`"), replaced under the same ids by the marker checks (MIG-B9-20).
+  DELEGATED's external line names this story's Press Craftor evidence.
+- **G2.** Locally: `verify:1.0` exit 0 on the final tree, run last and alone.
+  CI: the gate PR's run (`feat/b9-91-gate` → `feat/beta9`): `npm test`,
+  `verify:1.0 (one tarball, real Chrome)` and `npm test (uxdsl, Windows)`
+  with `watch-mode.test.js` as its named exclusion (decision 29). CI runs
+  only on `pull_request` and on a push to `main`, so the release commit's own
+  run is the owner's `feat/beta9` → `main` PR, listed as an owner check; the
+  owner's publish steps rerun `verify:1.0` on clean `main`. A timing check
+  (`UX-10`, P10) failing under load is re-run once alone, both runs recorded.
+- **G5.** Branch `chore/after-beta9-publish` from the gate's final head: one
+  commit setting `0.5.0-beta.9.dev` in `packages/uxdsl/package.json`, its
+  lockfile (`version`, `packages[""].version`) and the playground lockfile's
+  `packages["../uxdsl"].version`; pushed, no PR, never merged by the agent.
+  `scripts/release.js`'s `isValidSemver` rejects it, which is correct: it is
+  never published.
+
+**Owner flags, answered as recommended** under the owner's standing
+instruction of 2026-11-10 ("fusiona todo.. y preguntas como recomendadas, y
+sgeuimos"), reaffirmed on 2026-11-13 ("haz todo como recomendado"); the owner
+may override any of them.
+
+1. **Tarball headroom (257 bytes).** (a): the 300 KB budget stays; no
+   package README text in beta.9; the root `README.md` carries the status
+   line; if `--check-pack` fails, stop and ask.
+2. **`UX-10`'s basis (decision 26 of 2026-11-15, decision 53 of
+   2026-11-23).** (a): after the 200-block warm-up, 400 and 800 blocks are
+   compiled interleaved for 5 rounds, the order alternating; the verdict is
+   the ratio of the two minima, threshold 3 unchanged; the check prints
+   `os.loadavg()`. The verdict is an exported function with a negative
+   control.
+3. **The walk's port 3919 (decision 52).** (a): `run.js` asks the OS for a
+   free port and passes `--port <n>` to `walk.js`, which already reads it;
+   `walk.js` is not edited (its row is beta.10's stories 40 to 44).
+4. **T3's paired statistic (decision 4 of 2026-11-09).** (a): not added in
+   `0.5.0-beta.9`. The budget fixture keeps C2's difference of medians with
+   61 rounds; P10's re-measure uses the corpus runner, which T3 does not
+   involve; the paired statistic is an option for beta.10's timing work.
+5. **Where the "superseded" note for the two `includeTheme` passages goes
+   (decision 9 of 2026-11-13).** (a): in the record and as one item of this
+   story's own CHANGELOG subsection naming both headings; the two older
+   passages are not edited (§7: append-only).
+6. **Where "What changes for you" lives.** (a): a new `### What changes for
+   you` as the first subsection of the beta.9 section, copied verbatim into
+   the record; no other story's text is edited.
+7. **The playground lockfile (D19).** (a): `npm install --package-lock-only`
+   in the playground, the diff limited to `packages["../uxdsl"]`, `npm ci`
+   there exit 0, and the `[repo]` check `LOCK-pg`.
+8. **The gate's leftovers (decisions 4, 26 and 40).** (a): `packAndInstall`'s
+   directory and B7-15a's `uxdsl-1.0-upgrade-before-` directory are removed
+   when the process exits 0 and kept, their paths printed, otherwise
+   (`packages/uxdsl/test/helpers/temporary-directory.js`'s process-exit
+   mode), and `verify:1.0` runs through `node scripts/tmpdir-guard.js`, so a
+   leftover fails the gate.
+9. **G2's CI evidence.** (a): the record carries the gate PR's CI run and
+   lists the `feat/beta9` → `main` PR's run as an owner check; no workflow
+   change.
+10. **Scope of G5's bump commit.** (a): the version only; the CHANGELOG date
+    and the record's status are the owner's post-publish edits, listed in the
+    record.

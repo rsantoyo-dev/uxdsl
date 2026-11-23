@@ -555,9 +555,9 @@ edit `bin/uxdsl.js`).
 | `scripts/verify-docs-update.js` | 11, 12, 13, 21, 34 |
 | `scripts/agent-guide.test.js` | 25, 51, 52 |
 | `fixtures/release-1.0/run.js` | 02, 13, 14, 20, 26, 17, 30, 91, 31, 38, 92 (91 before 31 and 38, by decision 1 of 2026-11-23) |
-| `fixtures/release-1.0/verdicts.test.js` | 14, 25, 26, 17, 38, 66 |
+| `fixtures/release-1.0/verdicts.test.js` | 14, 25, 26, 17, 91, 38, 66 |
 | `fixtures/sass-corpus/run.js`, `run.test.js`, `README.md`, `.gitignore` | 10, 20, 23, 25, 66 (`run.test.js`) |
-| `packages/playground-nextjs/**` | 20, 21, 22, 16, 26, 30, 33, 34, 35, 36, 19, 40, 41, 42, 43 |
+| `packages/playground-nextjs/**` | 20, 21, 22, 16, 26, 30, 91 (`package-lock.json` only), 33, 34, 35, 36, 19, 40, 41, 42, 43 |
 | `fixtures/playground-browser/**` (MIG-B9-42 and 43: `walk.js`) | 40, 41, 42, 43, 44 |
 | `package.json`, `package-lock.json` (root and `packages/uxdsl`) | 01, 02, 10, 12, 13, 21 (root `package.json`), 25, 91 |
 | `packages/uxdsl/README.md` (the docs guard asks almost every code story to touch it) | every code story (append-only, one sentence per story; MIG-B9-26 and 27 also rewrite passages their §11 names, and MIG-B9-28 rewrites the sentence at lines 1550–1553 on `f855765` if `windows-latest` shows the on-disk case, by decision 20 of 2026-11-10) |
@@ -575,6 +575,7 @@ edit `bin/uxdsl.js`).
 | `fixtures/mig-b2-03-cli-init/**` | 20, 22, 25, 66 |
 | `packages/_deprecated/shims.test.js`, `fixtures/release-1.0/audit-lock.test.js` | 25, 66 |
 | `.github/workflows/ci.yml` | 28, 66 |
+| `fixtures/lib/tarball-consumer.js` | 91 |
 
 The rows that name MIG-B9-16, MIG-B9-17 and MIG-B9-24 to 29 follow the Owns
 and Shares of their story files, written on 2026-11-10 (MIG-B9-17's made
