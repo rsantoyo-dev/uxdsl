@@ -10,6 +10,9 @@
 // `postcss` peer itself, and the optional `vite`/`webpack` peers are left out.
 // `extra` packs further local package directories into the same install (the
 // deprecation shims, for instance) after `uxdsl`.
+//
+// The install directory is removed when the process exits 0 and kept, its path
+// printed on stderr, when it exits with any other code.
 
 const fs = require('node:fs');
 const os = require('node:os');
@@ -17,6 +20,7 @@ const path = require('node:path');
 const assert = require('node:assert/strict');
 const { createRequire } = require('node:module');
 const { execFileSync } = require('node:child_process');
+const { removeWhenDone } = require('../../packages/uxdsl/test/helpers/temporary-directory');
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
 const PACKAGE_DIR = path.join(REPO_ROOT, 'packages', 'uxdsl');
@@ -37,7 +41,7 @@ function packPackage(cwd, destination, run) {
  * @returns {{ dir: string, run: Function, write: Function, req: NodeRequire, version: string, tarball: string, pack: object }}
  */
 function packAndInstall({ tmpPrefix = 'uxdsl-tarball-consumer-', consumerPkg, extra = [] } = {}) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), tmpPrefix));
+  const dir = removeWhenDone(fs.mkdtempSync(path.join(os.tmpdir(), tmpPrefix)));
   const run = (cmd, args, cwd = dir) => execFileSync(cmd, args, { cwd, encoding: 'utf8', stdio: 'pipe', timeout: 180000 });
   const write = (file, value) => {
     const full = path.join(dir, file);

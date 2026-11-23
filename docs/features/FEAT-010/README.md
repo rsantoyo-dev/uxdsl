@@ -223,7 +223,7 @@ its wave can run in parallel with its siblings, within §7.
 | MIG-B9-24 | [The plugin's fixed per-build costs](MIG-B9-24-plugin-fixed-costs.md) | 2 | — | S | 20, 21 | Merged (PR #102) |
 | MIG-B9-18 | [The codemod's directive-argument rewrite is complete in one run](MIG-B9-18-codemod-directive-arguments.md) | 3 | — | S | 29 | Merged (PR #91) |
 | MIG-B9-30 | [Breakpoint media queries: `@media (--lg)`](MIG-B9-30-breakpoint-blocks.md) | 3 | DEC-07 | M | 13 | Merged (PR #104) |
-| MIG-B9-91 | [The gate and the release record](MIG-B9-91-gate-and-release.md) | 7 | DEC-03 | M | every story merged into `feat/beta9` at `6cdadaf`, 28 included (decision 1 of 2026-11-23) | Draft (re-baseline on `6cdadaf`, decision 1 of 2026-11-23) |
+| MIG-B9-91 | [The gate and the release record](MIG-B9-91-gate-and-release.md) | 7 | DEC-03 | M | every story merged into `feat/beta9` at `6cdadaf`, 28 included (decision 1 of 2026-11-23) | In review (PR #106) |
 | MIG-B9-31 | [Scoped palettes reach every composite](MIG-B9-31-scoped-palettes.md) | 3 | DEC-08 | M | 13 | Ready (moved to `0.5.0-beta.10` by decision 1 of 2026-11-23) |
 | MIG-B9-32 | [One inheritance rule for roles: `extends`](MIG-B9-32-custom-roles.md) | 3 | DEC-09 | S | 34 | Ready (moved to `0.5.0-beta.10` by decision 1 of 2026-11-23) |
 | MIG-B9-33 | [Typography `extends`](MIG-B9-33-typography-extends.md) | 3 | DEC-10 | S | 13 | Ready (moved to `0.5.0-beta.10` by decision 1 of 2026-11-23) |
@@ -555,12 +555,12 @@ edit `bin/uxdsl.js`).
 | `scripts/verify-docs-update.js` | 11, 12, 13, 21, 34 |
 | `scripts/agent-guide.test.js` | 25, 51, 52 |
 | `fixtures/release-1.0/run.js` | 02, 13, 14, 20, 26, 17, 30, 91, 31, 38, 92 (91 before 31 and 38, by decision 1 of 2026-11-23) |
-| `fixtures/release-1.0/verdicts.test.js` | 14, 25, 26, 17, 38, 66 |
+| `fixtures/release-1.0/verdicts.test.js` | 14, 25, 26, 17, 91, 38, 66 |
 | `fixtures/sass-corpus/run.js`, `run.test.js`, `README.md`, `.gitignore` | 10, 20, 23, 25, 66 (`run.test.js`) |
-| `packages/playground-nextjs/**` | 20, 21, 22, 16, 26, 30, 33, 34, 35, 36, 19, 40, 41, 42, 43 |
+| `packages/playground-nextjs/**` | 20, 21, 22, 16, 26, 30, 91 (`package-lock.json` only), 33, 34, 35, 36, 19, 40, 41, 42, 43 |
 | `fixtures/playground-browser/**` (MIG-B9-42 and 43: `walk.js`) | 40, 41, 42, 43, 44 |
 | `package.json`, `package-lock.json` (root and `packages/uxdsl`) | 01, 02, 10, 12, 13, 21 (root `package.json`), 25, 91 |
-| `packages/uxdsl/README.md` (the docs guard asks almost every code story to touch it) | every code story (append-only, one sentence per story; MIG-B9-26 and 27 also rewrite passages their §11 names, and MIG-B9-28 rewrites the sentence at lines 1550–1553 on `f855765` if `windows-latest` shows the on-disk case, by decision 20 of 2026-11-10) |
+| `packages/uxdsl/README.md` (the docs guard asks almost every code story to touch it) | every code story (append-only, one sentence per story; MIG-B9-26 and 27 also rewrite passages their §11 names, and MIG-B9-28 rewrites the sentence at lines 1550–1553 on `f855765` if `windows-latest` shows the on-disk case, by decision 20 of 2026-11-10; MIG-B9-91 corrects four sentences its release review found, recorded in its §15) |
 | `packages/uxdsl/src/typography.ts` | 21, 31, 33 |
 | `packages/uxdsl/src/language.ts` | 04, 21, 30, 31 |
 | `packages/uxdsl/src/entries/engine.ts` | 21, 36 |
@@ -575,6 +575,7 @@ edit `bin/uxdsl.js`).
 | `fixtures/mig-b2-03-cli-init/**` | 20, 22, 25, 66 |
 | `packages/_deprecated/shims.test.js`, `fixtures/release-1.0/audit-lock.test.js` | 25, 66 |
 | `.github/workflows/ci.yml` | 28, 66 |
+| `fixtures/lib/tarball-consumer.js` | 91 |
 
 The rows that name MIG-B9-16, MIG-B9-17 and MIG-B9-24 to 29 follow the Owns
 and Shares of their story files, written on 2026-11-10 (MIG-B9-17's made

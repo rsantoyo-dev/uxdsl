@@ -2,7 +2,7 @@
 
 UXDSL is a design-system-oriented CSS dialect with compiler + runtime tooling.
 
-## One package: `uxdsl` (next release: 0.5.0-beta.9)
+## One package: `uxdsl` (0.5.0-beta.9: this branch's release candidate, not published yet)
 
 ```bash
 npm i -D uxdsl

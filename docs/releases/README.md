@@ -5,7 +5,7 @@ verified (and what was not), and how it was published.
 
 | Version | Date | Record |
 | --- | --- | --- |
-| `uxdsl@0.5.0-beta.9` | not published | [0.5.0-beta.9.md](0.5.0-beta.9.md) — the first release of the one package, `uxdsl`. |
+| `uxdsl@0.5.0-beta.9` | release candidate, not published | [0.5.0-beta.9.md](0.5.0-beta.9.md) — the first release of the one package, `uxdsl`. |
 | `0.5.0-beta.8` | 2026-10-08 | [0.5.0-beta.8.md](0.5.0-beta.8.md) — the last release of the five former packages. |
 | `0.5.0-beta.7` | never published | Its record became [0.5.0-beta.9.md](0.5.0-beta.9.md). |
 | `0.5.0-beta.6` | 2026-09-23 | [0.5.0-beta.6.md](0.5.0-beta.6.md) |

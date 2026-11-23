@@ -55,7 +55,8 @@ export function findThemeConfigPath(dir: string): string | null {
     if (fs.existsSync(full)) {
       throw new Error(
         `${full}: theme files named ${former} are no longer read. Rename it to ${current} ` +
-        '(a computed theme), or move the object into uxdsl.theme.json; the contents stay the same.'
+        '(a computed theme), or move the object into uxdsl.theme.json. A file that exports { theme, references } exports ' +
+        'the theme itself and moves references to uxdsl.config.cjs.'
       );
     }
   }
