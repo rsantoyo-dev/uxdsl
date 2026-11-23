@@ -223,7 +223,7 @@ its wave can run in parallel with its siblings, within §7.
 | MIG-B9-24 | [The plugin's fixed per-build costs](MIG-B9-24-plugin-fixed-costs.md) | 2 | — | S | 20, 21 | Merged (PR #102) |
 | MIG-B9-18 | [The codemod's directive-argument rewrite is complete in one run](MIG-B9-18-codemod-directive-arguments.md) | 3 | — | S | 29 | Merged (PR #91) |
 | MIG-B9-30 | [Breakpoint media queries: `@media (--lg)`](MIG-B9-30-breakpoint-blocks.md) | 3 | DEC-07 | M | 13 | Merged (PR #104) |
-| MIG-B9-91 | [The gate and the release record](MIG-B9-91-gate-and-release.md) | 7 | DEC-03 | M | every story merged into `feat/beta9` at `6cdadaf`, 28 included (decision 1 of 2026-11-23) | Draft (re-baseline on `6cdadaf`, decision 1 of 2026-11-23) |
+| MIG-B9-91 | [The gate and the release record](MIG-B9-91-gate-and-release.md) | 7 | DEC-03 | M | every story merged into `feat/beta9` at `6cdadaf`, 28 included (decision 1 of 2026-11-23) | In review (PR #106) |
 | MIG-B9-31 | [Scoped palettes reach every composite](MIG-B9-31-scoped-palettes.md) | 3 | DEC-08 | M | 13 | Ready (moved to `0.5.0-beta.10` by decision 1 of 2026-11-23) |
 | MIG-B9-32 | [One inheritance rule for roles: `extends`](MIG-B9-32-custom-roles.md) | 3 | DEC-09 | S | 34 | Ready (moved to `0.5.0-beta.10` by decision 1 of 2026-11-23) |
 | MIG-B9-33 | [Typography `extends`](MIG-B9-33-typography-extends.md) | 3 | DEC-10 | S | 13 | Ready (moved to `0.5.0-beta.10` by decision 1 of 2026-11-23) |

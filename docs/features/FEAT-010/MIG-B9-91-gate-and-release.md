@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 7 |
 | Decision gate | DEC-03 (revised 2026-11-04: option (b), two releases; revised 2026-11-23: this story gates `0.5.0-beta.9`, with every story merged into `feat/beta9` at `6cdadaf`, and MIG-B9-92 gates `0.5.0-beta.10`) |
-| Status | In progress (re-baselined on `6cdadaf`, 2026-11-23, §15) |
+| Status | In review (PR #106) |
 | Size | M |
 | Depends on | every story merged into `feat/beta9` at `6cdadaf`, MIG-B9-28 (CI on Windows) included (decision 1 of 2026-11-23, §15) |
 | Blocks | the owner's publish of `0.5.0-beta.9` |
@@ -167,11 +167,11 @@ Figures are pasted from the logs.
 | --- | --- | --- |
 | G1 | `npm run verify:1.0` on `3267c93`: the 74 checks of `6cdadaf` under their ids plus `I-7` and `LOCK-pg`; DROPPED names `B3-e (beta.8)` and `UX-12 (beta.8)`; DELEGATED's external line names the Press Craftor evidence | "76/76 automated checks passed." |
 | G2, local | the same run, alone, 18:50:03–18:56:22 UTC, load 6.78 → 5.95 | exit 0; its `TMPDIR` held 0 entries afterwards |
-| G2, CI | the gate PR's run | pending: the gate PR's run, recorded when it finishes |
+| G2, CI | the gate PR's run | green: [run 45244860590](https://github.com/rsantoyo-dev/uxdsl/actions/runs/45244860590) of PR #106 on `09849f3` (the merge into `feat/beta9`), 19:03–19:20 UTC: `npm test` success (1,727 tests, 1,713 pass, 0 fail, 14 skipped); `verify:1.0 (one tarball, real Chrome)` success, "76/76 automated checks passed." (`UX-10` x1.80, load 1.31); `npm test (uxdsl, Windows)` success, with `test/cli/watch-mode.test.js` run and reported as its named exclusion ("exit 1: node --test test/cli/watch-mode.test.js (excluded from the Windows gate)") |
 | G3 | `docs/releases/0.5.0-beta.9.md` rewritten from the logs; `node --test scripts/docs-provenance.test.js scripts/version-mentions.test.js scripts/docs-shape.test.js` | exit 0, 16 tests, 16 pass |
 | G4 | CHANGELOG heading "0.5.0-beta.9 — unreleased"; `README.md` "(0.5.0-beta.9: this branch's release candidate, not published yet)"; releases index "release candidate, not published" | T2 above |
 | G5 | `chore/after-beta9-publish`, one commit, pushed, no PR (§15, "Delivery of 2026-11-23") | see there |
-| AC1 | the gate (above) and CI | local exit 0; CI pending: the gate PR's run, recorded when it finishes |
+| AC1 | the gate (above) and CI | local exit 0; CI green: [run 45244860590](https://github.com/rsantoyo-dev/uxdsl/actions/runs/45244860590) of PR #106 on `09849f3` (the merge into `feat/beta9`), 19:03–19:20 UTC: `npm test` success (1,727 tests, 1,713 pass, 0 fail, 14 skipped); `verify:1.0 (one tarball, real Chrome)` success, "76/76 automated checks passed." (`UX-10` x1.80, load 1.31); `npm test (uxdsl, Windows)` success, with `test/cli/watch-mode.test.js` run and reported as its named exclusion ("exit 1: node --test test/cli/watch-mode.test.js (excluded from the Windows gate)") |
 | AC2 | the record | every G3 section, figures from the logs |
 | AC3 | `node scripts/release.js --version 0.5.0-beta.9 --tag latest --dry-run --skip-build` | exit 0, "uxdsl: 299.8KB / 300KB budget — ok", "Release complete." |
 | AC4 | `npm test` on `3267c93` | exit 0 on `3267c93`: the 29 `node --test` runs it holds report 1,727 tests, 1,718 pass, 0 fail, 9 skipped (the base `6d38d19`: 1,718, 1,709, 0, 9), and its other steps (parity, the CLI `init` fixture, the generated-artifact checks) exit 0; `scripts/tmpdir-guard.js` found its temporary directory empty |
@@ -448,4 +448,4 @@ override any of them. None changes the release cut or publishes anything.
   install in Press Craftor; its prebuilt platform package is installed and
   nothing failed. Recorded for the documentation review.
 
-**G5, the bump commit.** Pending: prepared on this branch's last commit, after the CI run is recorded.
+**G5, the bump commit.** Prepared after this block's commit, on it: `chore/after-beta9-publish`, one commit setting `0.5.0-beta.9.dev` in `packages/uxdsl/package.json`, its lockfile (`version`, `packages[""].version`) and the playground lockfile's `packages["../uxdsl"].version`; pushed with no pull request, never merged by an agent. Its SHA and the results of `npm test` and the playground's `npm ci` on it are in PR #106's conversation, since a commit cannot name the one built on it. `semver` 7.8.5 (`packages/uxdsl/node_modules`) orders it as decided: `0.5.0-beta.9.dev` is valid, after `0.5.0-beta.9` and before `0.5.0-beta.10`, while `0.5.0-beta.10-dev` is after `0.5.0-beta.10` (the negative control).
