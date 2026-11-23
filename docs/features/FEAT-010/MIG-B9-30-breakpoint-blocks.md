@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 3 |
 | Decision gate | DEC-07 (decided 2026-10-23, amended: `@media (--<breakpoint>)`, not `@lg { … }`) |
-| Status | Ready |
+| Status | In review (PR #104) |
 | Size | M |
 | Depends on | MIG-B9-13 |
 | Blocks | MIG-B9-40, MIG-B9-55, MIG-B9-62, MIG-B9-65 |
@@ -153,7 +153,10 @@ messages are in §7.
   this one) is not refused. The message lists the breakpoints usable in
   `@media` (the theme's, without the base) and a "did you mean" over those
   and the stylesheet's own definitions (`(--lgg)` → `"(--lg)"`); there is no
-  edit-distance threshold for the error. It is located at the token. The
+  edit-distance threshold for the error. It is located at the token with
+  `uxdsl/postcss` alone; through `compile()` at the `@media` rule's line and
+  column, mapped through the Sass stage (as are the media forms of
+  `UXD_BREAKPOINT_CONTEXT`). The
   function form's message is unchanged. While one is pending, the compilation's
   warnings wait, as for a held Sass construct.
 - **B6 — The base breakpoint and other contexts** (`UXD_BREAKPOINT_CONTEXT`).
@@ -219,7 +222,7 @@ messages are in §7.
   query with no warning. Documented, and pinned by a test.
 
 Must stay byte-identical: every output whose `@media` preludes hold no
-`(--name)` (parity oracles are not re-recorded); the theme CSS; the
+`--` (parity oracles are not re-recorded); the theme CSS; the
 Bootstrap corpus's bytes and warnings. Must stay: the entries' export lists
 (`test/entries.test.js`); MIG-B9-24's pins (each theme engine once per
 compilation, the reference pass skipping when nothing can be checked, no
@@ -243,7 +246,10 @@ message; `LANGUAGE_COMPLETIONS.directives` and `.functions`.
   step returns at once when none was collected. It applies regexes to
   preludes only and parses no value. The theme's generated nodes are
   inserted later, so they are never collected.
-- Only the `(--<name>)` token is replaced (`/\(\s*--([A-Za-z0-9_-]+)\s*\)/g`),
+- Only the `(--<name>)` media feature is replaced
+  (`/(?<![\w-])\(\s*--([A-Za-z0-9_-]+)\s*\)/g`: a `(` that no name
+  character precedes, so `var(--x)`, `env(--x)` and `theme(--x)` are not
+  media features),
   with `minWidthQuery(px)`, the helper the responsive expansion's two media
   sites also call. A comment inside the prelude (`raws.params`) gets the same
   replacement in its raw text. The cheap guard is `params.includes('--')`:
@@ -378,13 +384,201 @@ Branch `feat/b9-30-breakpoint-blocks`. Commit:
 
 ## 14. Closure record
 
-To be filled in the delivering PR.
+- **PR:** #104, `feat/b9-30-breakpoint-blocks` → `feat/beta9`. BASE `6b8e3a9`
+  (the merge of PR #102). While the delivery ran, `origin/feat/beta9` moved
+  to `461116b` (PR #101, MIG-B9-28, CI on Windows); it was merged into the
+  branch as `8528a5b` (one conflict, `packages/uxdsl/CHANGELOG.md`, where
+  both stories had added their subsection at the top of
+  `## 0.5.0-beta.9 — unreleased`: both kept whole, no line removed).
+  Machine: macOS 27.0, Node v20.19.0, npm 11.21.1, Chrome 158.0.8127.37 at
+  the default path (157 for the implementers' runs of 2026-11-16), Dart
+  Sass 1.107.0, PostCSS 8.5.31. Load averages were 4–11; another workflow
+  shared the machine.
+- **Commits:** `7040177` (contract rewritten to DEC-07 as amended),
+  `81e2b95`, `83cc035`, `e1d7285`, `a61cea8`, `38cdf88` (the engine half),
+  `4faa22b`, `c7f39e8`, `0c2e5cf`, `c5a42ac`, `7c809f8` (the playground,
+  metadata, release gate and documentation half), `8137555` and `c6a37cd`
+  (the review's fixes), `8528a5b` (the merge of `feat/beta9`), and the
+  closure commit that adds this record.
+- **Failing first.** Every behavior was run red against the build of the
+  commit before it; §15's two implementation blocks quote each failure
+  (on BASE: 9 of 12 of `breakpoint-blocks.test.js` and
+  `compiler-structure.test.js`, e.g. `'@media (--md) { .a { color: red } }'`
+  where `'@media (min-width: 768px) { … }'` was expected). The review's
+  fixes were proven with mutants of the built plugin, each failing exactly
+  one test (15 pass / 1 fail) and passing unmutated (16 / 16): four for the
+  `OnceExit` conditions and the held warnings (CT-1), the unbounded token
+  regex (CT-2/RB-1), the warning that quoted each definition's own query
+  (RB-2/DE-3), the base chosen by name (DE-5), and the `OnceExit`
+  re-check's regex (RR-1); the capability and doc-example patterns' mutants
+  back to `7c809f8` fail 8/1 and 24/1 (RR-2).
+- **Criterion to test:**
+  - AC1 → `breakpoint-blocks.test.js` (16 tests, T1–T13 and the review's
+    three): B1/B3 T1, T2, T13; B2 T3, T4; B3 T5, T12; B4 T8, T7; B5 T6, T9
+    and the `OnceExit` test; B6 T7 (with the zero-width `base` theme case);
+    B7 T11; chain order T9; held construct T10; dashed name in a function
+    the CT-2 test. Must stay: T14 (`plugin-work-per-compilation.test.js`),
+    T15 (`compiler-structure.test.js`), `postcss-chain.test.js`,
+    `entries.test.js`, `no-silent-output.test.js` unchanged and green.
+  - AC2 → the two greps.
+  - AC3 → T23: the walk, and the second implementer's compare.
+  - AC4 → T18 (`language.test.js`), T19 (`grammar.test.js`, 2), T20
+    (`fixtures/vscode-extension/run.js`).
+  - AC5 → `npm test`; `verify:1.0` with T22 (S-8, `verdicts.test.js`, 2).
+  - B9 → T16 (catalog and coverage tests see `UXD_BREAKPOINT_SHADOWED`
+    asserted by T8); B10 → T2, T21 (`capability-matrix.test.js`, 2); B11 →
+    T17 (`doc-examples.test.js`, 2).
+- **The deliverer's runs on `c6a37cd`** (2026-11-23, `TMPDIR` a scratch
+  directory, 0 entries left after each run):
+  - `npm --prefix packages/uxdsl run build`: exit 0.
+  - **AC1:** `node --test` of `breakpoint-blocks`, `diagnostics-catalog`,
+    `diagnostics-coverage`, `language`, `plugin-work-per-compilation`,
+    `compiler-structure`, `postcss-chain`, `entries` and
+    `no-silent-output` (11:21, load 8.86): exit 0, 148 pass, 0 fail.
+  - **AC4:** `npm run generate:language` exit 0, then
+    `node scripts/generate-language-artifacts.js --check` exit 0, tree
+    clean; `node fixtures/vscode-extension/run.js` exit 0, "PASS", with
+    "ok - the packaged grammar carries breakpointMedia and injects it into
+    the @media header and the property list".
+  - `node fixtures/parity/run.js` (never `--update`): exit 0, "PASS: 10
+    parity case(s)"; `git diff --exit-code 6b8e3a9 --
+    fixtures/parity/expected` exit 0.
+  - `npm run verify:doc-examples`: exit 0, "78 examples and 24 theme
+    excerpts checked across 101 documentation files."
+    `node scripts/generate-agent-guide.js --check`: exit 0.
+  - **AC5:** `npm test` (11:22–11:28, load 8.15 → 9.40): exit 0, 1708
+    tests, 1707 pass, 0 fail, 1 skipped (MIG-B9-11's corpus test, which
+    needs `UXDSL_SASS_CORPUS`, as on BASE); 52 log lines name
+    `MIG-B9-30:`.
+  - `npm --prefix packages/playground-nextjs run uxdsl:build`: exit 0,
+    "unchanged src/app/uxdsl.css"; `git status` clean. Against BASE the
+    file differs by SideNav's rewritten comment (its
+    `@media (min-width: 1024px)` block byte-identical) and the
+    `/docs/breakpoints` demo's rules (one `@media (min-width: 480 | 768 |
+    1024 | 1280px)` per chip): 71 lines added, 3 removed.
+    `node packages/playground-nextjs/scripts/capture-capabilities.js
+    --check`: exit 0, "Captured CLI and compiler output is up to date."
+  - **AC2:** the grep prints exactly
+    `packages/playground-nextjs/src/app/not-found.uxdsl:61:@media
+    (min-width: 600px) {`; `grep -q "(--lg)" …/SideNav.uxdsl` exits 0.
+  - **AC3:** `npm run verify:playground-browser`, run 1 (11:29–11:31, load
+    7.33 → 8.60): exit 1 after the 19 light routes,
+    `page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3919/` —
+    the `next start` server went away mid-walk, not a page failure (the
+    walk's port is fixed at 3919 and another workflow's gate ran on the
+    machine; follow-up 7). Re-run (11:38–11:42, load 6.93 → 7.22): exit 0,
+    "PASS: no console errors, no UXDSL warnings, no unresolved var(),
+    visible keyboard focus, contrast page = Node.", 380 pages, 2240
+    focusable elements, 19 routes × 2 schemes × 10 widths (1023 and 1024
+    included), its six negative controls caught. The compare was the
+    second implementer's, on `7c809f8` (§15): no difference outside
+    `/docs/breakpoints` (5,328 records: the new demo and "write / get"
+    example), `/docs/language` (3,635: example text), `/docs/surfaces`
+    (647) and `/docs/introduction` (355) (prose wording), and
+    `/docs/diagnostics` (20: the reworded `UXD_DIRECTIVE_CONTEXT`
+    capture); none in the header or the SideNav column at any width. No
+    file under `packages/playground-nextjs` changed after `7c809f8`, and
+    the build above leaves `uxdsl.css` and `examples.json` unchanged, so
+    it was not repeated.
+  - **AC5:** `npm run verify:1.0` (the full gate, walk included), run 1
+    (11:31–11:38, load 8.60 → 9.47): exit 1, 73/74, `FAIL UX-10 reference
+    validation stays near-linear — doubling cost x3.18` (a timing under
+    load; `S-8 ok`, `B7-17E` walk PASS). Re-run (11:42–11:49, load 7.22 →
+    6.21): exit 0, "74/74 automated checks passed. PASS: the 1.0 gate
+    (automated portion) for uxdsl@0.5.0-beta.9.", `UX-10 … x2.31 per
+    doubling`, `S-8 ok` ("@media (--lg) compiled to @media
+    (min-width: 1024px) with the flat role; UXD_BREAKPOINT_SHADOWED at
+    src/a.uxdsl:1:1, (--lg) compiled to (min-width: 900px); src/a.uxdsl:4:1
+    UXD_BREAKPOINT_UNKNOWN, did you mean "(--lg)""). Each run left five
+    tarball-consumer directories in `TMPDIR` by design; they were removed.
+  - `node fixtures/sass-corpus/run.js --no-timing-budget` (Mon Nov 23
+    11:49:21 EST 2026, load 6.03 7.38 8.55): exit 0, 276,926 bytes,
+    `byte-identical: true`, 21 warnings, the five checks ok; Dart Sass
+    median 369 ms, `compile()` 450 ms, 1.22x.
+  - `node --test --test-concurrency=1
+    packages/uxdsl/test/performance/*.test.js` (11:49:32, load 5.53): exit
+    0, 1 pass.
+  - `node fixtures/mig-b9-23-compile-budget/run.js --base <a fresh build of
+    6b8e3a9 in the scratch directory>`, last and alone (11:49:56–11:52:37,
+    load 6.08 → 7.21): exit 0, "All checks ok."; the corpus equals BASE's
+    css, map, dependencies and warnings in the three `sourceMap` modes
+    (276,926 bytes; inline 791,522; 87 dependencies; 21 warnings); the
+    large-directory check +1.5 ms (planted control +147.7 ms). The first
+    attempt exited 2 before measuring anything: the implementer's BASE
+    build had been emptied by the machine's temporary-file cleaner
+    (`has no dist/entries/index.js: build it first`), so BASE was archived
+    and built again.
+- **On the merged head** (`8528a5b`'s tree): `npm --prefix packages/uxdsl
+  run build` exit 0; `npm test` (11:54–11:59, load 10.30 → 6.31) exit 0,
+  1718 tests, 1709 pass, 0 fail, 9 skipped (MIG-B9-28's win32-only tests
+  and the corpus test); `npm run verify:doc-examples` exit 0; the
+  pre-commit hook (`verify:docs`, the playground's `next build`) passed.
+  The merge brought CI, test and documentation files only (no file under
+  `src`), so the browser walk, `verify:1.0`, the corpus and the budget were
+  not repeated on it; CI runs `npm test` and `verify:1.0` on the PR.
+- **The implementers' and fixers' runs** are in §15 ("Implementation,
+  engine half", "Implementation, playground, metadata and documentation
+  half") and in the review's record below: `npm test` exit 0 before each
+  of the 13 commits (1681 on BASE → 1697 → 1703, then the fixers' runs at
+  load 45–54 and 7–12); corpus 276,926 bytes and 21 warnings every run,
+  BASE 1.30x, 1.31x, 1.31x, 1.34x against the branch 1.32x, 1.32x, 1.40x,
+  1.29x (2026-11-16, loads 3.7–7.6); the budget all ok twice (−1.2 ms,
+  +2.9 ms); the plugin alone on Bootstrap's compiled CSS: BASE 45.19 /
+  44.90 ms, branch 44.66 / 44.71 ms (medians, load 7.08), outputs
+  identical; `verify:1.0 -- --skip-playground-walk` 73/73 with `S-8 ok`;
+  the walk exit 0. The first fixer's gate run timed out in
+  `capture-capabilities.js --check` under load ("timed out waiting for the
+  first build") and passed on the re-run; both are recorded.
+- **Contract as delivered, where it differs from the rewritten §5 and §7**
+  (each line corrected in place, old and new text in §15's delivery
+  block):
+  - B5's location: at the token with `uxdsl/postcss` alone; through
+    `compile()` at the `@media` rule's line and column (the Sass stage
+    map's granularity). Owner flag, answered (a).
+  - "Must stay byte-identical": outputs whose `@media` preludes hold no
+    `--`, not no `(--name)`: a bare `@media --lg` is
+    `UXD_BREAKPOINT_CONTEXT` by design Q12. Owner flag, answered (a).
+  - §7's token regex has a left boundary, `(?<![\w-])\(\s*--…\)`:
+    `var(--x)`, `env(--x)` and `theme(--x)` in a prelude are not media
+    features and are left as written (review CT-2/RB-1); the grammar, the
+    capability pattern and the doc-example harness follow it.
+  - `UXD_BREAKPOINT_SHADOWED` names what `(--bp)` compiles to: the last
+    definition's query, `all`/`not all` for `true`/`false` (review
+    RB-2/DE-3); for one definition the text is §7's.
+  - The F1 message names the declaration's own property and the prelude's
+    breakpoint (`(padding: xs(…) lg(…))`); `UXD_BREAKPOINT_UNKNOWN`'s catalog
+    fix says a plugin before or after `uxdsl/postcss` (DE-4).
+- **Review and outcome.** Three lenses (contract-tests, rewrite-behavior,
+  docs-evidence), then a mutation re-review. Blocking: CT-1 (B5's
+  `OnceExit` conditions and held warnings untested: four surviving
+  mutants) and RR-1 (the `OnceExit` re-check's boundary untested). Should
+  fix: CT-2/RB-1 (`var(--lg)` in a prelude rewritten to
+  `var(min-width: 1024px)`, `var(--gutter)` rejected), DE-1 (compile.md and
+  AGENTS.md said `compile()` changes nothing else in Sass's output), DE-2
+  (the byte-identity wording), CT-3 (B5's location). All fixed in
+  `8137555` and `c6a37cd` with tests that fail on their mutants; RR-2 and
+  the nits DE-3, DE-4, DE-5 fixed; CT-3, CT-4, CT-5 and DE-6 recorded by
+  this closure. Not applied: RB-2's part (c) and the F1 advice under a
+  project `@custom-media` (follow-up 4).
+- **Not run, and why:** highlighting in a real VS Code with the VSIX
+  installed (release-gate item B7-12, the owner's); `snapshot.js`'s
+  interactions (they time out on BASE too; follow-up 6); a new browser
+  compare (the playground is unchanged since the one recorded); the
+  browser walk, `verify:1.0`, the corpus and the budget on the merged head
+  (no source change came with the merge; CI runs `verify:1.0`).
+- **Owner steps:** review and merge PR #104 into `feat/beta9`; override
+  any flag answered as recommended (§15, "Owner flags of 2026-11-16" and
+  the delivery block); check `UXD_BREAKPOINT_SHADOWED`'s catalog entry and
+  the reworded `UXD_DIRECTIVE_CONTEXT` text; the VS Code check (B7-12);
+  patch Press Craftor after beta.9 (D17; the delivery block lists its
+  queries).
 
 ## 15. Findings and follow-ups
 
 - Owner's call recorded here: `not-found.uxdsl`'s 600 px threshold moves to
   `@md` (768 px) by default; keeping 600 px would need an allowlisted
-  `@media` in MIG-B9-43.
+  `@media` in MIG-B9-43. (Superseded by the owner decisions of 2026-10-23:
+  `not-found.uxdsl` keeps its 600px.)
 
 ### Review of 2026-10-11 (apply before implementing)
 
@@ -973,3 +1167,135 @@ check +2.9 ms (its planted control +141.9 ms).
 5. `fixtures/playground-browser/snapshot.js`'s interactions time out on
    BASE `6b8e3a9` (the Density card's Edit button is not visible), so a
    snapshot needs `--no-interactions` today.
+
+### Delivery of 2026-11-23
+
+**New facts.**
+
+1. `origin/feat/beta9` moved from `6b8e3a9` to `461116b` (PR #101,
+   MIG-B9-28) after the pull request was opened; it was merged as
+   `8528a5b`. The only conflict was the CHANGELOG, where both stories had
+   put their subsection first under `## 0.5.0-beta.9 — unreleased`; both
+   are kept whole. MIG-B9-28's Windows job now runs the package's suites,
+   this story's tests included.
+2. The walk's `next start` server answers on a fixed port, 3919. With
+   another workflow's gate on the machine, the first walk lost its server
+   after the 19 light routes (`net::ERR_CONNECTION_REFUSED`); the re-run
+   passed, as did the walk inside `verify:1.0`.
+3. UX-10 ("reference validation stays near-linear") failed once at load
+   8.6–9.5 (x3.18 per doubling) and passed on the re-run (x2.31).
+4. The implementer's BASE build in the scratch directory had been emptied
+   by the machine's temporary-file cleaner between 2026-11-16 and today
+   (directories kept, files gone), so the budget needed a fresh build of
+   `6b8e3a9`.
+5. B6's "the rule follows the width, not the name" is pinned by T7's
+   zero-width `base` theme case (xs at 320px, the default `xs(` values
+   written as `base(` so the theme validates): `(--base)` is
+   `UXD_BREAKPOINT_CONTEXT` and `(--xs)` compiles to `(min-width: 320px)`.
+   The mutant that chooses the base by name fails it.
+
+**Stale or wrong lines corrected at delivery** (old → new):
+
+- §5 B5: "edit-distance threshold for the error. It is located at the
+  token. The" → "… It is located at the token with `uxdsl/postcss` alone;
+  through `compile()` at the `@media` rule's line and column, mapped
+  through the Sass stage (as are the media forms of
+  `UXD_BREAKPOINT_CONTEXT`). The" (review CT-3/DE-5; owner flag 1 below).
+- §5 "Must stay": "every output whose `@media` preludes hold no
+  `(--name)`" → "… hold no `--`" (review DE-2; owner flag 2 below; T14,
+  the CHANGELOG and `migration.md` already read so).
+- §7: "Only the `(--<name>)` token is replaced
+  (`/\(\s*--([A-Za-z0-9_-]+)\s*\)/g`)," → "Only the `(--<name>)` media
+  feature is replaced (`/(?<![\w-])\(\s*--([A-Za-z0-9_-]+)\s*\)/g`: a `(`
+  that no name character precedes, so `var(--x)`, `env(--x)` and
+  `theme(--x)` are not media features)," (review CT-2/RB-1, fixed in
+  `8137555`).
+- §15's first bullet ("`not-found.uxdsl`'s 600 px threshold moves to `@md`
+  (768 px) by default; …") is kept and gains "(Superseded by the owner
+  decisions of 2026-10-23: `not-found.uxdsl` keeps its 600px.)" (review
+  DE-6).
+
+**AC3's declared differences, route by route** (review CT-4): the compare
+differs on five routes and nowhere else: `/docs/breakpoints` (the new
+block-form demo and "write / get" example), `/docs/language` (its examples
+now use `@media (--md)`), `/docs/surfaces` and `/docs/introduction` (one
+phrase each, no longer "a directive is not responsive"), and
+`/docs/diagnostics` (the reworded `UXD_DIRECTIVE_CONTEXT` capture is a
+wider code block). SideNav, the header and every other route are
+unchanged at every width, 1023 and 1024 included.
+
+**Owner flags raised at review and delivery**, answered with the
+recommended option under the standing instruction of 2026-11-10 ("fusiona
+todo.. y preguntas como recomendadas, y sgeuimos"), reaffirmed on
+2026-11-13 ("haz todo como recomendado"); the owner may override them.
+
+1. **Where `UXD_BREAKPOINT_UNKNOWN` is located through `compile()`.** B5
+   said "at the token"; through `compile()` it is the `@media` rule's line
+   and column (pinned at `x.uxdsl:2:1` by T6 and `src/a.uxdsl:4:1` by
+   S-8). (a) Qualify B5 and §7: the token with the plugin alone, the rule
+   through `compile()`. (b) Point `compile()` at the token (the Sass map
+   gives no token-level positions). (c) Leave B5 and record a finding.
+   **Taken: (a).**
+2. **The byte-identity line.** §5 promised identical bytes for every
+   output whose preludes hold no `(--name)`, false for a bare
+   `@media screen and --lg`, now `UXD_BREAKPOINT_CONTEXT` (design Q12).
+   (a) Reword to "hold no `--`". (b) Name the exception after the existing
+   wording. (c) Drop the bare-name check. **Taken: (a).**
+3. **"In that build"** (review CT-5). DEC-07 says a project `@custom-media
+   --<bp>` "replaces the theme's `--<bp>` in that build". (a) Read it as
+   "in that compilation: the stylesheet and the partials it loads", since a
+   custom media is scoped to the CSS it is written in and stylesheets
+   compiled apart cannot see it, so in a multi-entry CLI build a definition
+   in one entry does not reach the others. (b) Carry a definition across
+   every entry of a build (a cross-entry state the CLI, Vite and webpack do
+   not have, and that the plugin alone cannot have). **Taken: (a)**, as
+   the warning, B4, AGENTS.md and the README already say ("stylesheets
+   compiled apart keep the theme's").
+
+**Press Craftor** (read-only, decision D17 of 2026-11-04). A grep of
+`/Users/ricardosantoyo/Documents/projects/story-radar` at `2b92723`
+(`.env*`, `node_modules`, `.next` and `.git` excluded; nothing modified).
+Its theme (`uxdsl.config.js`, read by `uxdsl.theme.config.cjs`) sets
+`xs 0, sm 640, md 768, lg 1024, xl 1280`, and it still depends on
+`postcss-uxdsl@0.5.0-beta.8`. Its eight `.uxdsl` sources hold ten
+hand-written `min-width` queries (the `*.generated.module.css` files and
+`src/app/uxdsl.css` are compiler output). Eight equal a theme breakpoint
+and could become `@media (--<bp>)` after beta.9:
+`draft-2-canvas.module.uxdsl:28` (lg), `:29` (xl), `:52` (lg), `:107`
+(sm), `:119` (xl), `:164` (xl), `radar-dashboard.module.uxdsl:3477` (lg)
+and `ui/primitives.module.uxdsl:84` (lg). Two are deliberate local
+thresholds to keep: `draft-2-canvas.module.uxdsl:196` (960px) and `:257`
+(900px). Its thirteen `max-width` queries (`639px`, `767px`, `1023px`,
+`1279px`, some with `(pointer: coarse)`) have no block form (§6) and
+stay. It holds no `@custom-media`, no `(--name)` and no `var(--x)` in any
+`@media` prelude, so nothing in it newly warns or fails, and its outputs
+stay byte-identical. The owner patches it after beta.9.
+
+**Follow-ups**, each with a proposed story:
+
+1. `(--lg)` in an `@import` media list is left as written on both paths, a
+   stylesheet no browser loads (owner flag F4 (a)). Proposed: a new
+   beta.10 story, MIG-B9-66, to make it `UXD_BREAKPOINT_CONTEXT` or
+   rewrite it, with the owner's call on byte identity.
+2. With `uxdsl/postcss` alone a responsive value in a literal `@media`
+   nested in a rule still prints a selector-less clone at the root
+   (BASE's bytes, F1 (b)). Proposed: a new beta.10 story, MIG-B9-67.
+3. With `uxdsl/postcss` alone only the file being compiled is seen, so a
+   `@custom-media` defined in another file is `UXD_BREAKPOINT_UNKNOWN`
+   there (documented); F2 (d), an option listing external custom-media
+   names, can be added later without breaking anyone. Proposed: MIG-B9-68.
+4. Message polish: the F1 message advises `lg(…)` even when a project
+   `@custom-media --lg` moved `(--lg)` (where `lg()` keeps the theme's
+   query), and `UXD_BREAKPOINT_SHADOWED` names an unwrapped query where a
+   compound prelude wraps it (the same condition). Proposed: MIG-B9-68.
+5. VS Code: completion of `--<bp>` inside an `@media` prelude, and
+   highlighting of `@ds-*` and `xs()` written inside a rule (VS Code's CSS
+   property list owns them). MIG-B9-55.
+6. `fixtures/playground-browser/snapshot.js`'s interactions time out on
+   BASE as on the branch (the Density card's Edit button is not visible),
+   so a compare needs `--no-interactions`. MIG-B9-91.
+7. The walk's fixed port 3919 is shared by concurrent gate runs on one
+   machine (fact 2). MIG-B9-91: a free port or a lock.
+8. UX-10's timing under load (fact 3), the known flake. MIG-B9-91.
+9. Press Craftor's eight queries above. The owner's patch after beta.9
+   (D17; MIG-B9-03's project).
