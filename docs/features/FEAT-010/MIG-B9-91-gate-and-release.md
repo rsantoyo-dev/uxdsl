@@ -156,25 +156,29 @@ checkout of `main`.
 ## 14. Closure record
 
 Delivered on `feat/b9-91-gate`, branched from `6d38d19` (`feat/beta9` at
-`6cdadaf` plus the owner decisions of 2026-11-23, PR #105). The gate ran on
-`3267c93`; the record and this closure are docs-only commits after it, so
-the tarball the gate verified is the one the branch carries. Environment:
+`6cdadaf` plus the owner decisions of 2026-11-23, PR #105), with
+`feat/beta9` at `ad79871` (PR #105 merged) merged in as `5949268`. The final
+gate ran on `d44252b`, after the release review's fixes (§15, "Delivery of
+2026-11-23 (review)"); the commits after it change no packaged file (the
+record, this story and the index), so the tarball the gate verified is the
+one the branch carries. The owner's publish step re-runs the gate on the
+`main` commit it publishes. Environment:
 macOS 27.0, MacBookPro18,3, Node v20.19.0, npm 11.21.1, Google Chrome
 158.0.8127.37; every run with `TMPDIR` in the session's scratch directory.
 Figures are pasted from the logs.
 
 | Criterion | Evidence | Result |
 | --- | --- | --- |
-| G1 | `npm run verify:1.0` on `3267c93`: the 74 checks of `6cdadaf` under their ids plus `I-7` and `LOCK-pg`; DROPPED names `B3-e (beta.8)` and `UX-12 (beta.8)`; DELEGATED's external line names the Press Craftor evidence | "76/76 automated checks passed." |
-| G2, local | the same run, alone, 18:50:03–18:56:22 UTC, load 6.78 → 5.95 | exit 0; its `TMPDIR` held 0 entries afterwards |
+| G1 | `npm run verify:1.0` on `d44252b`: the 74 checks of `6cdadaf` under their ids plus `I-7` and `LOCK-pg`; DROPPED names `B3-e (beta.8)` and `UX-12 (beta.8)`; DELEGATED's external line names the Press Craftor evidence | "76/76 automated checks passed." |
+| G2, local | the same run, with no other run of this delivery, 20:13:42–20:20:04 UTC, load 3.27 → 6.35; `UX-10` "x1.98 per doubling (fastest of 5 rounds: 1600 blocks 171 ms, 3200 blocks 339 ms; load 3.71 4.63 5.50)" (earlier: 76/76 on `3267c93`, 75/76 on `82b676d`) | exit 0; `ls -A` of its `TMPDIR` afterwards: 0 entries |
 | G2, CI | the gate PR's run | green: [run 45244860590](https://github.com/rsantoyo-dev/uxdsl/actions/runs/45244860590) of PR #106 on `09849f3` (the merge into `feat/beta9`), 19:03–19:20 UTC: `npm test` success (1,727 tests, 1,713 pass, 0 fail, 14 skipped); `verify:1.0 (one tarball, real Chrome)` success, "76/76 automated checks passed." (`UX-10` x1.80, load 1.31); `npm test (uxdsl, Windows)` success, with `test/cli/watch-mode.test.js` run and reported as its named exclusion ("exit 1: node --test test/cli/watch-mode.test.js (excluded from the Windows gate)") |
 | G3 | `docs/releases/0.5.0-beta.9.md` rewritten from the logs; `node --test scripts/docs-provenance.test.js scripts/version-mentions.test.js scripts/docs-shape.test.js` | exit 0, 16 tests, 16 pass |
 | G4 | CHANGELOG heading "0.5.0-beta.9 — unreleased"; `README.md` "(0.5.0-beta.9: this branch's release candidate, not published yet)"; releases index "release candidate, not published" | T2 above |
 | G5 | `chore/after-beta9-publish`, one commit, pushed, no PR (§15, "Delivery of 2026-11-23") | see there |
 | AC1 | the gate (above) and CI | local exit 0; CI green: [run 45244860590](https://github.com/rsantoyo-dev/uxdsl/actions/runs/45244860590) of PR #106 on `09849f3` (the merge into `feat/beta9`), 19:03–19:20 UTC: `npm test` success (1,727 tests, 1,713 pass, 0 fail, 14 skipped); `verify:1.0 (one tarball, real Chrome)` success, "76/76 automated checks passed." (`UX-10` x1.80, load 1.31); `npm test (uxdsl, Windows)` success, with `test/cli/watch-mode.test.js` run and reported as its named exclusion ("exit 1: node --test test/cli/watch-mode.test.js (excluded from the Windows gate)") |
 | AC2 | the record | every G3 section, figures from the logs |
-| AC3 | `node scripts/release.js --version 0.5.0-beta.9 --tag latest --dry-run --skip-build` | exit 0, "uxdsl: 299.8KB / 300KB budget — ok", "Release complete." |
-| AC4 | `npm test` on `3267c93` | exit 0 on `3267c93`: the 29 `node --test` runs it holds report 1,727 tests, 1,718 pass, 0 fail, 9 skipped (the base `6d38d19`: 1,718, 1,709, 0, 9), and its other steps (parity, the CLI `init` fixture, the generated-artifact checks) exit 0; `scripts/tmpdir-guard.js` found its temporary directory empty |
+| AC3 | `node scripts/release.js --version 0.5.0-beta.9 --tag latest --dry-run --skip-build`, on `d44252b` | exit 0, "uxdsl: 299.8KB / 300KB budget — ok", "Release complete."; the tarball 307,006 B packed, 90 files, 194 bytes to spare |
+| AC4 | `npm test` on `e090c28` (the package and gate of `d44252b`) | exit 0: the 29 `node --test` runs it holds report 1,728 tests, 1,719 pass, 0 fail, 9 skipped (on `3267c93`, before the review's fixes: 1,727, 1,718, 0, 9; the base `6d38d19`: 1,718, 1,709, 0, 9), and its other steps (parity, the CLI `init` fixture, the generated-artifact checks) exit 0; `scripts/tmpdir-guard.js` found its temporary directory empty |
 | D9 (P10) | `node fixtures/sass-corpus/run.js` three times, alone, at `3e1e269` (the package as at `3267c93`) | exit 0 each; byte-identical; 1.19x, 1.28x, 1.47x; load 4.04, 4.84, 4.93 |
 | The budget fixture | `node fixtures/mig-b9-23-compile-budget/run.js --base <a build of 6cdadaf>` at `3e1e269` | exit 0, "All checks ok."; T3 −2.4 ms |
 | D10 | `engines` in `packages/uxdsl/package.json` and its lockfile (written by `npm install --package-lock-only`); `I-7` and its verdict tests | gate `I-7` ok |
@@ -456,3 +460,96 @@ override any of them. None changes the release cut or publishes anything.
   remade on top of it.
 
 **G5, the bump commit.** Prepared after this block's commit, on it: `chore/after-beta9-publish`, one commit setting `0.5.0-beta.9.dev` in `packages/uxdsl/package.json`, its lockfile (`version`, `packages[""].version`) and the playground lockfile's `packages["../uxdsl"].version`; pushed with no pull request, never merged by an agent. Its SHA and the results of `npm test` and the playground's `npm ci` on it are in PR #106's conversation, since a commit cannot name the one built on it. `semver` 7.8.5 (`packages/uxdsl/node_modules`) orders it as decided: `0.5.0-beta.9.dev` is valid, after `0.5.0-beta.9` and before `0.5.0-beta.10`, while `0.5.0-beta.10-dev` is after `0.5.0-beta.10` (the negative control).
+
+### Delivery of 2026-11-23 (review)
+
+Three reviews of the delivery (the evidence, the gate's code, the
+documentation as a reader follows it), each finding reproduced before it was
+fixed, on `feat/b9-91-gate` after merging `feat/beta9` at `ad79871` (PR
+#105, the owner decisions of 2026-11-23) as `5949268`. Owner flags arising
+here are answered with the recommended option under the owner's standing
+instruction of 2026-11-10, reaffirmed on 2026-11-13; the owner may override
+any of them. None changes the release cut or publishes anything.
+
+**Fixed.**
+
+- **Flag 12 — `UX-10` could not catch work quadratic in the declarations
+  (a contract change: decision 26 of 2026-11-15 kept 400 and 800 blocks).**
+  The theme adds about 700 declarations that do not grow with the blocks, so
+  at 400 and 800 blocks the declarations grow by 1.70 and quadratic work by at
+  most 2.89, under the threshold of 3. Reproduced with a copy of `dist` whose
+  `inspectReferences` scans the definitions three times per consumer: clean
+  x1.75 at 400/800 and x2.02 at 1600/3200; planted, PASS x2.51 at 400/800
+  (the compile 2.6 to 3.8 times slower) and FAIL x3.64 at 1600/3200. Options:
+  (a) measure at 1600 and 3200 blocks, same five interleaved rounds, minima and
+  threshold, a few seconds more; (b) keep 400/800 and record the blind spot
+  for `0.5.0-beta.10`'s timing work. **Recommended and taken: (a)**; the gate
+  check is in this story's Owns and the gate was re-run anyway. The negative
+  control now models the real input (689 + 4 declarations per block, work
+  quadratic in them): it fails at the sizes and, as the test states, would
+  pass at 400/800. Mutation: sizes back to 400/800, three tests fail.
+- **`freePort`'s control passed with a fixed port.** Its test now holds 3919
+  (when free) and the port `freePort` just returned, and requires another;
+  `return Promise.resolve(3919)` fails it.
+- **`LOCK-pg` ignored `peerDependenciesMeta`.** Added to the compared fields,
+  with keys sorted at every depth; a manifest without `vite`'s entry and an
+  entry with `optional: false` are both rejected; dropping the field from
+  `LOCK_FIELDS` fails two tests. (`bin` stays out: npm writes
+  `./bin/uxdsl.js` as `bin/uxdsl.js`.)
+- **The package README** (in the tarball): the 60-second examples go into
+  `src/styles.uxdsl`, not the generated entry `generate-entry` overwrites,
+  and compile to the CSS shown "formatted by Dart Sass"; `uxdsl` itself needs
+  Node 20.19; the `@ds-button` example names its hover, keyboard focus,
+  selected and disabled states; the silent-typo example is `sourceMaps` (a
+  config with it builds and writes no map), since `includeTheme` is gone and
+  `outfile` alone fails ("No output file configured").
+- **The message of a theme file under a former name** said "the contents
+  stay the same", false for a file exporting `{ theme, references }`; it now
+  says what that file does. `test/config.test.js` (27 pass) and the gate's
+  `P4-rename` match its unchanged first sentence.
+- **The CHANGELOG's subsection** said "above" for two subsections below it.
+- **The record:** the status and §14 no longer say the published tarball is
+  "from the same commit" (the gate ran on `d44252b`; the owner's step 3
+  re-runs it on the `main` commit it publishes); the owner steps say an
+  agent runs none of steps 2 to 7, start step 2 with merging PR #106, and
+  install as CI does (the root, three packages, the CSS Modules fixture, the
+  build, the consumer fixture), which `npm test` and `verify:1.0` need; the
+  migration gains the codemod without a theme file, `@theme` blocks (Press
+  Craftor's own test holds one), a generated entry, the marker in a `builds`
+  project and the config's `@type` import, and says that `migration.md`'s
+  "To 1.0" first paragraph describes the rename alone; the P10 and budget
+  rows name `3e1e269`; the `[postpublish]` shim line is read against owner
+  step 4; StackBlitz is wave 5; the "Theme files", "Fonts" and "Editor"
+  rows; two known limitations (the CLI's byte count, the wrapper's `Once`)
+  and the compatibility `Once` in the moved list. The evidence file quotes
+  `pc-05` exactly and says the `wc -c` sizes were read at run time and not
+  saved (the documentation review read the same seven on a fresh clone).
+
+**Not fixed here, for the owner's documentation review** (owner step 1 lists
+them): `migration.md`'s "To 1.0" first paragraph (the file is frozen until
+MIG-B9-52; the record corrects it for this move); `init`'s pointer to
+"Editor support" in the README, where only a link of that name is (changing
+it changes `bin/uxdsl.js`, `test/cli/init.test.js` and the site's captured
+CLI output); the CLI's `built … (N bytes)` counting characters, already
+MIG-B9-38's (fact 4, `0.5.0-beta.10`); npm 11's `install-scripts` warning.
+
+**Routed.** The compatibility `Once` (flag 11) is routed by MIG-B9-92's
+re-baseline, and the record's moved list says so. The verdicts leftover of
+the delivery block is explained: the helper keeps a test file's directories
+when one of its tests fails, by design (`temporary-directory.js`); a passing
+run of `verdicts.test.js` with an empty `TMPDIR` left 0 entries, failing
+(mutated) runs left theirs. Nothing to fix.
+
+**Re-run after the fixes.** `npm test` on `e090c28` exit 0 (29 runs: 1,728
+tests, 1,719 pass, 0 fail, 9 skipped; the guard's directory empty);
+`verify:doc-examples` "78 examples and 24 theme excerpts checked across 101
+documentation files."; T2 16/16; both `--check` exit 0; `release.js` dry run
+exit 0, "uxdsl: 299.8KB / 300KB budget — ok"; `npm pack --dry-run`
+307,006 B packed, 1,131,674 unpacked, 90 files (194 bytes to spare);
+`verify:1.0` on `d44252b`: exit 0, 2026-11-23 20:13:42–20:20:04 UTC, "76/76 automated checks passed." and "PASS: the 1.0 gate (automated portion) for uxdsl@0.5.0-beta.9. The items listed above remain."; header "uxdsl-0.5.0-beta.9.tgz (307006 bytes packed, 1131674 unpacked, 90 files)"; `UX-10` "x1.98 per doubling (fastest of 5 rounds: 1600 blocks 171 ms, 3200 blocks 339 ms; load 3.71 4.63 5.50)"; `LOCK-pg` names `peerDependenciesMeta`; `B7-17E` on port 49785; `ls -A` of its `TMPDIR` afterwards: 0 entries. P10 was not re-run: no commit after
+`3e1e269` changes the compile path.
+
+**G5.** `chore/after-beta9-publish` recreated on this branch's final package
+state, on the commit that adds this block, and force-pushed (that branch
+only); its SHA, `npm test` and the playground's `npm ci` on it are in PR
+#106's conversation, since a commit cannot name the one built on it.
