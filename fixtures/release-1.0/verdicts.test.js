@@ -11,7 +11,7 @@ const { pathToFileURL } = require('node:url');
 const {
   assertAuthorLocated, assertSassFramed, assertLocatedWarning, assertNearMissSuggested, assertDebugWarned, assertIsolationWarned, S7_ISOLATION_LINE, webpackAdapterRecord, assertWebpackAdapter, viteAdapterRecord, assertViteAdapter, assertMissingImport,
   S8_BLOCK_SOURCE, S8_SHADOWED_SOURCE, S8_UNKNOWN_SOURCE, assertBreakpointBlock, assertBreakpointShadowed, assertBreakpointUnknown,
-  assertNearLinear, assertEnginesCovered, assertLockEntryMatches, freePort, DROPPED, installedManifests,
+  assertNearLinear, UX10_SIZES, assertEnginesCovered, assertLockEntryMatches, freePort, DROPPED, installedManifests,
 } = require('./run');
 const { PACKAGE_DIR, REPO_ROOT } = require('../lib/tarball-consumer');
 const net = require('node:net');
@@ -345,16 +345,30 @@ const STALE_PLAYGROUND_LOCK_ENTRY = JSON.parse('{"version":"0.5.0-beta.9","licen
 const readJson = (file) => JSON.parse(fs.readFileSync(file, 'utf8'));
 
 test('MIG-B9-91: UX-10 accepts near-linear timings, and a load spike in one round, by the fastest of the interleaved rounds', () => {
-  assert.match(assertNearLinear({ 400: [100, 110, 105, 120, 101], 800: [200, 230, 210, 205, 240] }, [7.5, 7.4, 7.5]), /^x2\.00 per doubling \(fastest of 5 rounds: 400 blocks 100 ms, 800 blocks 200 ms; load 7\.50 7\.40 7\.50\)$/);
+  assert.deepEqual(UX10_SIZES, [1600, 3200]);
+  assert.match(assertNearLinear({ 1600: [100, 110, 105, 120, 101], 3200: [200, 230, 210, 205, 240] }, [7.5, 7.4, 7.5]), /^x2\.00 per doubling \(fastest of 5 rounds: 1600 blocks 100 ms, 3200 blocks 200 ms; load 7\.50 7\.40 7\.50\)$/);
   // One round under load (x3.27) among quiet ones.
-  assert.match(assertNearLinear({ 400: [100, 102, 101, 99, 100], 800: [327, 205, 210, 201, 204] }), /^x2\.03 per doubling/);
+  assert.match(assertNearLinear({ 1600: [100, 102, 101, 99, 100], 3200: [327, 205, 210, 201, 204] }), /^x2\.03 per doubling/);
 });
 
 test('MIG-B9-91: UX-10 rejects quadratic timings, unequal or missing rounds and a NaN (negative control)', () => {
-  assert.throws(() => assertNearLinear({ 400: [100, 110, 105, 120, 101], 800: [400, 440, 420, 480, 404] }), { message: /^doubling cost x4\.00 \(fastest of 5 rounds: 400 blocks 100 ms, 800 blocks 400 ms\)$/ });
-  assert.throws(() => assertNearLinear({ 400: [100, 110], 800: [200] }), { message: /2 and 1 rounds/ });
+  assert.throws(() => assertNearLinear({ 1600: [100, 110, 105, 120, 101], 3200: [400, 440, 420, 480, 404] }), { message: /^doubling cost x4\.00 \(fastest of 5 rounds: 1600 blocks 100 ms, 3200 blocks 400 ms\)$/ });
+  assert.throws(() => assertNearLinear({ 1600: [100, 110], 3200: [200] }), { message: /2 and 1 rounds/ });
   assert.throws(() => assertNearLinear({}), { message: /0 and 0 rounds/ });
-  assert.throws(() => assertNearLinear({ 400: [100], 800: [Number.NaN] }), { message: /doubling cost xNaN/ });
+  assert.throws(() => assertNearLinear({ 1600: [100], 3200: [Number.NaN] }), { message: /doubling cost xNaN/ });
+});
+
+test('MIG-B9-91: UX-10 catches work quadratic in the declarations of its real input, theme included, at its sizes and not at 400 and 800 (negative control)', () => {
+  // UX-10's input: four declarations per block plus the theme's 689, which do
+  // not grow with the blocks (2289 at 400 blocks, 3889 at 800).
+  const declarations = (blocks) => 689 + 4 * blocks;
+  const quadratic = (blocks) => 20 + (declarations(blocks) ** 2) / 1e5;
+  const timingsAt = ([small, large]) => ({ [small]: [quadratic(small)], [large]: [quadratic(large)] });
+  assert.throws(() => assertNearLinear(timingsAt(UX10_SIZES)), { message: /^doubling cost x3\.\d\d \(fastest of 1 rounds: 1600 blocks/ });
+  // The sizes it replaced let the same work through: the blind spot the sizes close.
+  const ratioAt = ([small, large]) => quadratic(large) / quadratic(small);
+  assert.ok(ratioAt([400, 800]) < 3, `x${ratioAt([400, 800]).toFixed(2)} at 400 and 800 blocks`);
+  assert.ok(ratioAt(UX10_SIZES) > 3, `x${ratioAt(UX10_SIZES).toFixed(2)} at ${UX10_SIZES.join(' and ')} blocks`);
 });
 
 test('MIG-B9-91: I-7 accepts this checkout\'s uxdsl with the engines.node of its installed sass, chokidar and readdirp', () => {
@@ -378,7 +392,7 @@ test('MIG-B9-91: I-7 rejects a uxdsl without engines.node and a range wider than
 test('MIG-B9-91: LOCK-pg accepts the playground lockfile\'s ../uxdsl entry as this checkout records it', () => {
   const manifest = readJson(path.join(PACKAGE_DIR, 'package.json'));
   const lock = readJson(path.join(REPO_ROOT, 'packages/playground-nextjs/package-lock.json'));
-  assert.equal(assertLockEntryMatches(manifest, lock.packages['../uxdsl']), `the playground lockfile records uxdsl@${manifest.version} with packages/uxdsl/package.json's dependencies, devDependencies, peerDependencies, optionalDependencies and engines`);
+  assert.equal(assertLockEntryMatches(manifest, lock.packages['../uxdsl']), `the playground lockfile records uxdsl@${manifest.version} with packages/uxdsl/package.json's dependencies, devDependencies, peerDependencies, peerDependenciesMeta, optionalDependencies and engines`);
 });
 
 test('MIG-B9-91: LOCK-pg rejects a stale entry, a missing entry and another version (negative control)', () => {
@@ -387,20 +401,34 @@ test('MIG-B9-91: LOCK-pg rejects a stale entry, a missing entry and another vers
   assert.throws(() => assertLockEntryMatches(manifest, undefined), { message: /no packages\["\.\.\/uxdsl"\] entry/ });
   const lock = readJson(path.join(REPO_ROOT, 'packages/playground-nextjs/package-lock.json'));
   assert.throws(() => assertLockEntryMatches(manifest, { ...lock.packages['../uxdsl'], version: '0.5.0-beta.8' }), { message: /differs from packages\/uxdsl\/package\.json in version;/ });
+  const { vite, ...onlyWebpack } = manifest.peerDependenciesMeta;
+  assert.ok(vite, 'the manifest marks vite optional');
+  assert.throws(() => assertLockEntryMatches({ ...manifest, peerDependenciesMeta: onlyWebpack }, lock.packages['../uxdsl']), { message: /differs from packages\/uxdsl\/package\.json in peerDependenciesMeta;/ });
+  assert.throws(() => assertLockEntryMatches(manifest, { ...lock.packages['../uxdsl'], peerDependenciesMeta: { ...manifest.peerDependenciesMeta, vite: { optional: false } } }), { message: /in peerDependenciesMeta;/ });
 });
 
 test('MIG-B9-91: the walk\'s port is one the OS reports free, never one a listener holds', async () => {
-  const held = net.createServer();
-  await new Promise((resolve) => held.listen(0, resolve));
+  const listen = (port) => new Promise((resolve, reject) => {
+    const server = net.createServer();
+    server.once('error', reject);
+    server.listen(port, () => resolve(server));
+  });
+  const close = (server) => new Promise((resolve) => server.close(resolve));
+  const held = [];
   try {
-    const port = await freePort();
-    assert.equal(typeof port, 'number');
-    assert.notEqual(port, held.address().port);
-    const probe = net.createServer();
-    await new Promise((resolve, reject) => { probe.once('error', reject); probe.listen(port, resolve); });
-    await new Promise((resolve) => probe.close(resolve));
+    // The walk's former fixed port, held when nothing else holds it.
+    const fixed = await listen(3919).catch(() => null);
+    if (fixed) held.push(fixed);
+    const first = await freePort();
+    assert.equal(typeof first, 'number');
+    assert.notEqual(first, 3919);
+    // The port freePort just returned, now held: the next call must pick another.
+    held.push(await listen(first));
+    const second = await freePort();
+    assert.notEqual(second, first);
+    await close(await listen(second));
   } finally {
-    await new Promise((resolve) => held.close(resolve));
+    for (const server of held) await close(server);
   }
 });
 

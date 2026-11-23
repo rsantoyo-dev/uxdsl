@@ -85,24 +85,34 @@ const DROPPED = [
   ['UX-12 (beta.8)', '`--no-include-theme` really suppresses :root', 'the same removal: UX-12 now checks that `@uxdsl theme;` alone emits :root, and that without it a build emits none and warns once.'],
 ];
 
-/** Rounds of UX-10: 400 and 800 blocks compiled in alternating order, after a warm-up. */
+/** Rounds of UX-10: the two sizes compiled in alternating order, after a warm-up. */
 const UX10_ROUNDS = 5;
 
 /**
- * UX-10's verdict on `{ 400: [ms…], 800: [ms…] }`, one time per round for each
- * size: the ratio of the fastest 800-block compile to the fastest 400-block
- * one, which a load spike in some rounds cannot raise. Above 3 a doubling of
+ * UX-10's input sizes, in blocks of four declarations each. The theme adds
+ * about 700 declarations that do not grow with the blocks, so a small input
+ * hides superlinear work: at 400 and 800 blocks the declarations grow by
+ * 1.70, and work quadratic in them by at most 2.89, under the threshold of 3.
+ * At 1600 and 3200 they grow by 1.90, and the same work by 3.62.
+ */
+const UX10_SIZES = [1600, 3200];
+
+/**
+ * UX-10's verdict on `{ 1600: [ms…], 3200: [ms…] }` (UX10_SIZES), one time per
+ * round for each size: the ratio of the fastest compile of the larger input to
+ * the fastest of the smaller, which a load spike in some rounds cannot raise. Above 3 a doubling of
  * the input costs more than near-linear work, and the check fails. `load`, the
  * 1, 5 and 15 minute load averages, is printed with the result.
  */
 function assertNearLinear(timings, load) {
-  const small = timings[400] || [];
-  const large = timings[800] || [];
+  const [smallSize, largeSize] = UX10_SIZES;
+  const small = timings[smallSize] || [];
+  const large = timings[largeSize] || [];
   if (!small.length || small.length !== large.length) throw new Error(`timings for ${small.length} and ${large.length} rounds; expected the same number of each, at least one`);
   const fastestSmall = Math.min(...small);
   const fastestLarge = Math.min(...large);
   const growth = fastestLarge / fastestSmall;
-  const detail = `fastest of ${small.length} rounds: 400 blocks ${fastestSmall.toFixed(0)} ms, 800 blocks ${fastestLarge.toFixed(0)} ms${load ? `; load ${load.map((n) => n.toFixed(2)).join(' ')}` : ''}`;
+  const detail = `fastest of ${small.length} rounds: ${smallSize} blocks ${fastestSmall.toFixed(0)} ms, ${largeSize} blocks ${fastestLarge.toFixed(0)} ms${load ? `; load ${load.map((n) => n.toFixed(2)).join(' ')}` : ''}`;
   if (!(growth <= 3)) throw new Error(`doubling cost x${growth.toFixed(2)} (${detail})`);
   return `x${growth.toFixed(2)} per doubling (${detail})`;
 }
@@ -152,14 +162,14 @@ function installedManifests(root) {
 }
 
 /** The fields of packages/uxdsl/package.json that the playground lockfile's `../uxdsl` entry must record as they are. */
-const LOCK_FIELDS = ['version', 'dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies', 'engines'];
+const LOCK_FIELDS = ['version', 'dependencies', 'devDependencies', 'peerDependencies', 'peerDependenciesMeta', 'optionalDependencies', 'engines'];
 
-/** A field's value for comparison: an object with its keys sorted, an empty or missing one as null. */
+/** A field's value for comparison: objects at every depth with their keys sorted, an empty or missing one as null. */
 function lockComparable(value) {
   if (value === undefined || value === null) return null;
-  if (typeof value !== 'object') return value;
+  if (typeof value !== 'object' || Array.isArray(value)) return value;
   const keys = Object.keys(value).sort();
-  return keys.length ? Object.fromEntries(keys.map((key) => [key, value[key]])) : null;
+  return keys.length ? Object.fromEntries(keys.map((key) => [key, lockComparable(value[key])])) : null;
 }
 
 /**
@@ -1084,7 +1094,7 @@ async function main() {
       fs.rmSync(path.join(p.root, 'uxdsl.theme.cjs'));
       return `${report.failures.length} pairs, ${primary.length} on the overridden tone`;
     });
-    await check('UX-10', 'reference validation stays near-linear (the fastest of 5 interleaved rounds of 400 and 800 blocks)', async () => {
+    await check('UX-10', 'reference validation stays near-linear (the fastest of 5 interleaved rounds of 1600 and 3200 blocks)', async () => {
       const block = (i) => `.c-${i} { padding: density(2); color: palette(primary); background: palette(surface); border-radius: radius(2); }\n`;
       const timeFor = async (count) => {
         p.write(`src/perf-${count}.uxdsl`, `@uxdsl theme;\n${Array.from({ length: count }, (_, i) => block(i)).join('')}`);
@@ -1093,9 +1103,10 @@ async function main() {
         return Number(process.hrtime.bigint() - started) / 1e6;
       };
       await timeFor(200);
-      const timings = { 400: [], 800: [] };
+      const [smallSize, largeSize] = UX10_SIZES;
+      const timings = { [smallSize]: [], [largeSize]: [] };
       for (let round = 0; round < UX10_ROUNDS; round += 1) {
-        for (const count of round % 2 === 0 ? [800, 400] : [400, 800]) timings[count].push(await timeFor(count));
+        for (const count of round % 2 === 0 ? [largeSize, smallSize] : [smallSize, largeSize]) timings[count].push(await timeFor(count));
       }
       return assertNearLinear(timings, os.loadavg());
     });
@@ -1521,4 +1532,4 @@ async function main() {
 
 if (require.main === module) main().catch((error) => { console.error(error); process.exitCode = 1; });
 
-module.exports = { contrastSignature, exceptedSignature, contrastBaselineOf, assertContrastBaseline, auditLockfile, assertAuthorLocated, assertSassFramed, assertLocatedWarning, assertNearMissSuggested, assertDebugWarned, assertIsolationWarned, S7_ISOLATION_LINE, webpackAdapterRecord, assertWebpackAdapter, viteAdapterRecord, assertViteAdapter, assertMissingImport, mapIntegrityProblems, DROPPED, S8_BLOCK_SOURCE, S8_SHADOWED_SOURCE, S8_UNKNOWN_SOURCE, assertBreakpointBlock, assertBreakpointShadowed, assertBreakpointUnknown, assertNearLinear, assertEnginesCovered, assertLockEntryMatches, freePort, installedManifests };
+module.exports = { contrastSignature, exceptedSignature, contrastBaselineOf, assertContrastBaseline, auditLockfile, assertAuthorLocated, assertSassFramed, assertLocatedWarning, assertNearMissSuggested, assertDebugWarned, assertIsolationWarned, S7_ISOLATION_LINE, webpackAdapterRecord, assertWebpackAdapter, viteAdapterRecord, assertViteAdapter, assertMissingImport, mapIntegrityProblems, DROPPED, S8_BLOCK_SOURCE, S8_SHADOWED_SOURCE, S8_UNKNOWN_SOURCE, assertBreakpointBlock, assertBreakpointShadowed, assertBreakpointUnknown, assertNearLinear, UX10_SIZES, assertEnginesCovered, assertLockEntryMatches, freePort, installedManifests };

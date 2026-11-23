@@ -47,7 +47,7 @@ for the lockfile this package is built and tested from (release-gate checks
 `AUDIT` and `AUDIT-lock`). `sass` (Dart Sass, the pure-JavaScript package)
 arrives with `uxdsl` as a regular dependency and is loaded only when a file is
 compiled through Dart Sass, never by the PostCSS plugin used alone
-(`uxdsl/postcss`). Dart Sass declares Node 20.19 or later in its `engines`.
+(`uxdsl/postcss`). `uxdsl` and Dart Sass need Node 20.19 or later.
 
 `init` scaffolds a `uxdsl.config.cjs`, `src/styles.uxdsl` and the generated
 entry with its `uxdsl-theme.uxdsl` (no `uxdsl.theme.json`: the default theme is
@@ -259,8 +259,9 @@ names a story, a phase, a date or a release instead.
 
 ## See it in 60 seconds
 
-Everything below is real, verified UXDSL — write it into the entry file
-`init` created and it compiles exactly as shown.
+Everything below is real, verified UXDSL — write it into `src/styles.uxdsl`,
+the stylesheet `init` created, and it compiles to the CSS shown (formatted by
+Dart Sass).
 
 ### Responsive values, without writing a single media query
 
@@ -313,8 +314,8 @@ more on a bigger screen the way a real layout should.
 ```
 
 generates padding, radius, background, text color, border, shadow, and
-working `:hover`/selected states — all wired to `primary` from your
-palette. Add a plain CSS declaration below it to override just one
+working hover, keyboard focus, selected and disabled states — all wired
+to `primary` from your palette. Add a plain CSS declaration below it to override just one
 property; everything else stays generated. The host selector can be a
 comma-separated list, including one with functional pseudo-classes —
 `.btn:is(.a, .b) { @ds-button(...); }` generates
@@ -2107,7 +2108,7 @@ no document rather than silently doing nothing.
 ## Typed config and theme (`defineConfig`, `$schema`)
 
 Most UXDSL mistakes are typos, and they are made while writing configuration —
-where nothing used to help. `includeThem` and `palete` compile to *nothing at
+where nothing used to help. `sourceMaps` and `palete` compile to *nothing at
 all*, with no compile error, because an unknown key is simply not read (only
 the theme validator's unknown-family warning flags `palete`); `fontsize` and
 `focusVisible` do fail (`UXD_TYPO_FIELD`, `UXD_BUTTON_STATE`), but only once

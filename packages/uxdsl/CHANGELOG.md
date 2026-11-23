@@ -64,23 +64,29 @@ them. See `docs/releases/0.5.0-beta.9.md`.
   `Once(root, helpers)` itself fails with `plugin.Once is not a function`:
   call `plugin.prepare(result)` in your own `prepare(result)` and forward
   both listeners, `OnceExit` included (it judges what `Once` held). This
-  changed with "uxdsl/postcss in a PostCSS chain" above; the release
+  changed with "uxdsl/postcss in a PostCSS chain" below; the release
   candidate's check of a real project found it.
 
 #### Changed
 
 - **The two earlier passages of this section that describe `includeTheme`
   as current are superseded** by "The theme is emitted only at
-  `@uxdsl theme;`; `includeTheme` is removed" above: the bullet "`init`'s
+  `@uxdsl theme;`; `includeTheme` is removed" below: the bullet "`init`'s
   entry" in "The CLI, Vite and webpack on the Sass pipeline", and "Added:
   `@uxdsl theme;`". The Next.js setup is `'uxdsl/postcss': {}` in
   `postcss.config.js` plus `@uxdsl theme;` once in the global stylesheet.
 - **`npm run verify:1.0`** (the release gate, in this repository) checks the
   `engines` field against every installed package's, checks that the
   playground's lockfile records the package's dependencies, measures its
-  near-linearity check on the fastest of five interleaved rounds, gives the
-  playground walk a free port, and removes its temporary directories when it
-  passes.
+  near-linearity check on the fastest of five interleaved rounds of 1600 and
+  3200 blocks (at 400 and 800, the theme's own declarations hid work
+  quadratic in the declarations), gives the playground walk a free port, and
+  removes its temporary directories when it passes.
+- **A theme file under a former name** (`uxdsl.theme.config.*`) fails with a
+  message that also says what a file exporting `{ theme, references }` does:
+  export the theme itself and move `references` to `uxdsl.config.cjs`.
+  Before, it said "the contents stay the same", which is not so for that
+  file.
 
 #### Visual changes
 
