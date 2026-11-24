@@ -9,6 +9,7 @@ import {
   paletteFor,
   isInherited,
   roleGroups,
+  groupRoles,
   wouldCycle,
   patchFor,
   pathFor,
@@ -57,7 +58,7 @@ export default function PaletteFamilyEditor({ defaultFamily = 'primary' }: { def
   const mode: Mode = isDark ? 'dark' : 'light'
   const palette = useMemo(() => paletteFor(activeThemeData, mode), [activeThemeData, mode])
   // The roles are the families of the active theme's palette, in its order.
-  const families = useMemo(() => roleGroups(activeThemeData?.palette), [activeThemeData])
+  const families = useMemo(() => groupRoles(roleGroups(activeThemeData?.palette)), [activeThemeData])
   const [family, setFamily] = useState(defaultFamily)
   const variants = useMemo(() => Object.keys(activeThemeData?.palette?.[family] || {}), [activeThemeData, family])
   const [variant, setVariant] = useState(() => variants[0] || 'main')
@@ -144,18 +145,38 @@ export default function PaletteFamilyEditor({ defaultFamily = 'primary' }: { def
     >
       <div className="pfe">
         <div className="pfe__families" role="radiogroup" aria-label="Role">
-          {families.map((group: { family: string; keys: string[] }) => (
-            <button
-              key={group.family}
-              type="button"
-              role="radio"
-              aria-checked={family === group.family}
-              className="pfe__family"
-              onClick={() => chooseFamily(group.family)}
-            >
-              <span className={`pfe__dot ${fill(group.keys.includes(`${group.family}.main`) ? `${group.family}.main` : group.keys[0])}`} />
-              {group.family}
-            </button>
+          {families.map((group: { label: string; roles: Array<{ family: string; keys: string[] }> }) => (
+            <div key={group.label} className="pfe__group">
+              <span className="pfe__group-label">{group.label}</span>
+              <div className="pfe__group-roles">
+                {group.roles.map((role) => {
+                  const has = (variant: string) => role.keys.includes(`${role.family}.${variant}`)
+                  // The face: main with "Aa" in contrast; text on the canvas; otherwise the first variant.
+                  const faceKey = role.family === 'text' || !has('main') ? role.keys[0] : `${role.family}.main`
+                  const face = role.family === 'text'
+                    ? `pfe-fill--surface-main ${ink(faceKey)}`
+                    : `${fill(faceKey)} ${has('contrast') ? ink(`${role.family}.contrast`) : ''}`
+                  // The band shows the variants the face does not: light and dark, paper and subtle…
+                  const bands = role.keys.filter((key) => key !== faceKey && key !== `${role.family}.contrast`)
+                  return (
+                    <button
+                      key={role.family}
+                      type="button"
+                      role="radio"
+                      aria-checked={family === role.family}
+                      className="pfe__role"
+                      onClick={() => chooseFamily(role.family)}
+                    >
+                      <span className={`pfe__role-face ${face}`}>{role.family === 'text' || has('contrast') ? 'Aa' : ''}</span>
+                      <span className="pfe__role-strip" aria-hidden="true">
+                        {bands.map((key) => <span key={key} className={`pfe__role-band ${fill(key)}`} />)}
+                      </span>
+                      <span className="pfe__role-name">{role.family}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
           ))}
         </div>
 

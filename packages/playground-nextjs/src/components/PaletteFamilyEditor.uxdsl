@@ -81,27 +81,54 @@ $pfe-palette: (
 .pfe__families {
   display: flex;
   flex-wrap: wrap;
-  gap: space(1);
+  gap: density(3);
   grid-column: xs(1) lg(1 / -1);
 }
 
-.pfe__family {
-  display: inline-flex;
-  align-items: center;
+.pfe__group {
+  display: flex;
+  flex-direction: column;
   gap: space(1);
-  padding: space(1) space(2);
+}
+
+.pfe__group-label {
+  @ds-typo(caption);
+
+  color: palette(text.secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.pfe__group-roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: space(2);
+}
+
+/* A role as a swatch card: its main color with "Aa" in its contrast, a band per variant, its name. */
+.pfe__role {
+  display: flex;
+  flex-direction: column;
+  width: 5.75rem;
+  padding: 0;
+  overflow: hidden;
   border: border(1);
-  border-radius: radius(pill);
-  background: transparent;
+  border-radius: radius(2);
+  background: palette(surface.main);
   color: palette(text.primary);
   font: inherit;
-  font-size: 0.85rem;
+  text-align: left;
   cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: shadow(2);
+  }
 
   &[aria-checked="true"] {
-    border-color: palette(text.primary);
-    background: palette(surface.light);
-    font-weight: 600;
+    outline: 2px solid palette(text.primary);
+    outline-offset: 2px;
   }
 
   &:focus-visible {
@@ -110,11 +137,28 @@ $pfe-palette: (
   }
 }
 
-.pfe__dot {
-  width: 0.9rem;
-  height: 0.9rem;
-  border: border(1);
-  border-radius: radius(circle);
+.pfe__role-face {
+  display: flex;
+  align-items: flex-end;
+  height: 2.75rem;
+  padding: space(1) space(2);
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.pfe__role-strip {
+  display: flex;
+  height: 0.5rem;
+}
+
+.pfe__role-band {
+  flex: 1;
+}
+
+.pfe__role-name {
+  padding: space(1) space(2);
+  font-size: 0.8rem;
+  font-weight: 600;
 }
 
 .pfe__variants {

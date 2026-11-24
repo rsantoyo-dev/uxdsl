@@ -76,6 +76,31 @@ function roleGroups(palette) {
 }
 
 /**
+ * The roles grouped by what they are for, as the editor shows them. A family the
+ * theme has and no group names (one a project added) goes under "Other".
+ */
+const ROLE_GROUPS = [
+  { label: 'Brand', families: ['primary', 'secondary', 'tertiary'] },
+  { label: 'Status', families: ['success', 'info', 'warning', 'error'] },
+  { label: 'Canvas', families: ['surface', 'light', 'dark', 'neutral'] },
+  { label: 'Text and lines', families: ['text', 'divider', 'action'] },
+];
+
+function groupRoles(groups) {
+  const byFamily = new Map(groups.map((group) => [group.family, group]));
+  const placed = new Set();
+  const result = [];
+  for (const { label, families } of ROLE_GROUPS) {
+    const roles = families.filter((family) => byFamily.has(family)).map((family) => byFamily.get(family));
+    roles.forEach((role) => placed.add(role.family));
+    if (roles.length) result.push({ label, roles });
+  }
+  const other = groups.filter((group) => !placed.has(group.family));
+  if (other.length) result.push({ label: 'Other', roles: other });
+  return result;
+}
+
+/**
  * Whether writing `palette(target)` into `edited` would make a cycle: the
  * target, followed through its own `palette()` references, reaches `edited`.
  * The validator refuses a cycle anyway (UXD_REFERENCE_CYCLE); this lets the
@@ -145,6 +170,7 @@ module.exports = {
   paletteFor,
   isInherited,
   roleGroups,
+  groupRoles,
   wouldCycle,
   patchFor,
   pathFor,

@@ -6052,7 +6052,7 @@ input[type=range]::-moz-range-thumb:hover {
 .pfe__families {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--uxdsl__space__1);
+  gap: var(--uxdsl__density__3);
   grid-column: 1;
 }
 
@@ -6062,34 +6062,82 @@ input[type=range]::-moz-range-thumb:hover {
   grid-column: 1/-1;
 } }
 
-.pfe__family {
-  display: inline-flex;
-  align-items: center;
+.pfe__group {
+  display: flex;
+  flex-direction: column;
   gap: var(--uxdsl__space__1);
-  padding: var(--uxdsl__space__1) var(--uxdsl__space__2);
+}
+
+.pfe__group-label {
+  font-family: var(--uxdsl__typography__caption-font-family);
+  font-size: var(--uxdsl__typography__caption-font-size);
+  line-height: var(--uxdsl__typography__caption-line-height);
+  font-weight: var(--uxdsl__typography__caption-font-weight);
+  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+  color: var(--uxdsl__palette__text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.pfe__group-roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--uxdsl__space__2);
+}
+
+/* A role as a swatch card: its main color with "Aa" in its contrast, a band per variant, its name. */
+.pfe__role {
+  display: flex;
+  flex-direction: column;
+  width: 5.75rem;
+  padding: 0;
+  overflow: hidden;
   border: var(--uxdsl__border__1);
-  border-radius: 9999px;
-  background: transparent;
+  border-radius: var(--uxdsl__radius__2);
+  background: var(--uxdsl__palette__surface-main);
   color: var(--uxdsl__palette__text-primary);
   font: inherit;
-  font-size: 0.85rem;
+  text-align: left;
   cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease;
 }
-.pfe__family[aria-checked=true] {
-  border-color: var(--uxdsl__palette__text-primary);
-  background: var(--uxdsl__palette__surface-light);
-  font-weight: 600;
+.pfe__role:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--uxdsl__shadow__2);
 }
-.pfe__family:focus-visible {
+.pfe__role[aria-checked=true] {
+  outline: 2px solid var(--uxdsl__palette__text-primary);
+  outline-offset: 2px;
+}
+.pfe__role:focus-visible {
   outline: 2px solid var(--uxdsl__palette__primary-main);
   outline-offset: 2px;
 }
 
-.pfe__dot {
-  width: 0.9rem;
-  height: 0.9rem;
-  border: var(--uxdsl__border__1);
-  border-radius: 50%;
+.pfe__role-face {
+  display: flex;
+  align-items: flex-end;
+  height: 2.75rem;
+  padding: var(--uxdsl__space__1) var(--uxdsl__space__2);
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.pfe__role-strip {
+  display: flex;
+  height: 0.5rem;
+}
+
+.pfe__role-band {
+  flex: 1;
+}
+
+.pfe__role-name {
+  padding: var(--uxdsl__space__1) var(--uxdsl__space__2);
+  font-size: 0.8rem;
+  font-weight: 600;
 }
 
 .pfe__variants {

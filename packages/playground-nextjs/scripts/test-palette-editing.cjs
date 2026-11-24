@@ -32,6 +32,17 @@ test('the dark palette is modes.dark.palette over the light one, key by key', ()
   assert.equal(p.isInherited(theme, 'primary', 'light'), true);
 });
 
+test('roles are grouped by purpose, every family once, an unknown one under Other', () => {
+  const groups = p.roleGroups({ ...baseTheme.palette, brandish: { main: 'red' } });
+  const grouped = p.groupRoles(groups);
+  assert.deepEqual(grouped.map((g) => g.label), ['Brand', 'Status', 'Canvas', 'Text and lines', 'Other']);
+  const families = grouped.flatMap((g) => g.roles.map((r) => r.family));
+  assert.deepEqual([...families].sort(), groups.map((g) => g.family).sort());
+  assert.deepEqual(grouped.at(-1).roles.map((r) => r.family), ['brandish']);
+  // Control: with only known families there is no Other group.
+  assert.ok(!p.groupRoles(p.roleGroups(baseTheme.palette)).some((g) => g.label === 'Other'));
+});
+
 test('a link that would come back to the edited variant is a cycle', () => {
   const palette = { primary: { main: 'palette(secondary.main)', light: 'color(purple.500)' }, secondary: { main: 'palette(primary.light)' } };
   assert.equal(p.wouldCycle(palette, 'primary.light', 'primary.main'), true);
