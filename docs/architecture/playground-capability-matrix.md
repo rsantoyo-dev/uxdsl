@@ -47,7 +47,7 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | Capability | Requires | Level | Evidence |
 | --- | --- | --- | --- |
 | `ds-button` | live | live | `src/components/AIPrompt.uxdsl`, `src/components/BreakpointsEditor.uxdsl`, `src/components/CapabilityDocs.uxdsl` |
-| `ds-input` | live | live | `src/components/BreakpointsEditor.uxdsl`, `src/components/CapabilityDocs.uxdsl`, `src/components/DemoBorders.uxdsl` |
+| `ds-input` | live | live | `src/components/BreakpointsEditor.uxdsl`, `src/components/CapabilityDocs.uxdsl`, `src/components/ColorsEditor.uxdsl` |
 | `ds-surface` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/not-found.uxdsl`, `src/app/page.uxdsl` |
 | `ds-typo` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/not-found.uxdsl`, `src/app/page.uxdsl` |
 
@@ -92,7 +92,7 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | `colors` | live | live | `src/components/AgentGuidance.uxdsl`, `src/components/AppHeader.uxdsl`, `src/components/BreakpointEditor.uxdsl` |
 | `densities` | live | live | `src/app/app.uxdsl`, `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/not-found.uxdsl` |
 | `fonts` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/layout.uxdsl`, `src/app/not-found.uxdsl` |
-| `inputs` | live | live | `src/components/BreakpointsEditor.uxdsl`, `src/components/CapabilityDocs.uxdsl`, `src/components/DemoBorders.uxdsl` |
+| `inputs` | live | live | `src/components/BreakpointsEditor.uxdsl`, `src/components/CapabilityDocs.uxdsl`, `src/components/ColorsEditor.uxdsl` |
 | `modes` | live | live | `src/app/docs/theme/page.tsx`, `src/components/CodeBlock.tsx`, `src/components/ColorDocumentation.tsx` |
 | `palette` | live | live | `src/app/app.uxdsl`, `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/layout.uxdsl` |
 | `radii` | live | live | `src/app/app.uxdsl`, `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/not-found.uxdsl` |
@@ -109,7 +109,7 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | `button.flat` | live | live | `src/components/AIPrompt.uxdsl`, `src/components/DemoButtons.tsx`, `src/components/PaletteFamilyEditor.uxdsl` |
 | `button.outlined` | live | live | `src/components/AIPrompt.uxdsl`, `src/components/BreakpointsEditor.uxdsl`, `src/components/CapabilityDocs.uxdsl` |
 | `input.contained` | live | live | `src/components/InputDemo.tsx`, `src/components/RuntimeEngines.tsx` |
-| `input.outlined` | live | live | `src/components/BreakpointsEditor.uxdsl`, `src/components/CapabilityDocs.uxdsl`, `src/components/DemoBorders.uxdsl` |
+| `input.outlined` | live | live | `src/components/BreakpointsEditor.uxdsl`, `src/components/CapabilityDocs.uxdsl`, `src/components/ColorsEditor.uxdsl` |
 | `input.underline` | live | live | `src/components/InputDemo.tsx`, `src/components/RuntimeEngines.tsx` |
 | `surface.contained` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/not-found.uxdsl`, `src/components/CapabilityDocs.uxdsl` |
 | `surface.flat` | live | live | `src/components/DemoSurfaces.tsx`, `src/components/SideNav.uxdsl`, `src/components/SurfaceGrid.tsx` |

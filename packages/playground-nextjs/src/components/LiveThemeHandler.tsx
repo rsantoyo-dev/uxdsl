@@ -2,6 +2,7 @@
 
 import Tabs from './Tabs'
 import PaletteFamilyEditor from './PaletteFamilyEditor'
+import ColorsEditor from './ColorsEditor'
 import BreakpointsEditor from './BreakpointsEditor'
 import DensityEditor from './DensityEditor'
 import SpacingEditor from './SpacingEditor'
@@ -19,8 +20,12 @@ export default function LiveThemeHandler({ showcase = true }: { showcase?: boole
     <>
       {/* The showcase first: a small page in UXDSL alone, which every tab below changes. */}
       {showcase && <ThemeShowcase />}
-      <Tabs labels={['Palette', 'Breakpoints', 'Spacing / Density', 'JSON']}>
-        <PaletteFamilyEditor />
+      <Tabs labels={['Colors / Palette', 'Breakpoints', 'Spacing / Density', 'JSON']}>
+        {/* Two editors, one tab: the Palette draws from the Colors, so a shade edited above moves the roles below. */}
+        <div className="lth__stack">
+          <ColorsEditor />
+          <PaletteFamilyEditor />
+        </div>
         <BreakpointsEditor />
         {/* Two editors, one tab: Density is built from Spacing, so an edit above shows below. */}
         <div className="lth__stack">

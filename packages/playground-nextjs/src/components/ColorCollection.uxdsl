@@ -1,0 +1,48 @@
+/* The color collection (ColorCollection), shared by the Palette and Colors editors of the Live
+   theme handler. Every value is a UXDSL token; the literals left are layout and scrolling. */
+
+.ccl {
+  display: flex;
+  flex-direction: column;
+  gap: density(2);
+  max-height: space(16);
+  overflow-y: auto;
+}
+
+.ccl__row {
+  display: grid;
+  grid-template-columns: space(11) minmax(0, 1fr);
+  align-items: center;
+  gap: density(3);
+}
+
+.ccl__name {
+  @ds-typo(caption);
+
+  color: palette(text.secondary);
+}
+
+.ccl__swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: density(2);
+}
+
+.ccl__chip {
+  width: space(6);
+  height: space(6);
+  padding: density(0);
+  border: border(1);
+  border-radius: radius(1);
+  cursor: pointer;
+
+  &[aria-pressed="true"] {
+    outline: space(1) solid palette(text.primary);
+    outline-offset: space(1);
+  }
+
+  &:focus-visible {
+    outline: space(1) solid palette(primary.main);
+    outline-offset: space(1);
+  }
+}
