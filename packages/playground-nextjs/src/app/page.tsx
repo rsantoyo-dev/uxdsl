@@ -1,8 +1,10 @@
 import Link from 'next/link'
-import { ArrowRight, Github, Package, Mail } from 'lucide-react'
+import { Github, Package, Mail } from 'lucide-react'
 import CodeBlock from '@/components/CodeBlock'
 import ParadigmFrame from '@/components/ParadigmFrame'
 import { AIPrompt } from '@/components/AIPrompt'
+import HeroFeed from '@/components/HeroFeed'
+import LiveThemeHandler from '@/components/LiveThemeHandler'
 import { GITHUB_URL, NPM_URL } from '@/lib/docs'
 import generated from '@/generated/examples.json'
 
@@ -22,23 +24,25 @@ const PILLARS = [
 export default function Home() {
   return (
     <main className="home">
+      <HeroFeed />
+
+      <section className="home-live" aria-labelledby="home-live-title">
+        <h2 id="home-live-title" className="home-section-title">Edit the theme, watch it change</h2>
+        <p className="home-live__text">
+          The banners above are UXDSL only. Change a color, a spacing step, a density or a breakpoint below and they follow —
+          through <code>applyTheme</code>, the same call your app makes. Nothing is saved: export the JSON for your theme file.
+        </p>
+        <LiveThemeHandler showcase={false} />
+      </section>
+
       <section className="home-hero" aria-labelledby="home-title">
         <div className="home-hero__intro">
-          <p className="home-hero__eyebrow">UXDSL · CSS with a theme</p>
-          <h1 id="home-title" className="home-hero__title">Breakpoints belong to the theme, not to your components.</h1>
+          <p className="home-hero__eyebrow">How it works</p>
+          <h2 id="home-title" className="home-hero__title">Breakpoints belong to the theme, not to your components.</h2>
           <p className="home-hero__lede">
             Spacing, type and color — and how each of them steps at a breakpoint — are defined once in a theme JSON.
             Components name them. The compiler writes the media queries and refuses any reference it cannot resolve.
           </p>
-          <div className="home-hero__ctas">
-            <Link href="/docs/quick-start" className="home-cta home-cta--primary">
-              Quick start <ArrowRight size={18} aria-hidden="true" />
-            </Link>
-            <Link href="/docs/introduction" className="home-cta">Docs</Link>
-            <a href={GITHUB_URL} className="home-cta" target="_blank" rel="noopener noreferrer">
-              <Github size={18} aria-hidden="true" /> GitHub
-            </a>
-          </div>
         </div>
 
         <div className="home-hero__code">

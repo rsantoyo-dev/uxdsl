@@ -48,25 +48,6 @@
   color: palette(text.secondary);
 }
 
-.home-hero__ctas {
-  display: flex;
-  flex-wrap: wrap;
-  gap: space(3);
-}
-
-.home-cta {
-  @ds-button(outlined primary);
-  display: inline-flex;
-  align-items: center;
-  gap: space(2);
-  text-decoration: none;
-  font-weight: 600;
-}
-
-.home-cta--primary {
-  @ds-button(contained primary);
-}
-
 .home-hero__code {
   display: grid;
   grid-template-columns: xs(minmax(0, 1fr)) md(minmax(0, 1fr) minmax(0, 1fr));
@@ -234,5 +215,24 @@
 .home-footer__copy {
   @ds-typo(caption);
   margin: 0;
+  color: palette(text.secondary);
+}
+
+/* The theme editor under the hero feed: the same container as every home section. */
+.home-live {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: density(3);
+  width: 100%;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: density(5) xs(space(4)) md(space(6));
+}
+
+.home-live__text {
+  @ds-typo(body);
+
+  max-width: calc(space(16) * 3);
   color: palette(text.secondary);
 }
