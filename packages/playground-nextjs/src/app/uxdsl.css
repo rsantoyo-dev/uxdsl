@@ -6053,6 +6053,437 @@ input[type=range]::-moz-range-thumb:hover {
   outline-offset: 2px;
 }
 
+/* The Borders / Radii editor of the Live theme handler (/docs/theme). Every value is a UXDSL
+   token, role or directive; the literals left are layout (grid, flex). */
+/* One class per token of the base theme, so every box is border(n) or radius(n) itself. */
+.ede-border--0 {
+  border: var(--uxdsl__border__0);
+}
+
+.ede-radius--0 {
+  border-radius: var(--uxdsl__radius__0);
+}
+
+/* The chosen token on real components, after their directive. */
+.ede__samples .ede-b--0 {
+  border: var(--uxdsl__border__0);
+}
+
+.ede__samples .ede-r--0 {
+  border-radius: var(--uxdsl__radius__0);
+}
+
+.ede-border--1 {
+  border: var(--uxdsl__border__1);
+}
+
+.ede-radius--1 {
+  border-radius: var(--uxdsl__radius__1);
+}
+
+/* The chosen token on real components, after their directive. */
+.ede__samples .ede-b--1 {
+  border: var(--uxdsl__border__1);
+}
+
+.ede__samples .ede-r--1 {
+  border-radius: var(--uxdsl__radius__1);
+}
+
+.ede-border--2 {
+  border: var(--uxdsl__border__2);
+}
+
+.ede-radius--2 {
+  border-radius: var(--uxdsl__radius__2);
+}
+
+/* The chosen token on real components, after their directive. */
+.ede__samples .ede-b--2 {
+  border: var(--uxdsl__border__2);
+}
+
+.ede__samples .ede-r--2 {
+  border-radius: var(--uxdsl__radius__2);
+}
+
+.ede-border--3 {
+  border: var(--uxdsl__border__3);
+}
+
+.ede-radius--3 {
+  border-radius: var(--uxdsl__radius__3);
+}
+
+/* The chosen token on real components, after their directive. */
+.ede__samples .ede-b--3 {
+  border: var(--uxdsl__border__3);
+}
+
+.ede__samples .ede-r--3 {
+  border-radius: var(--uxdsl__radius__3);
+}
+
+.ede-border--4 {
+  border: var(--uxdsl__border__4);
+}
+
+.ede-radius--4 {
+  border-radius: var(--uxdsl__radius__4);
+}
+
+/* The chosen token on real components, after their directive. */
+.ede__samples .ede-b--4 {
+  border: var(--uxdsl__border__4);
+}
+
+.ede__samples .ede-r--4 {
+  border-radius: var(--uxdsl__radius__4);
+}
+
+.ede-border--5 {
+  border: var(--uxdsl__border__5);
+}
+
+.ede-radius--5 {
+  border-radius: var(--uxdsl__radius__5);
+}
+
+/* The chosen token on real components, after their directive. */
+.ede__samples .ede-b--5 {
+  border: var(--uxdsl__border__5);
+}
+
+.ede__samples .ede-r--5 {
+  border-radius: var(--uxdsl__radius__5);
+}
+
+.ede__toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__density__2);
+}
+
+.ede__kinds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--uxdsl__density__1);
+}
+
+.ede__kind { padding: var(--uxdsl__density__1); border-radius: var(--uxdsl__radius__1); background: var(--uxdsl__surface__outlined-bg); color: var(--uxdsl__surface__outlined-color); border: var(--uxdsl__surface__outlined-border); box-shadow: var(--uxdsl__surface__outlined-shadow);
+}
+
+.ede__kind:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__outlined-hover-color); border: var(--uxdsl__button__outlined-hover-border); }
+
+.ede__kind:focus-visible { outline: var(--uxdsl__button__outlined-focusvisible-outline); outline-offset: var(--uxdsl__button__outlined-focusvisible-outline-offset); }
+
+.ede__kind.is-selected, .ede__kind[aria-pressed="true"], .ede__kind[aria-selected="true"] { background: var(--uxdsl__button__outlined-selected-bg); color: var(--uxdsl__button__outlined-selected-color); border: var(--uxdsl__button__outlined-selected-border); }
+
+.ede__kind:disabled, .ede__kind[aria-disabled="true"] { opacity: var(--uxdsl__button__outlined-disabled-opacity); cursor: var(--uxdsl__button__outlined-disabled-cursor); }
+
+.ede__hint,
+.ede__note,
+.ede__as-written,
+.ede__px {
+  font-family: var(--uxdsl__typography__caption-font-family);
+  font-size: var(--uxdsl__typography__caption-font-size);
+  line-height: var(--uxdsl__typography__caption-line-height);
+  font-weight: var(--uxdsl__typography__caption-font-weight);
+  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+  color: var(--uxdsl__palette__text-secondary);
+}
+
+.ede {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--uxdsl__density__4);
+}
+
+@media (min-width: 1024px){
+
+.ede {
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+} }
+
+.ede__preview,
+.ede__editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__density__3);
+  min-width: 0;
+}
+
+/* Every token of the family, live. */
+.ede__gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--uxdsl__space__14), 1fr));
+  gap: var(--uxdsl__density__2);
+}
+
+.ede__tile { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: var(--uxdsl__surface__flat-bg); color: var(--uxdsl__surface__flat-color); border: var(--uxdsl__surface__flat-border); box-shadow: var(--uxdsl__surface__flat-shadow);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--uxdsl__density__2);
+  /* Not border(n): the tokens on show are the ones being edited. */
+}
+
+.ede__tile:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__flat-hover-color); }
+
+.ede__tile:focus-visible { outline: var(--uxdsl__button__flat-focusvisible-outline); outline-offset: var(--uxdsl__button__flat-focusvisible-outline-offset); }
+
+.ede__tile.is-selected, .ede__tile[aria-pressed="true"], .ede__tile[aria-selected="true"] { color: var(--uxdsl__button__flat-selected-color); }
+
+.ede__tile:disabled, .ede__tile[aria-disabled="true"] { opacity: var(--uxdsl__button__flat-disabled-opacity); cursor: var(--uxdsl__button__flat-disabled-cursor); }
+.ede__tile.is-selected {
+  background: var(--uxdsl__palette__surface-light);
+  color: var(--uxdsl__palette__primary-main);
+}
+
+.ede__box {
+  width: var(--uxdsl__space__13);
+  height: var(--uxdsl__space__12);
+  background: var(--uxdsl__palette__surface-main);
+}
+
+/* A Radius shows on a filled shape; a Border on a lighter one (so border(0), none, still shows), with the theme's middle corner. */
+.ede__box--radii {
+  background: var(--uxdsl__palette__primary-main);
+}
+
+.ede__box--borders {
+  border-radius: var(--uxdsl__radius__2);
+  background: var(--uxdsl__palette__surface-light);
+}
+
+.ede__tile-name,
+.ede__bp,
+.ede__written {
+  font-family: var(--uxdsl__typography__code-font-family);
+  font-size: var(--uxdsl__typography__code-font-size);
+  line-height: var(--uxdsl__typography__code-line-height);
+  font-weight: var(--uxdsl__typography__code-font-weight);
+  letter-spacing: var(--uxdsl__typography__code-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__code-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__code-margin-block-end);
+}
+
+.ede__stage {
+  padding: var(--uxdsl__surface__outlined-padding);
+  border-radius: var(--uxdsl__radius__3);
+  background: var(--uxdsl__surface__outlined-bg);
+  color: var(--uxdsl__surface__outlined-color);
+  border: var(--uxdsl__surface__outlined-border);
+  box-shadow: var(--uxdsl__surface__outlined-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__density__3);
+}
+
+.ede__stage-label {
+  font-family: var(--uxdsl__typography__code-font-family);
+  font-size: var(--uxdsl__typography__code-font-size);
+  line-height: var(--uxdsl__typography__code-line-height);
+  font-weight: var(--uxdsl__typography__code-font-weight);
+  letter-spacing: var(--uxdsl__typography__code-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__code-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__code-margin-block-end);
+  color: var(--uxdsl__palette__primary-main);
+}
+
+.ede__samples {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  gap: var(--uxdsl__density__3);
+}
+
+@media (min-width: 768px){
+
+.ede__samples {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+} }
+
+.ede__card {
+  padding: var(--uxdsl__surface__contained-padding);
+  border-radius: var(--uxdsl__surface__contained-radius);
+  background: var(--uxdsl__surface__contained-bg);
+  color: var(--uxdsl__surface__contained-color);
+  border: var(--uxdsl__surface__contained-border);
+  box-shadow: var(--uxdsl__surface__contained-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__density__1);
+}
+
+.ede__card-title {
+  font-family: var(--uxdsl__typography__code-font-family);
+  font-size: var(--uxdsl__typography__code-font-size);
+  line-height: var(--uxdsl__typography__code-line-height);
+  font-weight: var(--uxdsl__typography__code-font-weight);
+  letter-spacing: var(--uxdsl__typography__code-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__code-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__code-margin-block-end);
+}
+
+.ede__card-text {
+  font-family: var(--uxdsl__typography__body-sm-font-family);
+  font-size: var(--uxdsl__typography__body-sm-font-size);
+  line-height: var(--uxdsl__typography__body-sm-line-height);
+  font-weight: var(--uxdsl__typography__body-sm-font-weight);
+  letter-spacing: var(--uxdsl__typography__body-sm-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__body-sm-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__body-sm-margin-block-end);
+}
+
+.ede__button { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: var(--uxdsl__palette__primary-main); color: var(--uxdsl__palette__primary-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast);
+}
+
+.ede__button:hover:not(:where(:disabled, [aria-disabled="true"])) { background: var(--uxdsl__button__contained-tone-primary-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-primary-hover-color, var(--uxdsl__button__contained-hover-color)); }
+
+.ede__button:focus-visible { outline: var(--uxdsl__button__contained-tone-primary-focusvisible-outline, var(--uxdsl__button__contained-focusvisible-outline)); outline-offset: var(--uxdsl__button__contained-tone-primary-focusvisible-outline-offset, var(--uxdsl__button__contained-focusvisible-outline-offset)); }
+
+.ede__button.is-selected, .ede__button[aria-pressed="true"], .ede__button[aria-selected="true"] { background: var(--uxdsl__button__contained-tone-primary-selected-bg, var(--uxdsl__button__contained-selected-bg)); color: var(--uxdsl__button__contained-tone-primary-selected-color, var(--uxdsl__button__contained-selected-color)); }
+
+.ede__button:disabled, .ede__button[aria-disabled="true"] { opacity: var(--uxdsl__button__contained-tone-primary-disabled-opacity, var(--uxdsl__button__contained-disabled-opacity)); cursor: var(--uxdsl__button__contained-tone-primary-disabled-cursor, var(--uxdsl__button__contained-disabled-cursor)); }
+
+.ede__input { box-sizing: border-box; font: inherit; width: 100%; padding: var(--uxdsl__surface__outlined-padding); border-radius: var(--uxdsl__surface__outlined-radius); background: var(--uxdsl__surface__outlined-bg); color: var(--uxdsl__surface__outlined-color); border: var(--uxdsl__surface__outlined-border); box-shadow: var(--uxdsl__surface__outlined-shadow); caret-color: var(--uxdsl__input__outlined-base-caret);
+}
+
+.ede__input::placeholder { color: var(--uxdsl__input__outlined-base-placeholder); }
+
+.ede__input:focus { border: var(--uxdsl__input__outlined-focus-border); }
+
+.ede__input:invalid, .ede__input[aria-invalid="true"] { border: var(--uxdsl__input__outlined-invalid-border); }
+
+.ede__input:disabled, .ede__input[aria-disabled="true"] { opacity: var(--uxdsl__input__outlined-disabled-opacity); cursor: var(--uxdsl__input__outlined-disabled-cursor); }
+
+/* The value per breakpoint. */
+.ede__rows {
+  padding: var(--uxdsl__surface__outlined-padding);
+  border-radius: var(--uxdsl__radius__2);
+  background: var(--uxdsl__surface__outlined-bg);
+  color: var(--uxdsl__surface__outlined-color);
+  border: var(--uxdsl__surface__outlined-border);
+  box-shadow: var(--uxdsl__surface__outlined-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__density__1);
+}
+
+.ede__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--uxdsl__density__2);
+  padding: var(--uxdsl__density__1);
+  border-radius: var(--uxdsl__radius__1);
+}
+.ede__row.is-active {
+  background: var(--uxdsl__palette__surface-light);
+}
+
+.ede__row .ede__bp {
+  flex: 0 0 var(--uxdsl__space__9);
+}
+
+.ede__row .ede__px {
+  flex: 0 0 auto;
+}
+
+.ede__as-written {
+  flex: 1 1 var(--uxdsl__space__15);
+}
+
+.ede__select { box-sizing: border-box; font: inherit; width: 100%; padding: var(--uxdsl__surface__outlined-padding); border-radius: var(--uxdsl__surface__outlined-radius); background: var(--uxdsl__surface__outlined-bg); color: var(--uxdsl__surface__outlined-color); border: var(--uxdsl__surface__outlined-border); box-shadow: var(--uxdsl__surface__outlined-shadow); caret-color: var(--uxdsl__input__outlined-base-caret);
+  font-family: var(--uxdsl__typography__body-sm-font-family);
+  font-size: var(--uxdsl__typography__body-sm-font-size);
+  line-height: var(--uxdsl__typography__body-sm-line-height);
+  font-weight: var(--uxdsl__typography__body-sm-font-weight);
+  letter-spacing: var(--uxdsl__typography__body-sm-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__body-sm-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__body-sm-margin-block-end);
+  flex: 1 1 var(--uxdsl__space__12);
+  width: auto;
+  min-width: 0;
+}
+
+.ede__select::placeholder { color: var(--uxdsl__input__outlined-base-placeholder); }
+
+.ede__select:focus { border: var(--uxdsl__input__outlined-focus-border); }
+
+.ede__select:invalid, .ede__select[aria-invalid="true"] { border: var(--uxdsl__input__outlined-invalid-border); }
+
+.ede__select:disabled, .ede__select[aria-disabled="true"] { opacity: var(--uxdsl__input__outlined-disabled-opacity); cursor: var(--uxdsl__input__outlined-disabled-cursor); }
+
+.ede__title {
+  font-family: var(--uxdsl__typography__subtitle2-font-family);
+  font-size: var(--uxdsl__typography__subtitle2-font-size);
+  line-height: var(--uxdsl__typography__subtitle2-line-height);
+  font-weight: var(--uxdsl__typography__subtitle2-font-weight);
+  letter-spacing: var(--uxdsl__typography__subtitle2-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__subtitle2-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__subtitle2-margin-block-end);
+}
+
+.ede__definition {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__density__1);
+}
+
+.ede__text { box-sizing: border-box; font: inherit; width: 100%; padding: var(--uxdsl__surface__outlined-padding); border-radius: var(--uxdsl__surface__outlined-radius); background: var(--uxdsl__surface__outlined-bg); color: var(--uxdsl__surface__outlined-color); border: var(--uxdsl__surface__outlined-border); box-shadow: var(--uxdsl__surface__outlined-shadow); caret-color: var(--uxdsl__input__outlined-base-caret);
+  font-family: var(--uxdsl__typography__code-font-family);
+  font-size: var(--uxdsl__typography__code-font-size);
+  line-height: var(--uxdsl__typography__code-line-height);
+  font-weight: var(--uxdsl__typography__code-font-weight);
+  letter-spacing: var(--uxdsl__typography__code-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__code-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__code-margin-block-end);
+}
+
+.ede__text::placeholder { color: var(--uxdsl__input__outlined-base-placeholder); }
+
+.ede__text:focus { border: var(--uxdsl__input__outlined-focus-border); }
+
+.ede__text:invalid, .ede__text[aria-invalid="true"] { border: var(--uxdsl__input__outlined-invalid-border); }
+
+.ede__text:disabled, .ede__text[aria-disabled="true"] { opacity: var(--uxdsl__input__outlined-disabled-opacity); cursor: var(--uxdsl__input__outlined-disabled-cursor); }
+
+.ede__error {
+  font-family: var(--uxdsl__typography__caption-font-family);
+  font-size: var(--uxdsl__typography__caption-font-size);
+  line-height: var(--uxdsl__typography__caption-line-height);
+  font-weight: var(--uxdsl__typography__caption-font-weight);
+  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+  color: var(--uxdsl__palette__error-main);
+}
+
+.ede__consumers {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__density__1);
+}
+
+.ede__list {
+  font-family: var(--uxdsl__typography__body-sm-font-family);
+  font-size: var(--uxdsl__typography__body-sm-font-size);
+  line-height: var(--uxdsl__typography__body-sm-line-height);
+  font-weight: var(--uxdsl__typography__body-sm-font-weight);
+  letter-spacing: var(--uxdsl__typography__body-sm-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__body-sm-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__body-sm-margin-block-end);
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__density__0);
+  margin: var(--uxdsl__density__0);
+  padding-inline-start: var(--uxdsl__density__4);
+}
+
 /* The Density and Space edit dialogs (DemoDensity.tsx, DemoSpacing.tsx). MIG-B7-17 phase B (4):
    these rules were inline style={{}} in both components, written twice. Values on the scale use
    space(); the scrim and shadow use Color identities. Still a hand-styled dialog, button and
