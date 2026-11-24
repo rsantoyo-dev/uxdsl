@@ -1,0 +1,7 @@
+/* The Live theme handler (/docs/theme): editors that share a tab are stacked. */
+
+.lth__stack {
+  display: flex;
+  flex-direction: column;
+  gap: density(4);
+}
