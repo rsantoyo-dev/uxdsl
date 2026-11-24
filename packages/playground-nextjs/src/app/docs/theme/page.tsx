@@ -146,6 +146,10 @@ export default function DocsThemePage() {
           the other tabs follow at once; a change of structure is refused. Nothing is saved to a file: copy the JSON, or export it, into
           your <code>uxdsl.theme.json</code>.
         </p>
+        <p>
+          On top, a showcase: a menu, a hero and news cards styled with UXDSL alone. Every edit below shows there first, and its
+          layout changes at <code>md</code> like any component built with the theme.
+        </p>
         <ul>
           <li><strong>Palette</strong>: choose a role (primary, secondary, surface…), then pick each of its variants from the color collection (<code>color(purple.700)</code>), link it to another role (<code>palette(secondary.main)</code>) or give it a color of its own. The Light/Dark switch edits <code>palette</code> or <code>modes.dark.palette</code>.</li>
           <li><strong>Breakpoints</strong>: slide sm, md, lg and xl and the page switches at the new widths. It is a preview: the theme cannot move a breakpoint at run time, so it moves this page’s compiled media rules and gives you the JSON for your theme file.</li>

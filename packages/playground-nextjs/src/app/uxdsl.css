@@ -9569,6 +9569,307 @@ input[type=range]::-moz-range-thumb:hover {
   color: var(--uxdsl__palette__error-main);
 }
 
+/* The Live theme handler's showcase (/docs/theme): a small page styled only with UXDSL.
+   Roles for every surface, button and text; density() for every gap and padding;
+   palette() for every color; responsive values for the layout, which changes at md. */
+.shw {
+  padding: var(--uxdsl__surface__outlined-padding);
+  border-radius: var(--uxdsl__radius__3);
+  background: var(--uxdsl__surface__outlined-bg);
+  color: var(--uxdsl__surface__outlined-color);
+  border: var(--uxdsl__surface__outlined-border);
+  box-shadow: var(--uxdsl__surface__outlined-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__density__4);
+  margin-block: var(--uxdsl__density__4);
+}
+
+/* Menu: stacked on a phone, one row from md. */
+.shw__nav {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--uxdsl__density__3);
+  padding-bottom: var(--uxdsl__density__3);
+  border-bottom: var(--uxdsl__border__1);
+}
+@media (min-width: 768px){
+.shw__nav {
+  flex-direction: row;
+  align-items: center;
+} }
+
+.shw__brand {
+  font-family: var(--uxdsl__typography__h5-font-family);
+  font-size: var(--uxdsl__typography__h5-font-size);
+  line-height: var(--uxdsl__typography__h5-line-height);
+  font-weight: var(--uxdsl__typography__h5-font-weight);
+  letter-spacing: var(--uxdsl__typography__h5-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__h5-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__h5-margin-block-end);
+  color: var(--uxdsl__palette__primary-main);
+}
+
+.shw__menu {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__density__1);
+}
+
+@media (min-width: 768px){
+
+.shw__menu {
+  flex-direction: row;
+} }
+
+.shw__link { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: var(--uxdsl__surface__flat-bg); color: var(--uxdsl__surface__flat-color); border: var(--uxdsl__surface__flat-border); box-shadow: var(--uxdsl__surface__flat-shadow);
+  font-family: var(--uxdsl__typography__subtitle2-font-family);
+  font-size: var(--uxdsl__typography__subtitle2-font-size);
+  line-height: var(--uxdsl__typography__subtitle2-line-height);
+  font-weight: var(--uxdsl__typography__subtitle2-font-weight);
+  letter-spacing: var(--uxdsl__typography__subtitle2-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__subtitle2-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__subtitle2-margin-block-end);
+}
+
+.shw__link:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__flat-hover-color); }
+
+.shw__link:focus-visible { outline: var(--uxdsl__button__flat-focusvisible-outline); outline-offset: var(--uxdsl__button__flat-focusvisible-outline-offset); }
+
+.shw__link.is-selected, .shw__link[aria-pressed="true"], .shw__link[aria-selected="true"] { color: var(--uxdsl__button__flat-selected-color); }
+
+.shw__link:disabled, .shw__link[aria-disabled="true"] { opacity: var(--uxdsl__button__flat-disabled-opacity); cursor: var(--uxdsl__button__flat-disabled-cursor); }
+
+.shw__cta { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: var(--uxdsl__palette__primary-main); color: var(--uxdsl__palette__primary-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast);
+}
+
+.shw__cta:hover:not(:where(:disabled, [aria-disabled="true"])) { background: var(--uxdsl__button__contained-tone-primary-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-primary-hover-color, var(--uxdsl__button__contained-hover-color)); }
+
+.shw__cta:focus-visible { outline: var(--uxdsl__button__contained-tone-primary-focusvisible-outline, var(--uxdsl__button__contained-focusvisible-outline)); outline-offset: var(--uxdsl__button__contained-tone-primary-focusvisible-outline-offset, var(--uxdsl__button__contained-focusvisible-outline-offset)); }
+
+.shw__cta.is-selected, .shw__cta[aria-pressed="true"], .shw__cta[aria-selected="true"] { background: var(--uxdsl__button__contained-tone-primary-selected-bg, var(--uxdsl__button__contained-selected-bg)); color: var(--uxdsl__button__contained-tone-primary-selected-color, var(--uxdsl__button__contained-selected-color)); }
+
+.shw__cta:disabled, .shw__cta[aria-disabled="true"] { opacity: var(--uxdsl__button__contained-tone-primary-disabled-opacity, var(--uxdsl__button__contained-disabled-opacity)); cursor: var(--uxdsl__button__contained-tone-primary-disabled-cursor, var(--uxdsl__button__contained-disabled-cursor)); }
+
+/* Hero: the primary color with its contrast text, the secondary color for the main action. */
+.shw__hero {
+  padding: var(--uxdsl__surface__contained-padding);
+  border-radius: var(--uxdsl__radius__3);
+  background: var(--uxdsl__palette__primary-main);
+  color: var(--uxdsl__palette__primary-contrast);
+  border: var(--uxdsl__surface__contained-border);
+  box-shadow: var(--uxdsl__surface__contained-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__density__3);
+  padding: var(--uxdsl__density__6);
+}
+
+.shw__eyebrow {
+  font-family: var(--uxdsl__typography__caption-font-family);
+  font-size: var(--uxdsl__typography__caption-font-size);
+  line-height: var(--uxdsl__typography__caption-line-height);
+  font-weight: var(--uxdsl__typography__caption-font-weight);
+  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+  text-transform: uppercase;
+}
+
+.shw__title {
+  font-family: var(--uxdsl__typography__h1-font-family);
+  font-size: var(--uxdsl__typography__h1-font-size);
+  line-height: var(--uxdsl__typography__h1-line-height);
+  font-weight: var(--uxdsl__typography__h1-font-weight);
+  letter-spacing: var(--uxdsl__typography__h1-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__h1-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__h1-margin-block-end);
+}
+
+.shw__subtitle {
+  font-family: var(--uxdsl__typography__body-font-family);
+  font-size: var(--uxdsl__typography__body-font-size);
+  line-height: var(--uxdsl__typography__body-line-height);
+  font-weight: var(--uxdsl__typography__body-font-weight);
+  letter-spacing: var(--uxdsl__typography__body-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__body-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__body-margin-block-end);
+  max-width: calc(var(--uxdsl__space__16) * 2);
+}
+
+.shw__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__density__2);
+}
+
+@media (min-width: 480px){
+
+.shw__actions {
+  flex-direction: row;
+} }
+
+.shw__primary { padding: var(--uxdsl__density__3); border-radius: var(--uxdsl__radius__3); background: var(--uxdsl__palette__secondary-main); color: var(--uxdsl__palette__secondary-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__secondary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__secondary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__secondary-contrast);
+}
+
+.shw__primary:hover:not(:where(:disabled, [aria-disabled="true"])) { background: var(--uxdsl__button__contained-tone-secondary-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-secondary-hover-color, var(--uxdsl__button__contained-hover-color)); }
+
+.shw__primary:focus-visible { outline: var(--uxdsl__button__contained-tone-secondary-focusvisible-outline, var(--uxdsl__button__contained-focusvisible-outline)); outline-offset: var(--uxdsl__button__contained-tone-secondary-focusvisible-outline-offset, var(--uxdsl__button__contained-focusvisible-outline-offset)); }
+
+.shw__primary.is-selected, .shw__primary[aria-pressed="true"], .shw__primary[aria-selected="true"] { background: var(--uxdsl__button__contained-tone-secondary-selected-bg, var(--uxdsl__button__contained-selected-bg)); color: var(--uxdsl__button__contained-tone-secondary-selected-color, var(--uxdsl__button__contained-selected-color)); }
+
+.shw__primary:disabled, .shw__primary[aria-disabled="true"] { opacity: var(--uxdsl__button__contained-tone-secondary-disabled-opacity, var(--uxdsl__button__contained-disabled-opacity)); cursor: var(--uxdsl__button__contained-tone-secondary-disabled-cursor, var(--uxdsl__button__contained-disabled-cursor)); }
+
+.shw__secondary { padding: var(--uxdsl__density__3); border-radius: var(--uxdsl__radius__3); background: var(--uxdsl__palette__light-main); color: var(--uxdsl__palette__light-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__light-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__light-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__light-contrast);
+}
+
+.shw__secondary:hover:not(:where(:disabled, [aria-disabled="true"])) { background: var(--uxdsl__button__contained-tone-light-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-light-hover-color, var(--uxdsl__button__contained-hover-color)); }
+
+.shw__secondary:focus-visible { outline: var(--uxdsl__button__contained-tone-light-focusvisible-outline, var(--uxdsl__button__contained-focusvisible-outline)); outline-offset: var(--uxdsl__button__contained-tone-light-focusvisible-outline-offset, var(--uxdsl__button__contained-focusvisible-outline-offset)); }
+
+.shw__secondary.is-selected, .shw__secondary[aria-pressed="true"], .shw__secondary[aria-selected="true"] { background: var(--uxdsl__button__contained-tone-light-selected-bg, var(--uxdsl__button__contained-selected-bg)); color: var(--uxdsl__button__contained-tone-light-selected-color, var(--uxdsl__button__contained-selected-color)); }
+
+.shw__secondary:disabled, .shw__secondary[aria-disabled="true"] { opacity: var(--uxdsl__button__contained-tone-light-disabled-opacity, var(--uxdsl__button__contained-disabled-opacity)); cursor: var(--uxdsl__button__contained-tone-light-disabled-cursor, var(--uxdsl__button__contained-disabled-cursor)); }
+
+/* News: one column on a phone, two from md, three from lg. */
+.shw__news {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--uxdsl__density__3);
+}
+@media (min-width: 768px){
+.shw__news {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+} }
+@media (min-width: 1024px){
+.shw__news {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+} }
+
+.shw__card {
+  padding: var(--uxdsl__surface__outlined-padding);
+  border-radius: var(--uxdsl__radius__2);
+  background: var(--uxdsl__surface__outlined-bg);
+  color: var(--uxdsl__surface__outlined-color);
+  border: var(--uxdsl__surface__outlined-border);
+  box-shadow: var(--uxdsl__surface__outlined-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__density__2);
+}
+
+/* A tag in its tone; the rule after it keeps the tag's own size. */
+.shw__tag--secondary {
+  padding: var(--uxdsl__surface__contained-padding);
+  border-radius: 9999px;
+  background: var(--uxdsl__palette__secondary-main);
+  color: var(--uxdsl__palette__secondary-contrast);
+  border: var(--uxdsl__surface__contained-border);
+  box-shadow: var(--uxdsl__surface__contained-shadow);
+}
+
+.shw__tag--info {
+  padding: var(--uxdsl__surface__contained-padding);
+  border-radius: 9999px;
+  background: var(--uxdsl__palette__info-main);
+  color: var(--uxdsl__palette__info-contrast);
+  border: var(--uxdsl__surface__contained-border);
+  box-shadow: var(--uxdsl__surface__contained-shadow);
+}
+
+.shw__tag--success {
+  padding: var(--uxdsl__surface__contained-padding);
+  border-radius: 9999px;
+  background: var(--uxdsl__palette__success-main);
+  color: var(--uxdsl__palette__success-contrast);
+  border: var(--uxdsl__surface__contained-border);
+  box-shadow: var(--uxdsl__surface__contained-shadow);
+}
+
+.shw__tag {
+  font-family: var(--uxdsl__typography__caption-font-family);
+  font-size: var(--uxdsl__typography__caption-font-size);
+  line-height: var(--uxdsl__typography__caption-line-height);
+  font-weight: var(--uxdsl__typography__caption-font-weight);
+  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+  align-self: flex-start;
+  padding: var(--uxdsl__density__1) var(--uxdsl__density__2);
+}
+
+.shw__card-title {
+  font-family: var(--uxdsl__typography__h5-font-family);
+  font-size: var(--uxdsl__typography__h5-font-size);
+  line-height: var(--uxdsl__typography__h5-line-height);
+  font-weight: var(--uxdsl__typography__h5-font-weight);
+  letter-spacing: var(--uxdsl__typography__h5-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__h5-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__h5-margin-block-end);
+}
+
+.shw__card-body {
+  font-family: var(--uxdsl__typography__body-sm-font-family);
+  font-size: var(--uxdsl__typography__body-sm-font-size);
+  line-height: var(--uxdsl__typography__body-sm-line-height);
+  font-weight: var(--uxdsl__typography__body-sm-font-weight);
+  letter-spacing: var(--uxdsl__typography__body-sm-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__body-sm-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__body-sm-margin-block-end);
+  color: var(--uxdsl__palette__text-secondary);
+}
+
+.shw__meta {
+  font-family: var(--uxdsl__typography__caption-font-family);
+  font-size: var(--uxdsl__typography__caption-font-size);
+  line-height: var(--uxdsl__typography__caption-line-height);
+  font-weight: var(--uxdsl__typography__caption-font-weight);
+  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+  color: var(--uxdsl__palette__primary-main);
+}
+
+/* The breakpoint the layout is at, written by a responsive value alone. */
+.shw__bp {
+  padding: var(--uxdsl__surface__contained-padding);
+  border-radius: 9999px;
+  background: var(--uxdsl__palette__dark-main);
+  color: var(--uxdsl__palette__dark-contrast);
+  border: var(--uxdsl__surface__contained-border);
+  box-shadow: var(--uxdsl__surface__contained-shadow);
+  font-family: var(--uxdsl__typography__caption-font-family);
+  font-size: var(--uxdsl__typography__caption-font-size);
+  line-height: var(--uxdsl__typography__caption-line-height);
+  font-weight: var(--uxdsl__typography__caption-font-weight);
+  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+  align-self: flex-end;
+  padding: var(--uxdsl__density__1) var(--uxdsl__density__3);
+}
+.shw__bp::after {
+  content: "xs";
+}
+@media (min-width: 480px){
+.shw__bp::after {
+  content: "sm";
+} }
+@media (min-width: 768px){
+.shw__bp::after {
+  content: "md";
+} }
+@media (min-width: 1024px){
+.shw__bp::after {
+  content: "lg";
+} }
+@media (min-width: 1280px){
+.shw__bp::after {
+  content: "xl";
+} }
+
 /* The version line on the quick start: which release these pages describe. */
 .version-line {
   padding: var(--uxdsl__surface__outlined-padding);
