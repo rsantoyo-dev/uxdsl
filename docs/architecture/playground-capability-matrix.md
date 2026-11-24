@@ -39,15 +39,15 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | hexColorsInUxdsl | 0 | 0 |
 | rgbHslInUxdsl | 0 | 0 |
 | cssModuleFiles | 0 | 0 |
-| inlineStyleObjects | 20 | 20 |
+| inlineStyleObjects | 21 | 21 |
 | hexColorsInTsx | 10 | 10 |
 
 ## Directives
 
 | Capability | Requires | Level | Evidence |
 | --- | --- | --- | --- |
-| `ds-button` | live | live | `src/app/page.uxdsl`, `src/components/AIPrompt.uxdsl`, `src/components/CapabilityDocs.uxdsl` |
-| `ds-input` | live | live | `src/components/CapabilityDocs.uxdsl`, `src/components/DemoBorders.uxdsl`, `src/components/DemoColors.uxdsl` |
+| `ds-button` | live | live | `src/app/page.uxdsl`, `src/components/AIPrompt.uxdsl`, `src/components/BreakpointsEditor.uxdsl` |
+| `ds-input` | live | live | `src/components/BreakpointsEditor.uxdsl`, `src/components/CapabilityDocs.uxdsl`, `src/components/DemoBorders.uxdsl` |
 | `ds-surface` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/not-found.uxdsl`, `src/app/page.uxdsl` |
 | `ds-typo` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/not-found.uxdsl`, `src/app/page.uxdsl` |
 
@@ -78,7 +78,7 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | Capability | Requires | Level | Evidence |
 | --- | --- | --- | --- |
 | `--lg` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/components/SideNav.uxdsl` |
-| `--md` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl` |
+| `--md` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/components/BreakpointsEditor.uxdsl` |
 | `--sm` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl` |
 | `--xl` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl` |
 
@@ -88,11 +88,11 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | --- | --- | --- | --- |
 | `borders` | live | live | `src/app/page.uxdsl`, `src/components/AgentGuidance.uxdsl`, `src/components/AppHeader.uxdsl` |
 | `breakpoints` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/layout.uxdsl`, `src/app/page.uxdsl` |
-| `buttons` | live | live | `src/app/page.uxdsl`, `src/components/AIPrompt.uxdsl`, `src/components/CapabilityDocs.uxdsl` |
+| `buttons` | live | live | `src/app/page.uxdsl`, `src/components/AIPrompt.uxdsl`, `src/components/BreakpointsEditor.uxdsl` |
 | `colors` | live | live | `src/components/AgentGuidance.uxdsl`, `src/components/AIPrompt.uxdsl`, `src/components/AppHeader.uxdsl` |
 | `densities` | live | live | `src/app/app.uxdsl`, `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/not-found.uxdsl` |
 | `fonts` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/layout.uxdsl`, `src/app/not-found.uxdsl` |
-| `inputs` | live | live | `src/components/CapabilityDocs.uxdsl`, `src/components/DemoBorders.uxdsl`, `src/components/DemoColors.uxdsl` |
+| `inputs` | live | live | `src/components/BreakpointsEditor.uxdsl`, `src/components/CapabilityDocs.uxdsl`, `src/components/DemoBorders.uxdsl` |
 | `modes` | live | live | `src/app/docs/theme/page.tsx`, `src/components/CodeBlock.tsx`, `src/components/ColorDocumentation.tsx` |
 | `palette` | live | live | `src/app/app.uxdsl`, `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/layout.uxdsl` |
 | `radii` | live | live | `src/app/app.uxdsl`, `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/not-found.uxdsl` |
@@ -106,14 +106,14 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | Capability | Requires | Level | Evidence |
 | --- | --- | --- | --- |
 | `button.contained` | live | live | `src/app/page.uxdsl`, `src/components/CapabilityDocs.uxdsl`, `src/components/DemoButtons.tsx` |
-| `button.flat` | live | live | `src/components/AIPrompt.uxdsl`, `src/components/DemoButtons.tsx`, `src/components/RuntimeEngines.tsx` |
-| `button.outlined` | live | live | `src/app/page.uxdsl`, `src/components/CapabilityDocs.uxdsl`, `src/components/DemoButtons.tsx` |
+| `button.flat` | live | live | `src/components/AIPrompt.uxdsl`, `src/components/DemoButtons.tsx`, `src/components/PaletteFamilyEditor.uxdsl` |
+| `button.outlined` | live | live | `src/app/page.uxdsl`, `src/components/BreakpointsEditor.uxdsl`, `src/components/CapabilityDocs.uxdsl` |
 | `input.contained` | live | live | `src/components/InputDemo.tsx`, `src/components/RuntimeEngines.tsx` |
-| `input.outlined` | live | live | `src/components/CapabilityDocs.uxdsl`, `src/components/DemoBorders.uxdsl`, `src/components/DemoColors.uxdsl` |
+| `input.outlined` | live | live | `src/components/BreakpointsEditor.uxdsl`, `src/components/CapabilityDocs.uxdsl`, `src/components/DemoBorders.uxdsl` |
 | `input.underline` | live | live | `src/components/InputDemo.tsx`, `src/components/RuntimeEngines.tsx` |
 | `surface.contained` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/not-found.uxdsl`, `src/components/CapabilityDocs.uxdsl` |
 | `surface.flat` | live | live | `src/components/DemoSurfaces.tsx`, `src/components/SideNav.uxdsl`, `src/components/SurfaceGrid.tsx` |
-| `surface.outlined` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/page.uxdsl`, `src/components/CapabilityDocs.uxdsl` |
+| `surface.outlined` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/page.uxdsl`, `src/components/BreakpointsEditor.uxdsl` |
 
 ## Interaction states
 
@@ -179,8 +179,8 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | Capability | Requires | Level | Evidence |
 | --- | --- | --- | --- |
 | `build` | documented | documented | `src/app/docs/diagnostics/page.mdx`, `src/app/docs/introduction/page.mdx`, `src/app/docs/language/page.tsx` |
-| `generate-entry` | documented | documented | `src/app/docs/language/page.tsx`, `src/app/docs/quick-start/page.mdx`, `src/app/docs/tooling/page.mdx` |
-| `init` | documented | documented | `src/app/docs/quick-start/page.mdx`, `src/app/docs/tooling/page.mdx` |
+| `generate-entry` | documented | documented | `src/app/docs/quick-start/page.mdx`, `src/app/docs/tooling/page.mdx` |
+| `init` | documented | documented | `src/app/docs/language/page.tsx`, `src/app/docs/quick-start/page.mdx`, `src/app/docs/tooling/page.mdx` |
 | `theme` | documented | documented | `src/app/docs/accessibility/page.mdx`, `src/app/docs/introduction/page.mdx`, `src/app/docs/language/page.tsx` |
 
 ## CLI flags

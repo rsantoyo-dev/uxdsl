@@ -1,0 +1,351 @@
+/* The palette editor of the Live theme handler (/docs/theme). Every value is a UXDSL token,
+   role or directive; the literals left are layout (grid, flex) and motion, which have no family. */
+
+/* One fill and one ink class per Palette family and variant of the base theme, so the
+   editor shows any variant through palette() rather than an inline style. */
+$pfe-palette: (
+  primary: (main, light, dark, contrast),
+  secondary: (main, light, dark, contrast),
+  tertiary: (main, light, dark, contrast),
+  success: (main, light, dark, contrast),
+  info: (main, light, dark, contrast),
+  warning: (main, light, dark, contrast),
+  error: (main, light, dark, contrast),
+  dark: (main, light, dark, contrast),
+  neutral: (main, light, dark, contrast),
+  light: (main, light, dark, contrast),
+  surface: (main, light, dark, contrast, paper, subtle),
+  text: (main, primary, secondary, disabled),
+  divider: (main),
+  action: (disabled),
+);
+
+@each $family, $variants in $pfe-palette {
+  @each $variant in $variants {
+    .pfe-fill--#{$family}-#{$variant} {
+      background: palette(#{$family}.#{$variant});
+    }
+
+    .pfe-ink--#{$family}-#{$variant} {
+      color: palette(#{$family}.#{$variant});
+    }
+  }
+}
+
+/* Toolbar: the Light/Dark switch and its hint. */
+.pfe__toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: density(2);
+}
+
+.pfe__hint {
+  @ds-typo(caption);
+
+  color: palette(text.secondary);
+}
+
+/* A segmented control: Buttons of the theme, the chosen one in its selected state. */
+.pfe__segmented {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: density(1);
+}
+
+.pfe__segment {
+  @ds-button(outlined 2);
+  @ds-typo(body-sm);
+}
+
+.pfe {
+  display: grid;
+  grid-template-columns: xs(minmax(0, 1fr)) lg(minmax(0, space(16)) minmax(0, 1fr));
+  gap: density(3);
+}
+
+/* The roles, grouped, as swatch cards. */
+.pfe__families {
+  display: flex;
+  flex-wrap: wrap;
+  gap: density(3);
+  grid-column: xs(1) lg(1 / -1);
+}
+
+.pfe__group {
+  display: flex;
+  flex-direction: column;
+  gap: density(2);
+}
+
+.pfe__group-label {
+  @ds-typo(caption);
+
+  color: palette(text.secondary);
+  text-transform: uppercase;
+}
+
+.pfe__group-roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: density(3);
+}
+
+.pfe__role {
+  @ds-surface(outlined radius(2));
+
+  display: flex;
+  flex-direction: column;
+  width: space(12);
+  padding: density(0);
+  overflow: hidden;
+  background: palette(surface.main);
+  text-align: left;
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+
+  &:hover {
+    transform: translateY(calc(-1 * space(1)));
+    box-shadow: shadow(2);
+  }
+
+  &.is-selected {
+    outline: space(1) solid palette(text.primary);
+    outline-offset: space(1);
+  }
+
+  &:focus-visible {
+    outline: space(1) solid palette(primary.main);
+    outline-offset: space(1);
+  }
+}
+
+.pfe__role-face {
+  @ds-typo(h6);
+
+  display: flex;
+  align-items: flex-end;
+  height: space(9);
+  padding: density(2) density(3);
+}
+
+.pfe__role-strip {
+  display: flex;
+  height: space(3);
+}
+
+.pfe__role-band {
+  flex: 1;
+}
+
+.pfe__role-name {
+  @ds-typo(subtitle2);
+
+  padding: density(2) density(3);
+}
+
+/* The variants of the chosen role. */
+.pfe__variants {
+  display: flex;
+  flex-direction: column;
+  gap: density(2);
+}
+
+.pfe__variant {
+  @ds-button(flat 2);
+
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: center;
+  gap: density(1) density(3);
+  border: border(1);
+  border-color: transparent;
+  text-align: left;
+
+  &.is-selected {
+    border-color: palette(primary.main);
+    background: palette(surface.light);
+  }
+}
+
+.pfe__swatch {
+  width: space(7);
+  height: space(7);
+  border: border(1);
+  border-radius: radius(1);
+}
+
+.pfe__variant-name {
+  @ds-typo(subtitle2);
+
+  color: palette(text.primary);
+}
+
+.pfe__variant-value {
+  @ds-typo(code);
+
+  overflow: hidden;
+  color: palette(text.secondary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pfe__badge {
+  @ds-typo(caption);
+
+  grid-column: 3;
+  justify-self: start;
+  color: palette(text.secondary);
+}
+
+/* The editor of the chosen variant. */
+.pfe__editor {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: density(2);
+  min-width: 0;
+}
+
+/* Measured, never seen: the color the edited variant renders as, for the picker. */
+.pfe__probe {
+  position: absolute;
+  width: space(1);
+  height: space(1);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.pfe__written {
+  @ds-typo(code);
+
+  overflow-wrap: anywhere;
+}
+
+.pfe__note {
+  color: palette(text.secondary);
+}
+
+.pfe__collection {
+  display: flex;
+  flex-direction: column;
+  gap: density(2);
+  max-height: space(16);
+  overflow-y: auto;
+}
+
+.pfe__row {
+  display: grid;
+  grid-template-columns: space(11) minmax(0, 1fr);
+  align-items: center;
+  gap: density(3);
+}
+
+.pfe__row-name {
+  @ds-typo(caption);
+
+  color: palette(text.secondary);
+}
+
+.pfe__row-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: density(2);
+}
+
+.pfe__chip {
+  width: space(6);
+  height: space(6);
+  padding: density(0);
+  border: border(1);
+  border-radius: radius(1);
+  cursor: pointer;
+
+  &[aria-pressed="true"] {
+    outline: space(1) solid palette(text.primary);
+    outline-offset: space(1);
+  }
+
+  &:focus-visible {
+    outline: space(1) solid palette(primary.main);
+    outline-offset: space(1);
+  }
+}
+
+.pfe__field {
+  @ds-typo(body-sm);
+
+  display: flex;
+  flex-direction: column;
+  gap: density(2);
+}
+
+.pfe__select,
+.pfe__text {
+  @ds-input(outlined);
+
+  max-width: space(16);
+}
+
+.pfe__free {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: density(3);
+}
+
+.pfe__picker {
+  width: space(8);
+  height: space(8);
+  padding: density(0);
+  border: border(1);
+  border-radius: radius(1);
+  background: transparent;
+  cursor: pointer;
+}
+
+.pfe__text {
+  @ds-typo(code);
+
+  flex: 1 1 space(14);
+}
+
+.pfe__apply {
+  @ds-button(outlined 2);
+}
+
+.pfe__error {
+  @ds-typo(caption);
+
+  color: palette(error.main);
+}
+
+/* The sample: main with its contrast text, the other variants, the ratio. */
+.pfe__preview {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: density(3);
+  grid-column: xs(1) lg(1 / -1);
+  padding: density(2);
+  border-radius: radius(2);
+}
+
+.pfe__sample {
+  @ds-typo(h6);
+
+  padding: density(2) density(3);
+  border-radius: radius(2);
+}
+
+.pfe__sample--small {
+  @ds-typo(subtitle2);
+
+  padding: density(2) density(4);
+}
+
+.pfe__ratio {
+  @ds-typo(body-sm);
+
+  color: palette(text.secondary);
+}

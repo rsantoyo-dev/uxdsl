@@ -1,0 +1,180 @@
+/* The breakpoints editor of the Live theme handler (/docs/theme). Every value is a UXDSL
+   token, role or directive; the literals left are layout (grid, flex), which has no family. */
+
+.bpe__toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: density(2);
+}
+
+.bpe__status {
+  @ds-typo(body-sm);
+
+  color: palette(text.secondary);
+}
+
+/* Reset and Copy: the theme's outlined Button; its disabled state comes from the theme. */
+.bpe__button {
+  @ds-button(outlined 2);
+  @ds-typo(body-sm);
+
+  display: inline-flex;
+  align-items: center;
+  gap: density(2);
+}
+
+.bpe {
+  display: flex;
+  flex-direction: column;
+  gap: density(3);
+}
+
+.bpe__viewport {
+  @ds-typo(body);
+}
+
+.bpe__rows {
+  display: flex;
+  flex-direction: column;
+  gap: density(2);
+}
+
+/* A breakpoint: name, slider, width and compiled width; the active one as a flat Surface. */
+.bpe__row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "key name number"
+    "slider slider slider"
+    "compiled compiled compiled";
+  align-items: center;
+  gap: density(2) density(4);
+  padding: density(2);
+  border: border(1);
+  border-color: transparent;
+  border-radius: radius(1);
+
+  &.is-active {
+    border-color: palette(primary.main);
+    background: palette(surface.light);
+  }
+}
+
+@media (--md) {
+  .bpe__row {
+    grid-template-columns: auto space(8) minmax(0, 1fr) auto space(14);
+    grid-template-areas: "key name slider number compiled";
+  }
+}
+
+.bpe__key {
+  grid-area: key;
+  width: space(4);
+  height: space(4);
+  border-radius: radius(circle);
+}
+
+.bpe__key--0 { background: palette(neutral.main); }
+.bpe__key--1 { background: palette(info.main); }
+.bpe__key--2 { background: palette(success.main); }
+.bpe__key--3 { background: palette(warning.main); }
+.bpe__key--4 { background: palette(error.main); }
+
+.bpe__name {
+  @ds-typo(code);
+
+  grid-area: name;
+}
+
+.bpe__base {
+  @ds-typo(body-sm);
+
+  grid-column: 1 / -1;
+  color: palette(text.secondary);
+
+  @media (--md) {
+    grid-column: 3 / -1;
+  }
+}
+
+.bpe__slider {
+  grid-area: slider;
+  width: 100%;
+  accent-color: palette(primary.main);
+}
+
+.bpe__number {
+  @ds-typo(body-sm);
+
+  grid-area: number;
+  display: inline-flex;
+  align-items: center;
+  gap: density(2);
+}
+
+.bpe__input {
+  @ds-input(outlined);
+
+  width: space(12);
+  padding: density(2) density(3);
+}
+
+.bpe__compiled {
+  @ds-typo(caption);
+
+  grid-area: compiled;
+  color: palette(text.secondary);
+
+  &.is-moved {
+    @ds-typo(subtitle2);
+
+    color: palette(primary.main);
+  }
+}
+
+.bpe__error {
+  @ds-typo(body-sm);
+
+  color: palette(error.main);
+}
+
+.bpe__result {
+  display: flex;
+  flex-direction: column;
+  gap: density(3);
+}
+
+.bpe__result-head {
+  @ds-typo(body-sm);
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: density(3);
+}
+
+/* The JSON for the theme file, and its empty state: outlined Surfaces of the theme. */
+.bpe__json {
+  @ds-surface(outlined radius(1));
+  @ds-typo(code);
+
+  overflow-x: auto;
+  background: palette(surface.light);
+}
+
+.bpe__empty {
+  @ds-surface(outlined radius(1));
+  @ds-typo(body-sm);
+
+  border-style: dashed;
+  color: palette(text.secondary);
+}
+
+.bpe__note {
+  @ds-typo(caption);
+
+  color: palette(text.secondary);
+}
