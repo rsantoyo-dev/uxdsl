@@ -1,0 +1,371 @@
+/* The home page's hero feed: each banner of src/lib/hero-banners.ts is a configuration that
+   these rules turn into UXDSL. Colors are palette(), surfaces and buttons are roles, text is
+   @ds-typo, every gap and padding is density(), the layout uses responsive values. The
+   literals left are layout (grid, flex), the page's width and the entrance motion. */
+
+$hf-tones: primary, secondary, tertiary, success, info, warning, error, dark, light, neutral, surface;
+$hf-families: primary, secondary, success, info, warning, error;
+
+.hf {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: density(4);
+  width: 100%;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: density(5) xs(space(4)) md(space(6));
+}
+
+/* The brand line and the ways in, the same for every banner. */
+.hf__head {
+  display: flex;
+  flex-direction: xs(column) md(row);
+  align-items: xs(flex-start) md(center);
+  justify-content: space-between;
+  gap: density(3);
+}
+
+.hf__brand {
+  @ds-typo(h4);
+
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: density(2);
+  color: palette(primary.main);
+}
+
+.hf__tagline {
+  @ds-typo(body);
+
+  color: palette(text.secondary);
+}
+
+.hf__ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: density(2);
+}
+
+.hf__cta {
+  @ds-button(outlined primary 2);
+
+  display: inline-flex;
+  align-items: center;
+  gap: density(1);
+  text-decoration: none;
+}
+
+.hf__cta--primary {
+  @ds-button(contained primary 2);
+}
+
+.hf__play {
+  max-width: calc(space(16) * 3);
+}
+
+/* A banner: its tone is a contained Surface, its padding a Density token, its layout one of three. */
+@each $tone in $hf-tones {
+  .hf-tone--#{$tone} {
+    @ds-surface(contained #{$tone} radius(4));
+  }
+}
+
+@for $n from 0 through 15 {
+  .hf-banner.hf-pad--#{$n} {
+    padding: density(#{$n});
+  }
+}
+
+.hf-banner {
+  display: grid;
+  align-items: center;
+  gap: density(5);
+  min-height: space(16);
+  animation: hf-in 400ms ease-out;
+}
+
+@keyframes hf-in {
+  from {
+    opacity: 0;
+    transform: translateY(space(3));
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hf-banner { animation: none; }
+}
+
+.hf-banner__text {
+  display: flex;
+  flex-direction: column;
+  gap: density(3);
+  min-width: 0;
+}
+
+.hf-layout--split,
+.hf-layout--reverse {
+  grid-template-columns: xs(minmax(0, 1fr)) lg(minmax(0, 5fr) minmax(0, 6fr));
+}
+
+.hf-layout--reverse .hf-banner__text {
+  order: xs(0) lg(2);
+}
+
+.hf-layout--stacked {
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  text-align: center;
+}
+
+.hf-layout--stacked .hf-banner__text {
+  align-items: center;
+}
+
+.hf-banner__eyebrow {
+  @ds-typo(code);
+}
+
+.hf-banner__title {
+  @ds-typo(h1);
+}
+
+.hf-banner__body {
+  @ds-typo(body);
+
+  max-width: calc(space(16) * 2.5);
+}
+
+.hf-banner__show {
+  min-width: 0;
+}
+
+/* Palette: light, main and dark of each role, as swatches under one row of labels. */
+@each $family in $hf-families {
+  @each $variant in light, main, dark {
+    .hf-fill--#{$family}-#{$variant} {
+      background: palette(#{$family}.#{$variant});
+    }
+  }
+}
+
+.hf-palette {
+  display: flex;
+  flex-direction: column;
+  gap: density(1);
+}
+
+.hf-palette__row {
+  display: grid;
+  grid-template-columns: space(12) repeat(3, minmax(0, 1fr));
+  align-items: center;
+  gap: density(1);
+}
+
+.hf-palette__name {
+  @ds-typo(code);
+}
+
+.hf-palette__head {
+  @ds-typo(code);
+
+  text-align: center;
+}
+
+/* The border is the banner's own text color, so a swatch of the banner's color still shows. */
+.hf-palette__chip {
+  height: space(8);
+  border: border(1);
+  border-color: currentcolor;
+  border-radius: radius(1);
+}
+
+/* Type: each role as the theme sets it at this width. */
+@each $role in h1, h3, body, caption {
+  .hf-typo--#{$role} {
+    @ds-typo(#{$role});
+  }
+}
+
+.hf-type {
+  @ds-surface(outlined radius(3));
+
+  display: flex;
+  flex-direction: column;
+  gap: density(2);
+  background: palette(surface.main);
+}
+
+.hf-type__row {
+  display: flex;
+  flex-direction: column;
+  gap: density(1);
+}
+
+.hf-type__role {
+  @ds-typo(code);
+
+  color: palette(primary.main);
+}
+
+.hf-type__sample {
+  color: palette(text.primary);
+}
+
+/* Density: three nested boxes, each padded by its own token. */
+@each $n in 2, 4, 6 {
+  .hf-density--#{$n} {
+    padding: density(#{$n});
+  }
+}
+
+.hf-density {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: density(1);
+  border: border(1);
+  border-style: dashed;
+  border-color: currentcolor;
+  border-radius: radius(2);
+}
+
+.hf-density__label {
+  @ds-typo(code);
+}
+
+.hf-density__content {
+  @ds-surface(contained light radius(1));
+  @ds-typo(subtitle2);
+}
+
+/* Roles: buttons, a field and a card, each one line in UXDSL. */
+.hf-roles {
+  display: flex;
+  flex-direction: column;
+  gap: density(3);
+}
+
+.hf-roles__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: density(2);
+}
+
+.hf-btn-contained {
+  @ds-button(contained primary 3);
+}
+
+.hf-btn-outlined {
+  @ds-button(outlined light 3);
+}
+
+.hf-btn-secondary {
+  @ds-button(contained secondary 3);
+}
+
+.hf-input {
+  @ds-input(outlined);
+}
+
+.hf-card {
+  @ds-surface(contained surface radius(3));
+
+  display: flex;
+  flex-direction: column;
+  gap: density(1);
+}
+
+.hf-card__title {
+  @ds-typo(code);
+
+  color: palette(primary.main);
+}
+
+.hf-card__text {
+  @ds-typo(body-sm);
+}
+
+/* Responsive: a grid that changes at md, and a pill that names the breakpoint. */
+.hf-responsive {
+  display: flex;
+  flex-direction: column;
+  gap: density(3);
+}
+
+.hf-responsive__bp {
+  @ds-surface(contained dark radius(pill));
+  @ds-typo(caption);
+
+  align-self: flex-start;
+  padding: density(1) density(3);
+
+  &::after {
+    content: xs("xs") sm("sm") md("md") lg("lg") xl("xl");
+  }
+}
+
+.hf-responsive__grid {
+  display: grid;
+  grid-template-columns: xs(minmax(0, 1fr)) md(repeat(3, minmax(0, 1fr)));
+  gap: density(2);
+}
+
+.hf-responsive__cell {
+  @ds-surface(contained primary radius(2));
+  @ds-typo(subtitle2);
+
+  text-align: center;
+}
+
+.hf-responsive__code {
+  @ds-typo(code);
+
+  overflow-wrap: anywhere;
+}
+
+/* The feed's controls: pause, and one dot per banner. */
+.hf__controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: density(3);
+}
+
+.hf__pause {
+  @ds-button(outlined 1);
+
+  display: inline-flex;
+  align-items: center;
+}
+
+.hf__dots {
+  display: flex;
+  gap: density(2);
+}
+
+.hf__dot {
+  width: space(5);
+  height: space(5);
+  padding: density(0);
+  border: border(1);
+  border-color: palette(primary.main);
+  border-radius: radius(circle);
+  background: transparent;
+  cursor: pointer;
+
+  &.is-selected {
+    background: palette(primary.main);
+  }
+
+  &:focus-visible {
+    outline: space(1) solid palette(primary.main);
+    outline-offset: space(1);
+  }
+}

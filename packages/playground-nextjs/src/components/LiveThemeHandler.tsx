@@ -13,11 +13,12 @@ import ThemeConfigJsonEditor from './ThemeConfigJsonEditor'
  * Every tab reads and writes the same active theme (ThemeContext → applyTheme), so a change
  * in one shows in the others and on the page. A new editor (spacing, radii…) is a new tab.
  */
-export default function LiveThemeHandler() {
+/** `showcase` puts the small UXDSL page above the tabs (/docs/theme); the home page has its own hero instead. */
+export default function LiveThemeHandler({ showcase = true }: { showcase?: boolean }) {
   return (
     <>
       {/* The showcase first: a small page in UXDSL alone, which every tab below changes. */}
-      <ThemeShowcase />
+      {showcase && <ThemeShowcase />}
       <Tabs labels={['Palette', 'Breakpoints', 'Spacing / Density', 'JSON']}>
         <PaletteFamilyEditor />
         <BreakpointsEditor />

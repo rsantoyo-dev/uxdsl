@@ -1,122 +1,108 @@
-.ai-prompt-container {
-  margin-top: space(4);
-  width: 100%;
-  max-width: 600px;
-  background: transparent;
-  position: relative;
-  z-index: 10;
-}
+/* "Name a theme" (AIPrompt) in the home page's hero. Every value is a UXDSL token, role or
+   directive; the literals left are layout (flex) and the spinner's motion. */
 
-.ai-prompt-form {
+.ai-prompt {
+  display: flex;
+  flex-direction: column;
+  gap: density(2);
   width: 100%;
 }
 
-.input-wrapper {
+/* The field: an outlined Input shape holding an icon, the text and the submit button. */
+.ai-prompt__form {
+  @ds-surface(outlined radius(pill));
+
   display: flex;
   align-items: center;
-  padding: space(2);
-  border-radius: radius(pill);
-  background: palette(surface.paper);
-  border: 1px solid palette(divider);
-  transition: border-color 0.2s ease;
-  position: relative;
-  z-index: 1;
+  gap: density(2);
+  padding: density(1) density(1) density(1) density(3);
+  background: palette(surface.main);
 
   &:focus-within {
     border-color: palette(primary.main);
-    box-shadow: 0 0 0 2px palette(primary.light);
   }
 }
 
-.ai-icon {
+.ai-prompt__icon {
+  flex: none;
   color: palette(primary.main);
-  margin-right: space(2);
 }
 
-.ai-input {
+.ai-prompt__input {
+  @ds-typo(body);
+
   flex: 1;
-  border: none;
+  min-width: 0;
+  padding: density(2) density(0);
+  border: border(0);
   background: transparent;
   color: palette(text.primary);
-  font-size: 1rem;
   outline: none;
 
   &::placeholder {
     color: palette(text.secondary);
   }
 
-  /* MIG-B7-17 phase E: `outline: none` left keyboard focus invisible. */
+  /* The field itself shows keyboard focus (the pill around it only changes its border). */
   &:focus-visible {
-    outline: 2px solid palette(primary.main);
-    outline-offset: 2px;
+    outline: space(1) solid palette(primary.main);
+    outline-offset: space(1);
+    border-radius: radius(1);
   }
 }
 
-.ai-submit-btn {
- @ds-button(flat primary);
-  
-  &:disabled {
-    color: palette(action.disabled);
-    border-color: palette(action.disabled);
-  }
-}
+.ai-prompt__submit {
+  @ds-button(contained primary 2 radius(pill));
 
-.ai-response {
-  margin-top: space(4);
-  padding: space(4);
-  border-radius: radius(3);
-  background: palette(surface.paper);
-  border: 1px solid palette(divider);
-  color: palette(text.primary);
-  font-size: 0.95rem;
-  line-height: 1.6;
-}
-
-.theme-loading-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  background: color(black, 0.7); /* a modal scrim: black whatever the mode */
-  backdrop-filter: blur(4px);
-  display: grid;
-  place-items: center;
-  animation: fadeIn 0.2s ease-out;
-}
-
-.loading-content {
-  display: flex;
-  flex-direction: column;
+  display: inline-flex;
   align-items: center;
-  gap: space(4);
-  color: color(white);
 }
 
-.loading-spinner {
-  animation: spin 1s linear infinite;
-  color: palette(primary.light);
+@keyframes ai-prompt-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
-.loading-text {
-  font-size: 1.25rem;
-  font-weight: 500;
-  color: color(white);
-  text-align: center;
+.ai-prompt__spinner {
+  animation: ai-prompt-spin 1s linear infinite;
 }
 
-.loading-theme-name {
-  font-family: monospace;
-  background: color(white, 0.1);
-  padding: space(1) space(2);
-  border-radius: radius(2);
-  color: palette(primary.light);
+/* Suggestions to play with, and the theme in use: small and quiet. */
+.ai-prompt__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: density(1);
 }
 
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+.ai-prompt__suggestion {
+  @ds-button(outlined 1 radius(pill));
+  @ds-typo(caption);
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+.ai-prompt__status {
+  @ds-typo(caption);
+
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: density(1);
+  margin-left: auto;
+  color: palette(text.secondary);
+}
+
+.ai-prompt__reset {
+  @ds-button(flat 1);
+  @ds-typo(caption);
+
+  display: inline-flex;
+  align-items: center;
+  gap: density(1);
+}
+
+.ai-prompt__error {
+  @ds-typo(caption);
+
+  color: palette(error.main);
 }

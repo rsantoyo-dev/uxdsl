@@ -48,25 +48,6 @@
   color: palette(text.secondary);
 }
 
-.home-hero__ctas {
-  display: flex;
-  flex-wrap: wrap;
-  gap: space(3);
-}
-
-.home-cta {
-  @ds-button(outlined primary);
-  display: inline-flex;
-  align-items: center;
-  gap: space(2);
-  text-decoration: none;
-  font-weight: 600;
-}
-
-.home-cta--primary {
-  @ds-button(contained primary);
-}
-
 .home-hero__code {
   display: grid;
   grid-template-columns: xs(minmax(0, 1fr)) md(minmax(0, 1fr) minmax(0, 1fr));
@@ -177,23 +158,6 @@
   color: palette(text.secondary);
 }
 
-.home-experiment {
-  width: 100%;
-  max-width: 1320px;
-  margin: 0 auto;
-  box-sizing: border-box;
-  padding: density(6) xs(space(4)) md(space(6)) density(8);
-  display: grid;
-  justify-items: start;
-}
-
-.home-experiment__text {
-  @ds-typo(span);
-  margin: 0;
-  max-width: 48rem;
-  color: palette(text.secondary);
-}
-
 .home-footer {
   margin-top: auto;
   padding: density(6) space(4);
@@ -234,5 +198,35 @@
 .home-footer__copy {
   @ds-typo(caption);
   margin: 0;
+  color: palette(text.secondary);
+}
+
+/* The theme editor under the hero feed, closed by default: the same container as every home section. */
+.home-live {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: density(0) xs(space(4)) md(space(6));
+}
+
+.home-live__details {
+  @ds-surface(outlined radius(3));
+}
+
+.home-live__summary {
+  @ds-typo(subtitle2);
+
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: density(2);
+  color: palette(text.primary);
+  cursor: pointer;
+}
+
+.home-live__hint {
+  @ds-typo(caption);
+
   color: palette(text.secondary);
 }
