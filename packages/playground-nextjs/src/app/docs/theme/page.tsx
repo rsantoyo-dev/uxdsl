@@ -3,7 +3,7 @@ import schema from 'uxdsl/schema/theme.schema.json'
 import base from 'uxdsl/theme/base.json'
 import { deepMergeTheme, validateTheme, googleFontsImportUrls } from 'uxdsl/theme'
 import { PageTitle } from '@/components/PageTitle'
-import ThemeConfigJsonEditor from '@/components/ThemeConfigJsonEditor'
+import LiveThemeHandler from '@/components/LiveThemeHandler'
 import { ThemeResolution, FontsImport, ValueGrammar } from '@/components/RuntimeEngines'
 import { describeFamilies } from '@/lib/theme-reference'
 
@@ -140,10 +140,19 @@ export default function DocsThemePage() {
       </div>
 
       <div className="doc-section">
-        <h2 id="editor">The active theme, as JSON</h2>
-        <p>The theme this site is showing. Edit it and the page follows through <code>applyTheme</code>; a change of structure is refused. Nothing is saved to a file.</p>
+        <h2 id="editor">Live theme handler</h2>
+        <p>
+          The theme this site is showing, to edit live. Every tab writes the same theme through <code>applyTheme</code>, so the page and
+          the other tabs follow at once; a change of structure is refused. Nothing is saved to a file: copy the JSON, or export it, into
+          your <code>uxdsl.theme.json</code>.
+        </p>
+        <ul>
+          <li><strong>Palette</strong>: choose a role (primary, secondary, surface…), then pick each of its variants from the color collection (<code>color(purple.700)</code>), link it to another role (<code>palette(secondary.main)</code>) or give it a color of its own. The Light/Dark switch edits <code>palette</code> or <code>modes.dark.palette</code>.</li>
+          <li><strong>Breakpoints</strong>: slide sm, md, lg and xl and the page switches at the new widths. It is a preview: the theme cannot move a breakpoint at run time, so it moves this page’s compiled media rules and gives you the JSON for your theme file.</li>
+          <li><strong>JSON</strong>: the whole active theme as a tree: expand a family, edit a value in place, and the editor checks it against the packaged schema as you type. Text and table views are in its menu.</li>
+        </ul>
       </div>
-      <ThemeConfigJsonEditor />
+      <LiveThemeHandler />
     </>
   )
 }

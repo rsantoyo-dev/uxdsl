@@ -3,104 +3,136 @@
 import { useEffect, useRef, useState } from 'react'
 import { Download, RefreshCcw } from 'lucide-react'
 import { validateTheme } from 'uxdsl/theme'
+import schema from 'uxdsl/schema/theme.schema.json'
+import type { Content, OnChangeStatus, createJSONEditor as CreateJSONEditor } from 'vanilla-jsoneditor'
 import { useTheme } from './ThemeContext'
 import { InteractiveDemoContainer } from './InteractiveDemoContainer'
+
+type JSONEditor = ReturnType<typeof CreateJSONEditor>
 
 function prettyJson(value: unknown) {
   return JSON.stringify(value ?? {}, null, 2)
 }
 
+/** The JSON a Content holds, or a SyntaxError for text that does not parse. */
+function jsonOf(content: Content): unknown {
+  return 'json' in content && content.json !== undefined ? content.json : JSON.parse((content as { text: string }).text)
+}
+
+/**
+ * The active theme as a JSON tree (vanilla-jsoneditor): every family expands and collapses,
+ * values are edited in place, and the editor checks each edit against the packaged theme
+ * schema as you type. A valid edit is applied through `setCustomTheme` (ThemeContext →
+ * applyTheme), the same path as the other tabs, so they and the page follow it.
+ */
 export default function ThemeConfigJsonEditor() {
   const { activeThemeData, setCustomTheme, customThemeName } = useTheme()
-  const [jsonText, setJsonText] = useState(() => prettyJson(activeThemeData))
   const [error, setError] = useState<string | null>(null)
-  const [status, setStatus] = useState<'idle' | 'synced' | 'invalid'>('idle')
+  const [status, setStatus] = useState<'loading' | 'synced' | 'invalid'>('loading')
 
+  const hostRef = useRef<HTMLDivElement>(null)
+  const editorRef = useRef<JSONEditor | null>(null)
   const lastAppliedRef = useRef<string>('')
   const syncTimeoutRef = useRef<number | null>(null)
+  // The latest values for the editor's callbacks, which are created once.
+  const latest = useRef({ setCustomTheme, customThemeName, activeThemeData })
+  latest.current = { setCustomTheme, customThemeName, activeThemeData }
 
+  // Apply an edit 500ms after the last keystroke, if it parses and the validator accepts it.
+  const scheduleApply = (content: Content, contentErrors: OnChangeStatus['contentErrors']) => {
+    if (syncTimeoutRef.current) window.clearTimeout(syncTimeoutRef.current)
+    if (contentErrors && 'parseError' in contentErrors) {
+      setStatus('invalid')
+      setError(`Invalid JSON: ${contentErrors.parseError.message}`)
+      return
+    }
+    syncTimeoutRef.current = window.setTimeout(() => {
+      try {
+        const validated = validateTheme(jsonOf(content) as never)
+        if (!validated.ok) {
+          const first = validated.errors[0]
+          setStatus('invalid')
+          setError(typeof first === 'string' ? first : first ? `${first.path}: ${first.message}` : 'Invalid theme JSON.')
+          return
+        }
+        lastAppliedRef.current = prettyJson(validated.theme)
+        setError(null)
+        setStatus('synced')
+        latest.current.setCustomTheme(latest.current.customThemeName || 'Custom Theme', validated.theme)
+      } catch (cause) {
+        // setCustomTheme throws with the real reason (an unknown family, a structural change
+        // that needs a rebuild); keep it rather than calling everything a syntax error.
+        setStatus('invalid')
+        setError(cause instanceof Error ? cause.message : String(cause))
+      }
+    }, 500)
+  }
+
+  // Create the editor once, in the browser only: it is loaded with the tab, not with the page.
   useEffect(() => {
-    // MIG-B6-30 (FEAT-008): drop any edit still waiting on the debounce before
-    // adopting the new theme's JSON. Without this, switching themes (or
-    // resetting) while a keystroke was pending let that keystroke fire ~500ms
-    // later and re-apply an edit belonging to the theme the user just left.
+    let cancelled = false
+    let editor: JSONEditor | null = null
+    import('vanilla-jsoneditor').then(({ createJSONEditor, createAjvValidator, Mode }) => {
+      if (cancelled || !hostRef.current) return
+      const theme = latest.current.activeThemeData
+      lastAppliedRef.current = prettyJson(theme)
+      editor = createJSONEditor({
+        target: hostRef.current,
+        props: {
+          content: { json: theme },
+          mode: Mode.tree,
+          validator: createAjvValidator({ schema: schema as never }),
+          onChange: (content: Content, _previous: Content, { contentErrors }: OnChangeStatus) => scheduleApply(content, contentErrors),
+        },
+      })
+      // Open on the families, each collapsed: expand one to edit it.
+      editor.expand([], (path: readonly unknown[]) => path.length < 1)
+      editorRef.current = editor
+      setStatus('synced')
+    })
+    return () => {
+      cancelled = true
+      if (syncTimeoutRef.current) window.clearTimeout(syncTimeoutRef.current)
+      editorRef.current = null
+      editor?.destroy()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // A change made elsewhere (the Palette tab, another theme, a reset) shows here. MIG-B6-30
+  // (FEAT-008): an edit still waiting on the debounce is dropped first, so it cannot land on
+  // the theme the user just switched to.
+  useEffect(() => {
+    const editor = editorRef.current
+    if (!editor) return
+    const next = prettyJson(activeThemeData)
+    if (next === lastAppliedRef.current) return
     if (syncTimeoutRef.current) {
       window.clearTimeout(syncTimeoutRef.current)
       syncTimeoutRef.current = null
     }
-    const next = prettyJson(activeThemeData)
-    setJsonText(next)
     lastAppliedRef.current = next
+    editor.update({ json: activeThemeData })
     setError(null)
     setStatus('synced')
   }, [activeThemeData])
 
-  useEffect(() => {
-    if (jsonText === lastAppliedRef.current) return
-
-    if (syncTimeoutRef.current) {
-      window.clearTimeout(syncTimeoutRef.current)
-    }
-
-    syncTimeoutRef.current = window.setTimeout(() => {
-      try {
-        const parsed = JSON.parse(jsonText)
-        const validated = validateTheme(parsed)
-
-        if (!validated.ok) {
-          const first = validated.errors[0]
-          const firstMessage =
-            typeof first === 'string'
-              ? first
-              : first
-                ? `${first.path}: ${first.message}`
-                : 'Invalid theme JSON.'
-          setStatus('invalid')
-          setError(firstMessage)
-          return
-        }
-
-        const nextPretty = prettyJson(validated.theme)
-        lastAppliedRef.current = nextPretty
-        setError(null)
-        setStatus('synced')
-        setCustomTheme(customThemeName || 'Custom Theme', validated.theme)
-      } catch (cause) {
-        // A parse failure and a rejected theme are different problems, and
-        // labelling both "Invalid JSON syntax" sent people hunting for a comma
-        // that was not there — `setCustomTheme` throws with the real reason
-        // (an unknown family, a structural change that needs a rebuild).
-        setStatus('invalid')
-        const message = cause instanceof Error ? cause.message : ''
-        setError(
-          message && !(cause instanceof SyntaxError)
-            ? message
-            : 'Invalid JSON syntax. Fix the JSON to apply changes.')
-      }
-    }, 500)
-
-    return () => {
-      if (syncTimeoutRef.current) window.clearTimeout(syncTimeoutRef.current)
-    }
-  }, [jsonText, setCustomTheme, customThemeName])
-
   const handleReset = () => {
-    const next = prettyJson(activeThemeData)
-    setJsonText(next)
+    if (syncTimeoutRef.current) window.clearTimeout(syncTimeoutRef.current)
+    lastAppliedRef.current = prettyJson(activeThemeData)
+    editorRef.current?.update({ json: activeThemeData })
     setError(null)
     setStatus('synced')
   }
 
   const handleExport = () => {
-    const fallback = prettyJson(activeThemeData)
     const content = (() => {
       try {
-        return prettyJson(JSON.parse(jsonText))
+        return prettyJson(editorRef.current ? jsonOf(editorRef.current.get()) : activeThemeData)
       } catch {
-        return fallback
+        return prettyJson(activeThemeData)
       }
     })()
-
     const blob = new Blob([content], { type: 'application/json;charset=utf-8' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -116,21 +148,13 @@ export default function ThemeConfigJsonEditor() {
       toolbar={
         <div className="config-editor__toolbar">
           <div className="config-editor__hint">
-            Edit JSON to update UI live. UI changes also sync back here.
+            Expand a family to edit it; the page follows each valid edit. Tree, text and table views are in the editor’s menu.
           </div>
           <div className="config-editor__buttons">
-            <button
-              type="button"
-              onClick={handleReset}
-              className="config-editor__button"
-            >
+            <button type="button" onClick={handleReset} className="config-editor__button">
               <RefreshCcw size={14} /> Reset
             </button>
-            <button
-              type="button"
-              onClick={handleExport}
-              className="config-editor__button config-editor__button--primary"
-            >
+            <button type="button" onClick={handleExport} className="config-editor__button config-editor__button--primary">
               <Download size={14} /> Export
             </button>
           </div>
@@ -138,19 +162,9 @@ export default function ThemeConfigJsonEditor() {
       }
     >
       <div className="config-editor">
-        <textarea
-          value={jsonText}
-          onChange={(e) => setJsonText(e.target.value)}
-          spellCheck={false}
-          aria-label="Theme runtime JSON editor"
-          className={`config-editor__textarea${error ? ' is-invalid' : ''}`}
-        />
-        <div className={`config-editor__status${error ? ' is-invalid' : ''}`}>
-          {error
-            ? error
-            : status === 'synced'
-              ? 'Synced with runtime theme.'
-              : 'Waiting for valid JSON...'}
+        <div ref={hostRef} className={`config-editor__tree${error ? ' is-invalid' : ''}`} aria-label="Theme runtime JSON editor" />
+        <div className={`config-editor__status${error ? ' is-invalid' : ''}`} role="status">
+          {error ? error : status === 'loading' ? 'Loading the editor…' : 'Synced with runtime theme.'}
         </div>
       </div>
     </InteractiveDemoContainer>

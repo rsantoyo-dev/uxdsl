@@ -1,71 +1,103 @@
-/* The runtime JSON editor on /docs/config. MIG-B7-17 phase B (4): these rules were inline
-   style={{}} in ThemeConfigJsonEditor.tsx; the error color was a ternary and is now .is-invalid.
-   The radius fallbacks (6px/8px) were never used: radius 1 is always defined. */
+/* The JSON tab of the Live theme handler (/docs/theme): the theme as a JSON tree
+   (vanilla-jsoneditor). Every value is a UXDSL token, role or directive; the literals left
+   are layout (flex) and sizes the editor needs. */
+
 .config-editor__toolbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: space(3);
   flex-wrap: wrap;
+  gap: density(3);
 }
 
 .config-editor__hint {
-  font-size: 0.8rem;
+  @ds-typo(caption);
+
   color: palette(text.secondary);
 }
 
 .config-editor__buttons {
   display: flex;
-  gap: space(2);
+  gap: density(2);
 }
 
 .config-editor__button {
-  border: 1px solid palette(neutral.light);
-  background: palette(surface.light);
-  color: palette(text.primary);
-  border-radius: radius(1);
-  padding: space(2) space(3);
+  @ds-button(outlined 2);
+  @ds-typo(body-sm);
+
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  cursor: pointer;
+  gap: density(2);
 }
 
 .config-editor__button--primary {
-  border-color: palette(primary.main);
-  background: palette(primary.main);
-  color: palette(primary.contrast);
+  @ds-button(contained primary 2);
 }
 
 .config-editor {
   display: flex;
   flex-direction: column;
-  gap: space(2);
+  gap: density(2);
 }
 
-.config-editor__textarea {
-  width: 100%;
-  min-height: 460px;
+/* The editor draws itself with --jse-* custom properties; here each one is a Palette role,
+   so the tree follows the palette and dark mode like the rest of the page: the theme's
+   modes.dark.palette redefines the roles, and this rule never names a mode. */
+.config-editor__tree {
+  --jse-theme-color: palette(primary.main);
+  --jse-theme-color-highlight: palette(primary.dark);
+  --jse-background-color: palette(surface.main);
+  --jse-text-color: palette(text.primary);
+  --jse-text-color-inverse: palette(text.secondary);
+  --jse-main-border: border(1);
+  --jse-menu-color: palette(primary.contrast);
+  --jse-panel-background: palette(surface.light);
+  --jse-panel-color: palette(text.primary);
+  --jse-panel-color-readonly: palette(text.disabled);
+  --jse-panel-border: border(1);
+  --jse-panel-background-border: border(1);
+  --jse-hover-background-color: palette(surface.light);
+  --jse-active-line-background-color: palette(surface.light);
+  --jse-selection-background-color: palette(primary.light, 0.25);
+  --jse-selection-background-inactive-color: palette(neutral.light, 0.4);
+  --jse-key-color: palette(primary.main);
+  --jse-value-color: palette(text.primary);
+  --jse-value-color-string: palette(success.main);
+  --jse-value-color-number: palette(info.main);
+  --jse-value-color-boolean: palette(warning.main);
+  --jse-value-color-null: palette(text.secondary);
+  --jse-delimiter-color: palette(text.secondary);
+  --jse-collapsed-items-background-color: palette(surface.light);
+  --jse-collapsed-items-link-color: palette(primary.main);
+  --jse-tag-background: palette(surface.light);
+  --jse-tag-color: palette(text.secondary);
+  --jse-input-background: palette(surface.main);
+  --jse-input-border: border(1);
+  --jse-button-background: palette(primary.main);
+  --jse-button-color: palette(primary.contrast);
+  --jse-context-menu-background: palette(surface.main);
+  --jse-context-menu-color: palette(text.primary);
+  --jse-modal-background: palette(surface.main);
+  --jse-error-color: palette(error.main);
+  --jse-font-family-mono: var(--uxdsl__font__code, monospace);
+  --jse-font-size-mono: space(4);
+
+  height: calc(space(16) * 2);
   resize: vertical;
-  font-family: var(--uxdsl__font__code, ui-monospace, SFMono-Regular, Menlo, monospace);
-  font-size: 0.82rem;
-  line-height: 1.5;
-  border: 1px solid palette(neutral.light);
+  overflow: hidden;
   border-radius: radius(1);
-  padding: space(3);
-  background: palette(surface.main);
-  color: palette(text.primary);
-}
 
-.config-editor__textarea.is-invalid {
-  border-color: palette(error.main);
+  &.is-invalid {
+    outline: space(1) solid palette(error.main);
+  }
 }
 
 .config-editor__status {
-  font-size: 0.75rem;
-  color: palette(text.secondary);
-}
+  @ds-typo(caption);
 
-.config-editor__status.is-invalid {
-  color: palette(error.main);
+  color: palette(text.secondary);
+
+  &.is-invalid {
+    color: palette(error.main);
+  }
 }
