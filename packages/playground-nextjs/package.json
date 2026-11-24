@@ -47,7 +47,8 @@
     "react-dom": "^18.2.0",
     "react-syntax-highlighter": "^16.1.2",
     "sass": "^1.94.0",
-    "uxdsl": "file:../uxdsl"
+    "uxdsl": "file:../uxdsl",
+    "vanilla-jsoneditor": "^3.13.1"
   },
   "devDependencies": {
     "@testing-library/dom": "^10.4.2",
