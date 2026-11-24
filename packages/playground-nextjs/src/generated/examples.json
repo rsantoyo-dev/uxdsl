@@ -40,6 +40,25 @@
       },
       "bytes": 366
     },
+    "language": {
+      "id": "language",
+      "themePath": "uxdsl.theme.json",
+      "theme": "{}",
+      "sourcePath": "src/card.uxdsl",
+      "source": "// Sass: a variable, holding a token function\n$gap: space(3);\n\n.card {\n  // Directive: the theme's \"contained\" container\n  @ds-surface(contained);\n  display: flex;\n  // Responsive value: column, then row from md up\n  flex-direction: xs(column) md(row);\n  gap: $gap;\n\n  // Sass nesting, and a token function\n  &__title { color: palette(primary.main); }\n}",
+      "output": ":root { --uxdsl__space__3: 0.5rem; }\n.card {\n  padding: var(--uxdsl__surface__contained-padding);\n  border-radius: var(--uxdsl__surface__contained-radius);\n  background: var(--uxdsl__surface__contained-bg);\n  color: var(--uxdsl__surface__contained-color);\n  border: var(--uxdsl__surface__contained-border);\n  box-shadow: var(--uxdsl__surface__contained-shadow);\n  display: flex;\n  flex-direction: column;\n  gap: var(--uxdsl__space__3);\n}\n@media (min-width: 768px) { .card { flex-direction: row; } }\n.card__title { color: var(--uxdsl__palette__primary-main); }",
+      "tokens": [
+        "--uxdsl__space__3"
+      ],
+      "breakpoints": {
+        "xs": 0,
+        "sm": 480,
+        "md": 768,
+        "lg": 1024,
+        "xl": 1280
+      },
+      "bytes": 524
+    },
     "breakpoints": {
       "id": "breakpoints",
       "themePath": "uxdsl.theme.json",
