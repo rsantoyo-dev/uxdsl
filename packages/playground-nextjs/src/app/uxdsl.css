@@ -1024,7 +1024,7 @@ input[type=range]::-moz-range-thumb:hover {
   margin-block-end: var(--uxdsl__typography__body-sm-margin-block-end);
   display: inline-flex;
   align-items: center;
-  gap: var(--uxdsl__space__2);
+  gap: var(--uxdsl__density__2);
 }
 .bpe__button:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__outlined-hover-color); border: var(--uxdsl__button__outlined-hover-border); }
 .bpe__button:focus-visible { outline: var(--uxdsl__button__outlined-focusvisible-outline); outline-offset: var(--uxdsl__button__outlined-focusvisible-outline-offset); }
@@ -1050,7 +1050,7 @@ input[type=range]::-moz-range-thumb:hover {
 .bpe__rows {
   display: flex;
   flex-direction: column;
-  gap: var(--uxdsl__space__2);
+  gap: var(--uxdsl__density__2);
 }
 
 /* A breakpoint: name, slider, width and compiled width; the active one as a flat Surface. */
@@ -1059,7 +1059,7 @@ input[type=range]::-moz-range-thumb:hover {
   grid-template-columns: auto minmax(0, 1fr) auto;
   grid-template-areas: "key name number" "slider slider slider" "compiled compiled compiled";
   align-items: center;
-  gap: var(--uxdsl__space__2) var(--uxdsl__space__4);
+  gap: var(--uxdsl__density__2) var(--uxdsl__density__4);
   padding: var(--uxdsl__density__2);
   border: var(--uxdsl__border__1);
   border-color: transparent;
@@ -1148,12 +1148,12 @@ input[type=range]::-moz-range-thumb:hover {
   grid-area: number;
   display: inline-flex;
   align-items: center;
-  gap: var(--uxdsl__space__2);
+  gap: var(--uxdsl__density__2);
 }
 
 .bpe__input { box-sizing: border-box; font: inherit; width: 100%; padding: var(--uxdsl__surface__outlined-padding); border-radius: var(--uxdsl__surface__outlined-radius); background: var(--uxdsl__surface__outlined-bg); color: var(--uxdsl__surface__outlined-color); border: var(--uxdsl__surface__outlined-border); box-shadow: var(--uxdsl__surface__outlined-shadow); caret-color: var(--uxdsl__input__outlined-base-caret);
   width: var(--uxdsl__space__12);
-  padding: var(--uxdsl__space__2) var(--uxdsl__space__3);
+  padding: var(--uxdsl__density__2) var(--uxdsl__density__3);
 }
 
 .bpe__input::placeholder { color: var(--uxdsl__input__outlined-base-placeholder); }
@@ -1200,7 +1200,7 @@ input[type=range]::-moz-range-thumb:hover {
 .bpe__result {
   display: flex;
   flex-direction: column;
-  gap: var(--uxdsl__space__3);
+  gap: var(--uxdsl__density__3);
 }
 
 .bpe__result-head {
@@ -1215,7 +1215,7 @@ input[type=range]::-moz-range-thumb:hover {
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: var(--uxdsl__space__3);
+  gap: var(--uxdsl__density__3);
 }
 
 /* The JSON for the theme file, and its empty state: outlined Surfaces of the theme. */
@@ -6296,7 +6296,7 @@ input[type=range]::-moz-range-thumb:hover {
 .pfe__segmented {
   display: inline-flex;
   flex-wrap: wrap;
-  gap: var(--uxdsl__space__1);
+  gap: var(--uxdsl__density__1);
 }
 
 .pfe__segment { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: var(--uxdsl__surface__outlined-bg); color: var(--uxdsl__surface__outlined-color); border: var(--uxdsl__surface__outlined-border); box-shadow: var(--uxdsl__surface__outlined-shadow);
@@ -6344,7 +6344,7 @@ input[type=range]::-moz-range-thumb:hover {
 .pfe__group {
   display: flex;
   flex-direction: column;
-  gap: var(--uxdsl__space__2);
+  gap: var(--uxdsl__density__2);
 }
 
 .pfe__group-label {
@@ -6362,7 +6362,7 @@ input[type=range]::-moz-range-thumb:hover {
 .pfe__group-roles {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--uxdsl__space__3);
+  gap: var(--uxdsl__density__3);
 }
 
 .pfe__role {
@@ -6375,7 +6375,7 @@ input[type=range]::-moz-range-thumb:hover {
   display: flex;
   flex-direction: column;
   width: var(--uxdsl__space__12);
-  padding: 0;
+  padding: var(--uxdsl__density__0);
   overflow: hidden;
   background: var(--uxdsl__palette__surface-main);
   text-align: left;
@@ -6406,7 +6406,7 @@ input[type=range]::-moz-range-thumb:hover {
   display: flex;
   align-items: flex-end;
   height: var(--uxdsl__space__9);
-  padding: var(--uxdsl__space__2) var(--uxdsl__space__3);
+  padding: var(--uxdsl__density__2) var(--uxdsl__density__3);
 }
 
 .pfe__role-strip {
@@ -6426,21 +6426,21 @@ input[type=range]::-moz-range-thumb:hover {
   letter-spacing: var(--uxdsl__typography__subtitle2-letter-spacing);
   margin-block-start: var(--uxdsl__typography__subtitle2-margin-block-start);
   margin-block-end: var(--uxdsl__typography__subtitle2-margin-block-end);
-  padding: var(--uxdsl__space__2) var(--uxdsl__space__3);
+  padding: var(--uxdsl__density__2) var(--uxdsl__density__3);
 }
 
 /* The variants of the chosen role. */
 .pfe__variants {
   display: flex;
   flex-direction: column;
-  gap: var(--uxdsl__space__2);
+  gap: var(--uxdsl__density__2);
 }
 
 .pfe__variant { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: var(--uxdsl__surface__flat-bg); color: var(--uxdsl__surface__flat-color); border: var(--uxdsl__surface__flat-border); box-shadow: var(--uxdsl__surface__flat-shadow);
   display: grid;
   grid-template-columns: auto auto minmax(0, 1fr);
   align-items: center;
-  gap: var(--uxdsl__space__1) var(--uxdsl__space__3);
+  gap: var(--uxdsl__density__1) var(--uxdsl__density__3);
   border: var(--uxdsl__border__1);
   border-color: transparent;
   text-align: left;
@@ -6539,7 +6539,7 @@ input[type=range]::-moz-range-thumb:hover {
 .pfe__collection {
   display: flex;
   flex-direction: column;
-  gap: var(--uxdsl__space__2);
+  gap: var(--uxdsl__density__2);
   max-height: var(--uxdsl__space__16);
   overflow-y: auto;
 }
@@ -6548,7 +6548,7 @@ input[type=range]::-moz-range-thumb:hover {
   display: grid;
   grid-template-columns: var(--uxdsl__space__11) minmax(0, 1fr);
   align-items: center;
-  gap: var(--uxdsl__space__3);
+  gap: var(--uxdsl__density__3);
 }
 
 .pfe__row-name {
@@ -6565,13 +6565,13 @@ input[type=range]::-moz-range-thumb:hover {
 .pfe__row-swatches {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--uxdsl__space__2);
+  gap: var(--uxdsl__density__2);
 }
 
 .pfe__chip {
   width: var(--uxdsl__space__6);
   height: var(--uxdsl__space__6);
-  padding: 0;
+  padding: var(--uxdsl__density__0);
   border: var(--uxdsl__border__1);
   border-radius: var(--uxdsl__radius__1);
   cursor: pointer;
@@ -6595,7 +6595,7 @@ input[type=range]::-moz-range-thumb:hover {
   margin-block-end: var(--uxdsl__typography__body-sm-margin-block-end);
   display: flex;
   flex-direction: column;
-  gap: var(--uxdsl__space__2);
+  gap: var(--uxdsl__density__2);
 }
 
 .pfe__select,
@@ -6615,13 +6615,13 @@ input[type=range]::-moz-range-thumb:hover {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--uxdsl__space__3);
+  gap: var(--uxdsl__density__3);
 }
 
 .pfe__picker {
   width: var(--uxdsl__space__8);
   height: var(--uxdsl__space__8);
-  padding: 0;
+  padding: var(--uxdsl__density__0);
   border: var(--uxdsl__border__1);
   border-radius: var(--uxdsl__radius__1);
   background: transparent;
@@ -6666,9 +6666,9 @@ input[type=range]::-moz-range-thumb:hover {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--uxdsl__space__3);
+  gap: var(--uxdsl__density__3);
   grid-column: 1;
-  padding: var(--uxdsl__space__2);
+  padding: var(--uxdsl__density__2);
   border-radius: var(--uxdsl__radius__2);
 }
 @media (min-width: 1024px){
@@ -6696,7 +6696,7 @@ input[type=range]::-moz-range-thumb:hover {
   letter-spacing: var(--uxdsl__typography__subtitle2-letter-spacing);
   margin-block-start: var(--uxdsl__typography__subtitle2-margin-block-start);
   margin-block-end: var(--uxdsl__typography__subtitle2-margin-block-end);
-  padding: var(--uxdsl__space__2) var(--uxdsl__space__4);
+  padding: var(--uxdsl__density__2) var(--uxdsl__density__4);
 }
 
 .pfe__ratio {

@@ -50,7 +50,7 @@ $pfe-palette: (
 .pfe__segmented {
   display: inline-flex;
   flex-wrap: wrap;
-  gap: space(1);
+  gap: density(1);
 }
 
 .pfe__segment {
@@ -75,7 +75,7 @@ $pfe-palette: (
 .pfe__group {
   display: flex;
   flex-direction: column;
-  gap: space(2);
+  gap: density(2);
 }
 
 .pfe__group-label {
@@ -88,7 +88,7 @@ $pfe-palette: (
 .pfe__group-roles {
   display: flex;
   flex-wrap: wrap;
-  gap: space(3);
+  gap: density(3);
 }
 
 .pfe__role {
@@ -97,7 +97,7 @@ $pfe-palette: (
   display: flex;
   flex-direction: column;
   width: space(12);
-  padding: 0;
+  padding: density(0);
   overflow: hidden;
   background: palette(surface.main);
   text-align: left;
@@ -126,7 +126,7 @@ $pfe-palette: (
   display: flex;
   align-items: flex-end;
   height: space(9);
-  padding: space(2) space(3);
+  padding: density(2) density(3);
 }
 
 .pfe__role-strip {
@@ -141,14 +141,14 @@ $pfe-palette: (
 .pfe__role-name {
   @ds-typo(subtitle2);
 
-  padding: space(2) space(3);
+  padding: density(2) density(3);
 }
 
 /* The variants of the chosen role. */
 .pfe__variants {
   display: flex;
   flex-direction: column;
-  gap: space(2);
+  gap: density(2);
 }
 
 .pfe__variant {
@@ -157,7 +157,7 @@ $pfe-palette: (
   display: grid;
   grid-template-columns: auto auto minmax(0, 1fr);
   align-items: center;
-  gap: space(1) space(3);
+  gap: density(1) density(3);
   border: border(1);
   border-color: transparent;
   text-align: left;
@@ -229,7 +229,7 @@ $pfe-palette: (
 .pfe__collection {
   display: flex;
   flex-direction: column;
-  gap: space(2);
+  gap: density(2);
   max-height: space(16);
   overflow-y: auto;
 }
@@ -238,7 +238,7 @@ $pfe-palette: (
   display: grid;
   grid-template-columns: space(11) minmax(0, 1fr);
   align-items: center;
-  gap: space(3);
+  gap: density(3);
 }
 
 .pfe__row-name {
@@ -250,13 +250,13 @@ $pfe-palette: (
 .pfe__row-swatches {
   display: flex;
   flex-wrap: wrap;
-  gap: space(2);
+  gap: density(2);
 }
 
 .pfe__chip {
   width: space(6);
   height: space(6);
-  padding: 0;
+  padding: density(0);
   border: border(1);
   border-radius: radius(1);
   cursor: pointer;
@@ -277,7 +277,7 @@ $pfe-palette: (
 
   display: flex;
   flex-direction: column;
-  gap: space(2);
+  gap: density(2);
 }
 
 .pfe__select,
@@ -291,13 +291,13 @@ $pfe-palette: (
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: space(3);
+  gap: density(3);
 }
 
 .pfe__picker {
   width: space(8);
   height: space(8);
-  padding: 0;
+  padding: density(0);
   border: border(1);
   border-radius: radius(1);
   background: transparent;
@@ -325,9 +325,9 @@ $pfe-palette: (
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: space(3);
+  gap: density(3);
   grid-column: xs(1) lg(1 / -1);
-  padding: space(2);
+  padding: density(2);
   border-radius: radius(2);
 }
 
@@ -341,7 +341,7 @@ $pfe-palette: (
 .pfe__sample--small {
   @ds-typo(subtitle2);
 
-  padding: space(2) space(4);
+  padding: density(2) density(4);
 }
 
 .pfe__ratio {
