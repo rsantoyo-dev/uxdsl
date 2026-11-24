@@ -94,4 +94,31 @@ function applyToDocument(doc, compiled, next, originals) {
   return moved;
 }
 
-module.exports = { rewriteMediaText, checkPreview, changedBreakpoints, applyToDocument };
+/** The theme as the page uses it: its breakpoints replaced by the previewed ones, in place. */
+function withBreakpoints(theme, breakpoints) {
+  return theme && breakpoints ? { ...theme, breakpoints: { ...breakpoints } } : theme;
+}
+
+/**
+ * Splits an edit of the whole theme (the JSON tab) into what applyTheme can take and what
+ * only the preview can: the theme with its compiled breakpoints back, and the previewed
+ * breakpoints (null when they are the compiled ones). A breakpoint can be moved, not added
+ * or removed: that changes which xs()...xl() functions exist, and needs a rebuild.
+ */
+function splitThemeEdit(compiled, theme) {
+  const requested = (theme && theme.breakpoints) || compiled;
+  const have = Object.keys(compiled).sort().join(',');
+  const want = Object.keys(requested).sort().join(',');
+  if (have !== want) {
+    return { error: `Breakpoints can be moved here, not added or removed (${want || 'none'} instead of ${have}): a new name is a new function, which needs a rebuild.` };
+  }
+  const problem = checkPreview(compiled, requested);
+  if (problem) return { error: problem };
+  const changed = changedBreakpoints(compiled, requested);
+  return {
+    theme: { ...theme, breakpoints: { ...compiled } },
+    preview: Object.keys(changed).length ? { ...compiled, ...requested } : null,
+  };
+}
+
+module.exports = { rewriteMediaText, checkPreview, changedBreakpoints, applyToDocument, withBreakpoints, splitThemeEdit };
