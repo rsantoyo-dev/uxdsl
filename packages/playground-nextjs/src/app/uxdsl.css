@@ -601,7 +601,6 @@ input[type=range]::-moz-range-thumb:hover {
 }
 .ai-prompt__form:focus-within {
   border-color: var(--uxdsl__palette__primary-main);
-  outline: var(--uxdsl__space__1) solid color-mix(in srgb, var(--uxdsl__palette__primary-light) 40%, transparent);
 }
 
 .ai-prompt__icon {
@@ -627,6 +626,14 @@ input[type=range]::-moz-range-thumb:hover {
 }
 .ai-prompt__input::placeholder {
   color: var(--uxdsl__palette__text-secondary);
+}
+.ai-prompt__input {
+  /* The field itself shows keyboard focus (the pill around it only changes its border). */
+}
+.ai-prompt__input:focus-visible {
+  outline: var(--uxdsl__space__1) solid var(--uxdsl__palette__primary-main);
+  outline-offset: var(--uxdsl__space__1);
+  border-radius: var(--uxdsl__radius__1);
 }
 
 .ai-prompt__submit { padding: var(--uxdsl__density__2); border-radius: 9999px; background: var(--uxdsl__palette__primary-main); color: var(--uxdsl__palette__primary-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast);

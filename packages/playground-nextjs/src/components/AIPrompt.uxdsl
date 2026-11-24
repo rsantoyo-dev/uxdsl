@@ -20,7 +20,6 @@
 
   &:focus-within {
     border-color: palette(primary.main);
-    outline: space(1) solid palette(primary.light, 0.4);
   }
 }
 
@@ -42,6 +41,13 @@
 
   &::placeholder {
     color: palette(text.secondary);
+  }
+
+  /* The field itself shows keyboard focus (the pill around it only changes its border). */
+  &:focus-visible {
+    outline: space(1) solid palette(primary.main);
+    outline-offset: space(1);
+    border-radius: radius(1);
   }
 }
 
