@@ -153,6 +153,8 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
     // theme must not leave the UI claiming a theme that is not on the page.
     if (!applyThemeNow(themeToApply).ok) return
     if (nextBackground) setBackgroundImage(nextBackground)
+    // Leaving the custom theme forgets its name, so a later edit is not filed under it.
+    if (themeName !== 'custom') setCustomThemeName(null)
     setCurrentTheme(themeName)
   }
 

@@ -1,8 +1,10 @@
 import Link from 'next/link'
-import { ArrowRight, Github, Package, Mail } from 'lucide-react'
+import { Github, Package, Mail } from 'lucide-react'
 import CodeBlock from '@/components/CodeBlock'
 import ParadigmFrame from '@/components/ParadigmFrame'
 import { AIPrompt } from '@/components/AIPrompt'
+import HeroFeed from '@/components/HeroFeed'
+import HomeThemeEditor from '@/components/HomeThemeEditor'
 import { GITHUB_URL, NPM_URL } from '@/lib/docs'
 import generated from '@/generated/examples.json'
 
@@ -22,23 +24,20 @@ const PILLARS = [
 export default function Home() {
   return (
     <main className="home">
+      <HeroFeed>
+        <AIPrompt />
+      </HeroFeed>
+
+      <HomeThemeEditor />
+
       <section className="home-hero" aria-labelledby="home-title">
         <div className="home-hero__intro">
-          <p className="home-hero__eyebrow">UXDSL · CSS with a theme</p>
-          <h1 id="home-title" className="home-hero__title">Breakpoints belong to the theme, not to your components.</h1>
+          <p className="home-hero__eyebrow">How it works</p>
+          <h2 id="home-title" className="home-hero__title">Breakpoints belong to the theme, not to your components.</h2>
           <p className="home-hero__lede">
             Spacing, type and color — and how each of them steps at a breakpoint — are defined once in a theme JSON.
             Components name them. The compiler writes the media queries and refuses any reference it cannot resolve.
           </p>
-          <div className="home-hero__ctas">
-            <Link href="/docs/quick-start" className="home-cta home-cta--primary">
-              Quick start <ArrowRight size={18} aria-hidden="true" />
-            </Link>
-            <Link href="/docs/introduction" className="home-cta">Docs</Link>
-            <a href={GITHUB_URL} className="home-cta" target="_blank" rel="noopener noreferrer">
-              <Github size={18} aria-hidden="true" /> GitHub
-            </a>
-          </div>
         </div>
 
         <div className="home-hero__code">
@@ -74,15 +73,6 @@ export default function Home() {
             </Link>
           ))}
         </div>
-      </section>
-
-      <section className="home-experiment" aria-labelledby="home-experiment-title">
-        <h2 id="home-experiment-title" className="home-section-title">Experiment: a theme from a name</h2>
-        <p className="home-experiment__text">
-          Type a name and a language model writes a theme override for this site; it is validated and applied with
-          <code> applyTheme</code>, like the header&apos;s theme buttons. It changes values only — the components are not rebuilt.
-        </p>
-        <AIPrompt />
       </section>
 
       <footer className="home-footer">
