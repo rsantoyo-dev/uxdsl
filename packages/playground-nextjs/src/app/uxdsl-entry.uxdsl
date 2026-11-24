@@ -13,6 +13,7 @@
 @use '../components/AIPrompt.uxdsl' as components-aiprompt;
 @use '../components/AppHeader.uxdsl' as components-appheader;
 @use '../components/BreakpointEditor.uxdsl' as components-breakpointeditor;
+@use '../components/BreakpointsEditor.uxdsl' as components-breakpointseditor;
 @use '../components/CapabilityDocs.uxdsl' as components-capabilitydocs;
 @use '../components/CodeBlock.uxdsl' as components-codeblock;
 @use '../components/DemoBorders.uxdsl' as components-demoborders;
