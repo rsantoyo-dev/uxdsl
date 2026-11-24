@@ -10909,6 +10909,515 @@ input[type=range]::-moz-range-thumb:hover {
   content: "xl";
 } }
 
+/* The Typography editor of the Live theme handler (/docs/theme). Every value is a UXDSL token,
+   role or directive; the literals left are layout (grid, flex). */
+/* One class per text role of the base theme, so every sample is @ds-typo itself. */
+.tye-typo--default {
+  font-family: var(--uxdsl__typography__default-font-family);
+  font-size: var(--uxdsl__typography__default-font-size);
+  line-height: var(--uxdsl__typography__default-line-height);
+  font-weight: var(--uxdsl__typography__default-font-weight);
+  letter-spacing: var(--uxdsl__typography__default-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__default-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__default-margin-block-end);
+}
+
+.tye-typo--tag {
+  font-family: var(--uxdsl__typography__tag-font-family);
+  font-size: var(--uxdsl__typography__tag-font-size);
+  line-height: var(--uxdsl__typography__tag-line-height);
+  font-weight: var(--uxdsl__typography__tag-font-weight);
+  letter-spacing: var(--uxdsl__typography__tag-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__tag-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__tag-margin-block-end);
+}
+
+.tye-typo--h1 {
+  font-family: var(--uxdsl__typography__h1-font-family);
+  font-size: var(--uxdsl__typography__h1-font-size);
+  line-height: var(--uxdsl__typography__h1-line-height);
+  font-weight: var(--uxdsl__typography__h1-font-weight);
+  letter-spacing: var(--uxdsl__typography__h1-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__h1-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__h1-margin-block-end);
+}
+
+.tye-typo--h2 {
+  font-family: var(--uxdsl__typography__h2-font-family);
+  font-size: var(--uxdsl__typography__h2-font-size);
+  line-height: var(--uxdsl__typography__h2-line-height);
+  font-weight: var(--uxdsl__typography__h2-font-weight);
+  letter-spacing: var(--uxdsl__typography__h2-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__h2-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__h2-margin-block-end);
+}
+
+.tye-typo--h3 {
+  font-family: var(--uxdsl__typography__h3-font-family);
+  font-size: var(--uxdsl__typography__h3-font-size);
+  line-height: var(--uxdsl__typography__h3-line-height);
+  font-weight: var(--uxdsl__typography__h3-font-weight);
+  letter-spacing: var(--uxdsl__typography__h3-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__h3-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__h3-margin-block-end);
+}
+
+.tye-typo--h4 {
+  font-family: var(--uxdsl__typography__h4-font-family);
+  font-size: var(--uxdsl__typography__h4-font-size);
+  line-height: var(--uxdsl__typography__h4-line-height);
+  font-weight: var(--uxdsl__typography__h4-font-weight);
+  letter-spacing: var(--uxdsl__typography__h4-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__h4-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__h4-margin-block-end);
+}
+
+.tye-typo--h5 {
+  font-family: var(--uxdsl__typography__h5-font-family);
+  font-size: var(--uxdsl__typography__h5-font-size);
+  line-height: var(--uxdsl__typography__h5-line-height);
+  font-weight: var(--uxdsl__typography__h5-font-weight);
+  letter-spacing: var(--uxdsl__typography__h5-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__h5-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__h5-margin-block-end);
+}
+
+.tye-typo--h6 {
+  font-family: var(--uxdsl__typography__h6-font-family);
+  font-size: var(--uxdsl__typography__h6-font-size);
+  line-height: var(--uxdsl__typography__h6-line-height);
+  font-weight: var(--uxdsl__typography__h6-font-weight);
+  letter-spacing: var(--uxdsl__typography__h6-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__h6-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__h6-margin-block-end);
+}
+
+.tye-typo--p {
+  font-family: var(--uxdsl__typography__p-font-family);
+  font-size: var(--uxdsl__typography__p-font-size);
+  line-height: var(--uxdsl__typography__p-line-height);
+  font-weight: var(--uxdsl__typography__p-font-weight);
+  letter-spacing: var(--uxdsl__typography__p-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__p-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__p-margin-block-end);
+}
+
+.tye-typo--body {
+  font-family: var(--uxdsl__typography__body-font-family);
+  font-size: var(--uxdsl__typography__body-font-size);
+  line-height: var(--uxdsl__typography__body-line-height);
+  font-weight: var(--uxdsl__typography__body-font-weight);
+  letter-spacing: var(--uxdsl__typography__body-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__body-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__body-margin-block-end);
+}
+
+.tye-typo--span {
+  font-family: var(--uxdsl__typography__span-font-family);
+  font-size: var(--uxdsl__typography__span-font-size);
+  line-height: var(--uxdsl__typography__span-line-height);
+  font-weight: var(--uxdsl__typography__span-font-weight);
+  letter-spacing: var(--uxdsl__typography__span-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__span-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__span-margin-block-end);
+}
+
+.tye-typo--small {
+  font-family: var(--uxdsl__typography__small-font-family);
+  font-size: var(--uxdsl__typography__small-font-size);
+  line-height: var(--uxdsl__typography__small-line-height);
+  font-weight: var(--uxdsl__typography__small-font-weight);
+  letter-spacing: var(--uxdsl__typography__small-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__small-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__small-margin-block-end);
+}
+
+.tye-typo--code {
+  font-family: var(--uxdsl__typography__code-font-family);
+  font-size: var(--uxdsl__typography__code-font-size);
+  line-height: var(--uxdsl__typography__code-line-height);
+  font-weight: var(--uxdsl__typography__code-font-weight);
+  letter-spacing: var(--uxdsl__typography__code-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__code-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__code-margin-block-end);
+}
+
+.tye-typo--pre {
+  font-family: var(--uxdsl__typography__pre-font-family);
+  font-size: var(--uxdsl__typography__pre-font-size);
+  line-height: var(--uxdsl__typography__pre-line-height);
+  font-weight: var(--uxdsl__typography__pre-font-weight);
+  letter-spacing: var(--uxdsl__typography__pre-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__pre-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__pre-margin-block-end);
+}
+
+.tye-typo--caption {
+  font-family: var(--uxdsl__typography__caption-font-family);
+  font-size: var(--uxdsl__typography__caption-font-size);
+  line-height: var(--uxdsl__typography__caption-line-height);
+  font-weight: var(--uxdsl__typography__caption-font-weight);
+  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+}
+
+.tye-typo--body-sm {
+  font-family: var(--uxdsl__typography__body-sm-font-family);
+  font-size: var(--uxdsl__typography__body-sm-font-size);
+  line-height: var(--uxdsl__typography__body-sm-line-height);
+  font-weight: var(--uxdsl__typography__body-sm-font-weight);
+  letter-spacing: var(--uxdsl__typography__body-sm-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__body-sm-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__body-sm-margin-block-end);
+}
+
+.tye-typo--subtitle2 {
+  font-family: var(--uxdsl__typography__subtitle2-font-family);
+  font-size: var(--uxdsl__typography__subtitle2-font-size);
+  line-height: var(--uxdsl__typography__subtitle2-line-height);
+  font-weight: var(--uxdsl__typography__subtitle2-font-weight);
+  letter-spacing: var(--uxdsl__typography__subtitle2-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__subtitle2-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__subtitle2-margin-block-end);
+}
+
+.tye__toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__density__2);
+}
+
+.tye__roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--uxdsl__density__1);
+}
+
+.tye__role { padding: var(--uxdsl__density__1); border-radius: var(--uxdsl__radius__1); background: var(--uxdsl__surface__outlined-bg); color: var(--uxdsl__surface__outlined-color); border: var(--uxdsl__surface__outlined-border); box-shadow: var(--uxdsl__surface__outlined-shadow);
+  font-family: var(--uxdsl__typography__code-font-family);
+  font-size: var(--uxdsl__typography__code-font-size);
+  line-height: var(--uxdsl__typography__code-line-height);
+  font-weight: var(--uxdsl__typography__code-font-weight);
+  letter-spacing: var(--uxdsl__typography__code-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__code-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__code-margin-block-end);
+}
+
+.tye__role:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__outlined-hover-color); border: var(--uxdsl__button__outlined-hover-border); }
+
+.tye__role:focus-visible { outline: var(--uxdsl__button__outlined-focusvisible-outline); outline-offset: var(--uxdsl__button__outlined-focusvisible-outline-offset); }
+
+.tye__role.is-selected, .tye__role[aria-pressed="true"], .tye__role[aria-selected="true"] { background: var(--uxdsl__button__outlined-selected-bg); color: var(--uxdsl__button__outlined-selected-color); border: var(--uxdsl__button__outlined-selected-border); }
+
+.tye__role:disabled, .tye__role[aria-disabled="true"] { opacity: var(--uxdsl__button__outlined-disabled-opacity); cursor: var(--uxdsl__button__outlined-disabled-cursor); }
+
+.tye__hint,
+.tye__note {
+  font-family: var(--uxdsl__typography__caption-font-family);
+  font-size: var(--uxdsl__typography__caption-font-size);
+  line-height: var(--uxdsl__typography__caption-line-height);
+  font-weight: var(--uxdsl__typography__caption-font-weight);
+  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+  color: var(--uxdsl__palette__text-secondary);
+}
+
+.tye {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--uxdsl__density__4);
+}
+
+@media (min-width: 1024px){
+
+.tye {
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+} }
+
+.tye__preview,
+.tye__editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__density__3);
+  min-width: 0;
+}
+
+/* The chosen role, live at this width. */
+.tye__stage {
+  padding: var(--uxdsl__surface__outlined-padding);
+  border-radius: var(--uxdsl__radius__3);
+  background: var(--uxdsl__surface__outlined-bg);
+  color: var(--uxdsl__surface__outlined-color);
+  border: var(--uxdsl__surface__outlined-border);
+  box-shadow: var(--uxdsl__surface__outlined-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__density__2);
+  background: var(--uxdsl__palette__surface-main);
+}
+
+.tye__stage-label {
+  font-family: var(--uxdsl__typography__code-font-family);
+  font-size: var(--uxdsl__typography__code-font-size);
+  line-height: var(--uxdsl__typography__code-line-height);
+  font-weight: var(--uxdsl__typography__code-font-weight);
+  letter-spacing: var(--uxdsl__typography__code-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__code-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__code-margin-block-end);
+  color: var(--uxdsl__palette__primary-main);
+}
+
+.tye__sample {
+  color: var(--uxdsl__palette__text-primary);
+  overflow-wrap: anywhere;
+}
+
+.tye__sample-text { box-sizing: border-box; font: inherit; width: 100%; padding: var(--uxdsl__surface__flat-padding); border-radius: var(--uxdsl__surface__flat-radius); background: var(--uxdsl__surface__flat-bg); color: var(--uxdsl__surface__flat-color); border: var(--uxdsl__input__underline-base-border); box-shadow: var(--uxdsl__input__underline-base-shadow); border-bottom: var(--uxdsl__input__underline-base-underline); caret-color: var(--uxdsl__input__underline-base-caret);
+  font-family: var(--uxdsl__typography__caption-font-family);
+  font-size: var(--uxdsl__typography__caption-font-size);
+  line-height: var(--uxdsl__typography__caption-line-height);
+  font-weight: var(--uxdsl__typography__caption-font-weight);
+  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+}
+
+.tye__sample-text::placeholder { color: var(--uxdsl__input__underline-base-placeholder); }
+
+.tye__sample-text:focus { border-bottom: var(--uxdsl__input__underline-focus-underline); }
+
+.tye__sample-text:invalid, .tye__sample-text[aria-invalid="true"] { border-bottom: var(--uxdsl__input__underline-invalid-underline); }
+
+.tye__sample-text:disabled, .tye__sample-text[aria-disabled="true"] { opacity: var(--uxdsl__input__underline-disabled-opacity); cursor: var(--uxdsl__input__underline-disabled-cursor); }
+
+.tye__title {
+  font-family: var(--uxdsl__typography__subtitle2-font-family);
+  font-size: var(--uxdsl__typography__subtitle2-font-size);
+  line-height: var(--uxdsl__typography__subtitle2-line-height);
+  font-weight: var(--uxdsl__typography__subtitle2-font-weight);
+  letter-spacing: var(--uxdsl__typography__subtitle2-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__subtitle2-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__subtitle2-margin-block-end);
+}
+
+.tye__sizes,
+.tye__fonts {
+  padding: var(--uxdsl__surface__outlined-padding);
+  border-radius: var(--uxdsl__radius__2);
+  background: var(--uxdsl__surface__outlined-bg);
+  color: var(--uxdsl__surface__outlined-color);
+  border: var(--uxdsl__surface__outlined-border);
+  box-shadow: var(--uxdsl__surface__outlined-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__density__1);
+}
+
+.tye__size,
+.tye__font {
+  display: grid;
+  grid-template-columns: var(--uxdsl__space__9) minmax(0, 1fr) var(--uxdsl__space__11) var(--uxdsl__space__14);
+  align-items: center;
+  gap: var(--uxdsl__density__2);
+  padding: var(--uxdsl__density__1);
+  border-radius: var(--uxdsl__radius__1);
+}
+.tye__size.is-active,
+.tye__font.is-active {
+  background: var(--uxdsl__palette__surface-light);
+}
+
+.tye__font {
+  grid-template-columns: var(--uxdsl__space__9) minmax(0, 1fr);
+}
+
+.tye__bp {
+  font-family: var(--uxdsl__typography__code-font-family);
+  font-size: var(--uxdsl__typography__code-font-size);
+  line-height: var(--uxdsl__typography__code-line-height);
+  font-weight: var(--uxdsl__typography__code-font-weight);
+  letter-spacing: var(--uxdsl__typography__code-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__code-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__code-margin-block-end);
+}
+
+.tye__px,
+.tye__tag {
+  font-family: var(--uxdsl__typography__caption-font-family);
+  font-size: var(--uxdsl__typography__caption-font-size);
+  line-height: var(--uxdsl__typography__caption-line-height);
+  font-weight: var(--uxdsl__typography__caption-font-weight);
+  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+  color: var(--uxdsl__palette__text-secondary);
+}
+
+.tye__select { box-sizing: border-box; font: inherit; width: 100%; padding: var(--uxdsl__surface__outlined-padding); border-radius: var(--uxdsl__surface__outlined-radius); background: var(--uxdsl__surface__outlined-bg); color: var(--uxdsl__surface__outlined-color); border: var(--uxdsl__surface__outlined-border); box-shadow: var(--uxdsl__surface__outlined-shadow); caret-color: var(--uxdsl__input__outlined-base-caret);
+  font-family: var(--uxdsl__typography__body-sm-font-family);
+  font-size: var(--uxdsl__typography__body-sm-font-size);
+  line-height: var(--uxdsl__typography__body-sm-line-height);
+  font-weight: var(--uxdsl__typography__body-sm-font-weight);
+  letter-spacing: var(--uxdsl__typography__body-sm-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__body-sm-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__body-sm-margin-block-end);
+}
+
+.tye__select::placeholder { color: var(--uxdsl__input__outlined-base-placeholder); }
+
+.tye__select:focus { border: var(--uxdsl__input__outlined-focus-border); }
+
+.tye__select:invalid, .tye__select[aria-invalid="true"] { border: var(--uxdsl__input__outlined-invalid-border); }
+
+.tye__select:disabled, .tye__select[aria-disabled="true"] { opacity: var(--uxdsl__input__outlined-disabled-opacity); cursor: var(--uxdsl__input__outlined-disabled-cursor); }
+
+/* The fields of the role. */
+.tye__written {
+  font-family: var(--uxdsl__typography__code-font-family);
+  font-size: var(--uxdsl__typography__code-font-size);
+  line-height: var(--uxdsl__typography__code-line-height);
+  font-weight: var(--uxdsl__typography__code-font-weight);
+  letter-spacing: var(--uxdsl__typography__code-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__code-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__code-margin-block-end);
+}
+
+.tye__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__density__1);
+}
+
+.tye__field-head {
+  display: flex;
+  align-items: center;
+  gap: var(--uxdsl__density__2);
+}
+
+.tye__field-name {
+  font-family: var(--uxdsl__typography__code-font-family);
+  font-size: var(--uxdsl__typography__code-font-size);
+  line-height: var(--uxdsl__typography__code-line-height);
+  font-weight: var(--uxdsl__typography__code-font-weight);
+  letter-spacing: var(--uxdsl__typography__code-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__code-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__code-margin-block-end);
+  color: var(--uxdsl__palette__text-primary);
+}
+
+.tye__badge {
+  padding: var(--uxdsl__surface__contained-padding);
+  border-radius: 9999px;
+  background: var(--uxdsl__palette__primary-main);
+  color: var(--uxdsl__palette__primary-contrast);
+  border: var(--uxdsl__surface__contained-border);
+  box-shadow: var(--uxdsl__surface__contained-shadow);
+  font-family: var(--uxdsl__typography__caption-font-family);
+  font-size: var(--uxdsl__typography__caption-font-size);
+  line-height: var(--uxdsl__typography__caption-line-height);
+  font-weight: var(--uxdsl__typography__caption-font-weight);
+  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+  padding: var(--uxdsl__density__0) var(--uxdsl__density__2);
+}
+.tye__badge.is-inherited {
+  padding: var(--uxdsl__surface__outlined-padding);
+  border-radius: 9999px;
+  background: var(--uxdsl__surface__outlined-bg);
+  color: var(--uxdsl__surface__outlined-color);
+  border: var(--uxdsl__surface__outlined-border);
+  box-shadow: var(--uxdsl__surface__outlined-shadow);
+  padding: var(--uxdsl__density__0) var(--uxdsl__density__2);
+}
+
+.tye__field-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--uxdsl__density__2);
+}
+
+.tye__text { box-sizing: border-box; font: inherit; width: 100%; padding: var(--uxdsl__surface__outlined-padding); border-radius: var(--uxdsl__surface__outlined-radius); background: var(--uxdsl__surface__outlined-bg); color: var(--uxdsl__surface__outlined-color); border: var(--uxdsl__surface__outlined-border); box-shadow: var(--uxdsl__surface__outlined-shadow); caret-color: var(--uxdsl__input__outlined-base-caret);
+  font-family: var(--uxdsl__typography__code-font-family);
+  font-size: var(--uxdsl__typography__code-font-size);
+  line-height: var(--uxdsl__typography__code-line-height);
+  font-weight: var(--uxdsl__typography__code-font-weight);
+  letter-spacing: var(--uxdsl__typography__code-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__code-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__code-margin-block-end);
+  flex: 1;
+  min-width: var(--uxdsl__space__15);
+}
+
+.tye__text::placeholder { color: var(--uxdsl__input__outlined-base-placeholder); }
+
+.tye__text:focus { border: var(--uxdsl__input__outlined-focus-border); }
+
+.tye__text:invalid, .tye__text[aria-invalid="true"] { border: var(--uxdsl__input__outlined-invalid-border); }
+
+.tye__text:disabled, .tye__text[aria-disabled="true"] { opacity: var(--uxdsl__input__outlined-disabled-opacity); cursor: var(--uxdsl__input__outlined-disabled-cursor); }
+
+.tye__error {
+  font-family: var(--uxdsl__typography__caption-font-family);
+  font-size: var(--uxdsl__typography__caption-font-size);
+  line-height: var(--uxdsl__typography__caption-line-height);
+  font-weight: var(--uxdsl__typography__caption-font-weight);
+  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+  color: var(--uxdsl__palette__error-main);
+}
+
+/* Every role at once: an edit to default shows in each role that takes from it. */
+.tye__scale {
+  grid-column: 1/-1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__density__1);
+}
+
+.tye__scale-row { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: var(--uxdsl__surface__flat-bg); color: var(--uxdsl__surface__flat-color); border: var(--uxdsl__surface__flat-border); box-shadow: var(--uxdsl__surface__flat-shadow);
+  display: grid;
+  grid-template-columns: var(--uxdsl__space__13) minmax(0, 1fr);
+  align-items: baseline;
+  gap: var(--uxdsl__density__3);
+  border: var(--uxdsl__border__1);
+  border-color: transparent;
+  text-align: start;
+}
+
+.tye__scale-row:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__flat-hover-color); }
+
+.tye__scale-row:focus-visible { outline: var(--uxdsl__button__flat-focusvisible-outline); outline-offset: var(--uxdsl__button__flat-focusvisible-outline-offset); }
+
+.tye__scale-row.is-selected, .tye__scale-row[aria-pressed="true"], .tye__scale-row[aria-selected="true"] { color: var(--uxdsl__button__flat-selected-color); }
+
+.tye__scale-row:disabled, .tye__scale-row[aria-disabled="true"] { opacity: var(--uxdsl__button__flat-disabled-opacity); cursor: var(--uxdsl__button__flat-disabled-cursor); }
+.tye__scale-row.is-selected {
+  border-color: var(--uxdsl__palette__primary-main);
+}
+
+.tye__scale-role {
+  font-family: var(--uxdsl__typography__code-font-family);
+  font-size: var(--uxdsl__typography__code-font-size);
+  line-height: var(--uxdsl__typography__code-line-height);
+  font-weight: var(--uxdsl__typography__code-font-weight);
+  letter-spacing: var(--uxdsl__typography__code-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__code-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__code-margin-block-end);
+  color: var(--uxdsl__palette__text-secondary);
+}
+
+/* One line per role, so a large heading does not push the scale off the screen. */
+.tye__scale-sample {
+  overflow: hidden;
+  color: var(--uxdsl__palette__text-primary);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
 /* The version line on the quick start: which release these pages describe. */
 .version-line {
   padding: var(--uxdsl__surface__outlined-padding);
