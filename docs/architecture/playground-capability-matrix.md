@@ -110,7 +110,7 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | `button.outlined` | live | live | `src/components/AIPrompt.uxdsl`, `src/components/BreakpointsEditor.uxdsl`, `src/components/CapabilityDocs.uxdsl` |
 | `input.contained` | live | live | `src/components/InputDemo.tsx`, `src/components/RuntimeEngines.tsx` |
 | `input.outlined` | live | live | `src/components/BreakpointsEditor.uxdsl`, `src/components/CapabilityDocs.uxdsl`, `src/components/ColorsEditor.uxdsl` |
-| `input.underline` | live | live | `src/components/InputDemo.tsx`, `src/components/RuntimeEngines.tsx` |
+| `input.underline` | live | live | `src/components/InputDemo.tsx`, `src/components/RuntimeEngines.tsx`, `src/components/TypographyEditor.uxdsl` |
 | `surface.contained` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/not-found.uxdsl`, `src/components/CapabilityDocs.uxdsl` |
 | `surface.flat` | live | live | `src/components/DemoSurfaces.tsx`, `src/components/SideNav.uxdsl`, `src/components/SurfaceGrid.tsx` |
 | `surface.outlined` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/page.uxdsl`, `src/components/AIPrompt.uxdsl` |
@@ -162,7 +162,7 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | `inspectSurfaceTheme` | live | live | `src/components/DemoSurfaces.tsx` |
 | `loadPersistedTheme` | live | live | `src/runtime-sandbox/sandbox-entry.ts` |
 | `resetTheme` | live | live | `src/runtime-sandbox/sandbox-entry.ts` |
-| `resolveResponsiveValue` | live | live | `src/components/DemoDensity.tsx`, `src/components/DensityEditor.tsx` |
+| `resolveResponsiveValue` | live | live | `src/components/DemoDensity.tsx`, `src/components/DensityEditor.tsx`, `src/components/TypographyEditor.tsx` |
 | `resolveTheme` | live | live | `src/components/ContrastReport.tsx`, `src/components/RuntimeEngines.tsx` |
 | `resolveTypographyRole` | live | live | `src/components/RuntimeEngines.tsx` |
 | `responsiveEntries` | live | live | `src/components/DemoDensity.tsx`, `src/components/DensityEditor.tsx`, `src/components/SpacingEditor.tsx` |
