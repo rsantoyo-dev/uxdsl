@@ -165,7 +165,7 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | `resolveResponsiveValue` | live | live | `src/components/DemoDensity.tsx`, `src/components/DensityEditor.tsx` |
 | `resolveTheme` | live | live | `src/components/ContrastReport.tsx`, `src/components/RuntimeEngines.tsx` |
 | `resolveTypographyRole` | live | live | `src/components/RuntimeEngines.tsx` |
-| `responsiveEntries` | live | live | `src/components/DemoDensity.tsx`, `src/components/DensityEditor.tsx` |
+| `responsiveEntries` | live | live | `src/components/DemoDensity.tsx`, `src/components/DensityEditor.tsx`, `src/components/SpacingEditor.tsx` |
 | `spacingValueToCss` | live | live | `src/components/RussianDoll.tsx` |
 | `subscribeTheme` | live | live | `src/components/RuntimeLab.tsx`, `src/runtime-sandbox/sandbox-entry.ts` |
 | `surfaceDeclarations` | live | live | `src/components/DemoSurfaces.tsx` |

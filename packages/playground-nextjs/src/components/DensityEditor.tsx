@@ -45,6 +45,8 @@ export default function DensityEditor() {
     const value = resolveResponsiveValue(definition, bp, breakpoints)
     return { bp, written: entries[bp] ?? '', value, px: lengthPx(value, spacing) }
   })
+  // A step smaller than the breakpoint before it: usually a spacing edit that overtook this token's progression.
+  const shrinks = (index: number) => index > 0 && rows[index].px !== null && rows[index - 1].px !== null && (rows[index].px as number) < (rows[index - 1].px as number)
   const active = viewport === null ? null : inspectResponsiveValue(definition, viewport, breakpoints).active
 
   const write = (next: string) => {
@@ -109,7 +111,9 @@ export default function DensityEditor() {
                 <code className="dte__bp">{row.bp}</code>
                 <code className="dte__value">{row.value || '—'}</code>
                 <span className="dte__px">{row.px === null ? 'not drawn' : `${row.px}px`}</span>
-                <span className="dte__tag">{active === row.bp ? 'your window' : row.written ? '' : 'keeps the previous'}</span>
+                <span className={`dte__tag${shrinks(index) ? ' is-warning' : ''}`}>
+                  {shrinks(index) ? `smaller than ${rows[index - 1].bp}` : active === row.bp ? 'your window' : row.written ? '' : 'keeps the previous'}
+                </span>
               </li>
             ))}
           </ul>

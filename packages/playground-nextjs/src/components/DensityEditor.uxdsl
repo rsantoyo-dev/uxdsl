@@ -139,6 +139,12 @@
   @ds-typo(caption);
 
   color: palette(text.secondary);
+
+  &.is-warning {
+    @ds-typo(subtitle2);
+
+    color: palette(warning.main);
+  }
 }
 
 /* The editor: one value per breakpoint, or the definition as text. */

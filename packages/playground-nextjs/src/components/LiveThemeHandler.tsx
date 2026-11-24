@@ -4,6 +4,7 @@ import Tabs from './Tabs'
 import PaletteFamilyEditor from './PaletteFamilyEditor'
 import BreakpointsEditor from './BreakpointsEditor'
 import DensityEditor from './DensityEditor'
+import SpacingEditor from './SpacingEditor'
 import ThemeConfigJsonEditor from './ThemeConfigJsonEditor'
 
 /**
@@ -13,10 +14,14 @@ import ThemeConfigJsonEditor from './ThemeConfigJsonEditor'
  */
 export default function LiveThemeHandler() {
   return (
-    <Tabs labels={['Palette', 'Breakpoints', 'Density', 'JSON']}>
+    <Tabs labels={['Palette', 'Breakpoints', 'Spacing / Density', 'JSON']}>
       <PaletteFamilyEditor />
       <BreakpointsEditor />
-      <DensityEditor />
+      {/* Two editors, one tab: Density is built from Spacing, so an edit above shows below. */}
+      <div className="lth__stack">
+        <SpacingEditor />
+        <DensityEditor />
+      </div>
       <ThemeConfigJsonEditor />
     </Tabs>
   )

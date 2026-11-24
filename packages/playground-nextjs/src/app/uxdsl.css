@@ -5380,6 +5380,16 @@ input[type=range]::-moz-range-thumb:hover {
   margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
   color: var(--uxdsl__palette__text-secondary);
 }
+.dte__tag.is-warning {
+  font-family: var(--uxdsl__typography__subtitle2-font-family);
+  font-size: var(--uxdsl__typography__subtitle2-font-size);
+  line-height: var(--uxdsl__typography__subtitle2-line-height);
+  font-weight: var(--uxdsl__typography__subtitle2-font-weight);
+  letter-spacing: var(--uxdsl__typography__subtitle2-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__subtitle2-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__subtitle2-margin-block-end);
+  color: var(--uxdsl__palette__warning-main);
+}
 
 /* The editor: one value per breakpoint, or the definition as text. */
 .dte__editor {
@@ -5981,6 +5991,13 @@ input[type=range]::-moz-range-thumb:hover {
 .InteractiveDemoContainer__bodyInner {
   padding: var(--uxdsl__density__4);
   flex: 1;
+}
+
+/* The Live theme handler (/docs/theme): editors that share a tab are stacked. */
+.lth__stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__density__4);
 }
 
 /* PageTitle styles - Scoped */
@@ -8644,6 +8661,426 @@ input[type=range]::-moz-range-thumb:hover {
     box-shadow: var(--uxdsl__shadow__1);
     border-radius: var(--uxdsl__radius__2);
   }
+}
+
+/* The Spacing editor of the Live theme handler (/docs/theme). Every value is a UXDSL token,
+   role or directive; the literals left are layout (grid, flex). */
+/* One square per step of the base scale, drawn with the real space(k), so it follows every
+   edit: in the scale at 40%, every step in proportion; in the editor at its real size. */
+.spe-size--0 {
+  width: calc(var(--uxdsl__space__0) * 0.4);
+  height: calc(var(--uxdsl__space__0) * 0.4);
+}
+
+.spe-real--0 {
+  width: var(--uxdsl__space__0);
+  height: var(--uxdsl__space__0);
+}
+
+.spe-size--1 {
+  width: calc(var(--uxdsl__space__1) * 0.4);
+  height: calc(var(--uxdsl__space__1) * 0.4);
+}
+
+.spe-real--1 {
+  width: var(--uxdsl__space__1);
+  height: var(--uxdsl__space__1);
+}
+
+.spe-size--2 {
+  width: calc(var(--uxdsl__space__2) * 0.4);
+  height: calc(var(--uxdsl__space__2) * 0.4);
+}
+
+.spe-real--2 {
+  width: var(--uxdsl__space__2);
+  height: var(--uxdsl__space__2);
+}
+
+.spe-size--3 {
+  width: calc(var(--uxdsl__space__3) * 0.4);
+  height: calc(var(--uxdsl__space__3) * 0.4);
+}
+
+.spe-real--3 {
+  width: var(--uxdsl__space__3);
+  height: var(--uxdsl__space__3);
+}
+
+.spe-size--4 {
+  width: calc(var(--uxdsl__space__4) * 0.4);
+  height: calc(var(--uxdsl__space__4) * 0.4);
+}
+
+.spe-real--4 {
+  width: var(--uxdsl__space__4);
+  height: var(--uxdsl__space__4);
+}
+
+.spe-size--5 {
+  width: calc(var(--uxdsl__space__5) * 0.4);
+  height: calc(var(--uxdsl__space__5) * 0.4);
+}
+
+.spe-real--5 {
+  width: var(--uxdsl__space__5);
+  height: var(--uxdsl__space__5);
+}
+
+.spe-size--6 {
+  width: calc(var(--uxdsl__space__6) * 0.4);
+  height: calc(var(--uxdsl__space__6) * 0.4);
+}
+
+.spe-real--6 {
+  width: var(--uxdsl__space__6);
+  height: var(--uxdsl__space__6);
+}
+
+.spe-size--7 {
+  width: calc(var(--uxdsl__space__7) * 0.4);
+  height: calc(var(--uxdsl__space__7) * 0.4);
+}
+
+.spe-real--7 {
+  width: var(--uxdsl__space__7);
+  height: var(--uxdsl__space__7);
+}
+
+.spe-size--8 {
+  width: calc(var(--uxdsl__space__8) * 0.4);
+  height: calc(var(--uxdsl__space__8) * 0.4);
+}
+
+.spe-real--8 {
+  width: var(--uxdsl__space__8);
+  height: var(--uxdsl__space__8);
+}
+
+.spe-size--9 {
+  width: calc(var(--uxdsl__space__9) * 0.4);
+  height: calc(var(--uxdsl__space__9) * 0.4);
+}
+
+.spe-real--9 {
+  width: var(--uxdsl__space__9);
+  height: var(--uxdsl__space__9);
+}
+
+.spe-size--10 {
+  width: calc(var(--uxdsl__space__10) * 0.4);
+  height: calc(var(--uxdsl__space__10) * 0.4);
+}
+
+.spe-real--10 {
+  width: var(--uxdsl__space__10);
+  height: var(--uxdsl__space__10);
+}
+
+.spe-size--11 {
+  width: calc(var(--uxdsl__space__11) * 0.4);
+  height: calc(var(--uxdsl__space__11) * 0.4);
+}
+
+.spe-real--11 {
+  width: var(--uxdsl__space__11);
+  height: var(--uxdsl__space__11);
+}
+
+.spe-size--12 {
+  width: calc(var(--uxdsl__space__12) * 0.4);
+  height: calc(var(--uxdsl__space__12) * 0.4);
+}
+
+.spe-real--12 {
+  width: var(--uxdsl__space__12);
+  height: var(--uxdsl__space__12);
+}
+
+.spe-size--13 {
+  width: calc(var(--uxdsl__space__13) * 0.4);
+  height: calc(var(--uxdsl__space__13) * 0.4);
+}
+
+.spe-real--13 {
+  width: var(--uxdsl__space__13);
+  height: var(--uxdsl__space__13);
+}
+
+.spe-size--14 {
+  width: calc(var(--uxdsl__space__14) * 0.4);
+  height: calc(var(--uxdsl__space__14) * 0.4);
+}
+
+.spe-real--14 {
+  width: var(--uxdsl__space__14);
+  height: var(--uxdsl__space__14);
+}
+
+.spe-size--15 {
+  width: calc(var(--uxdsl__space__15) * 0.4);
+  height: calc(var(--uxdsl__space__15) * 0.4);
+}
+
+.spe-real--15 {
+  width: var(--uxdsl__space__15);
+  height: var(--uxdsl__space__15);
+}
+
+.spe-size--16 {
+  width: calc(var(--uxdsl__space__16) * 0.4);
+  height: calc(var(--uxdsl__space__16) * 0.4);
+}
+
+.spe-real--16 {
+  width: var(--uxdsl__space__16);
+  height: var(--uxdsl__space__16);
+}
+
+.spe__hint {
+  font-family: var(--uxdsl__typography__caption-font-family);
+  font-size: var(--uxdsl__typography__caption-font-size);
+  line-height: var(--uxdsl__typography__caption-line-height);
+  font-weight: var(--uxdsl__typography__caption-font-weight);
+  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+  color: var(--uxdsl__palette__text-secondary);
+}
+
+.spe {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--uxdsl__density__4);
+}
+
+@media (min-width: 1024px){
+
+.spe {
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+} }
+
+/* The scale as a staircase of squares, each a card to choose. */
+.spe__scale {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--uxdsl__density__2);
+  min-width: 0;
+}
+
+.spe__step { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: var(--uxdsl__surface__flat-bg); color: var(--uxdsl__surface__flat-color); border: var(--uxdsl__surface__flat-border); box-shadow: var(--uxdsl__surface__flat-shadow);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--uxdsl__density__1);
+  border: var(--uxdsl__border__1);
+  border-color: transparent;
+}
+
+.spe__step:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__flat-hover-color); }
+
+.spe__step:focus-visible { outline: var(--uxdsl__button__flat-focusvisible-outline); outline-offset: var(--uxdsl__button__flat-focusvisible-outline-offset); }
+
+.spe__step.is-selected, .spe__step[aria-pressed="true"], .spe__step[aria-selected="true"] { color: var(--uxdsl__button__flat-selected-color); }
+
+.spe__step:disabled, .spe__step[aria-disabled="true"] { opacity: var(--uxdsl__button__flat-disabled-opacity); cursor: var(--uxdsl__button__flat-disabled-cursor); }
+.spe__step.is-selected {
+  border-color: var(--uxdsl__palette__primary-main);
+  background: var(--uxdsl__palette__surface-light);
+}
+
+.spe__square {
+  min-width: var(--uxdsl__space__1);
+  min-height: var(--uxdsl__space__1);
+  border-radius: var(--uxdsl__radius__1);
+  background: var(--uxdsl__palette__primary-main);
+}
+
+.spe__name {
+  font-family: var(--uxdsl__typography__code-font-family);
+  font-size: var(--uxdsl__typography__code-font-size);
+  line-height: var(--uxdsl__typography__code-line-height);
+  font-weight: var(--uxdsl__typography__code-font-weight);
+  letter-spacing: var(--uxdsl__typography__code-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__code-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__code-margin-block-end);
+  color: var(--uxdsl__palette__text-primary);
+}
+
+.spe__value {
+  font-family: var(--uxdsl__typography__caption-font-family);
+  font-size: var(--uxdsl__typography__caption-font-size);
+  line-height: var(--uxdsl__typography__caption-line-height);
+  font-weight: var(--uxdsl__typography__caption-font-weight);
+  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+  color: var(--uxdsl__palette__text-secondary);
+}
+
+.spe__count {
+  font-family: var(--uxdsl__typography__caption-font-family);
+  font-size: var(--uxdsl__typography__caption-font-size);
+  line-height: var(--uxdsl__typography__caption-line-height);
+  font-weight: var(--uxdsl__typography__caption-font-weight);
+  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+  color: var(--uxdsl__palette__text-secondary);
+}
+
+/* The chosen step: its value and what follows it. */
+.spe__editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__density__3);
+  min-width: 0;
+}
+
+.spe__real {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--uxdsl__density__2);
+}
+
+.spe__real-label {
+  font-family: var(--uxdsl__typography__caption-font-family);
+  font-size: var(--uxdsl__typography__caption-font-size);
+  line-height: var(--uxdsl__typography__caption-line-height);
+  font-weight: var(--uxdsl__typography__caption-font-weight);
+  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+  color: var(--uxdsl__palette__text-secondary);
+}
+
+.spe__written {
+  font-family: var(--uxdsl__typography__code-font-family);
+  font-size: var(--uxdsl__typography__code-font-size);
+  line-height: var(--uxdsl__typography__code-line-height);
+  font-weight: var(--uxdsl__typography__code-font-weight);
+  letter-spacing: var(--uxdsl__typography__code-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__code-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__code-margin-block-end);
+  overflow-wrap: anywhere;
+}
+
+.spe__px {
+  color: var(--uxdsl__palette__text-secondary);
+}
+
+.spe__field {
+  font-family: var(--uxdsl__typography__body-sm-font-family);
+  font-size: var(--uxdsl__typography__body-sm-font-size);
+  line-height: var(--uxdsl__typography__body-sm-line-height);
+  font-weight: var(--uxdsl__typography__body-sm-font-weight);
+  letter-spacing: var(--uxdsl__typography__body-sm-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__body-sm-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__body-sm-margin-block-end);
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__density__1);
+}
+
+.spe__text { box-sizing: border-box; font: inherit; width: 100%; padding: var(--uxdsl__surface__outlined-padding); border-radius: var(--uxdsl__surface__outlined-radius); background: var(--uxdsl__surface__outlined-bg); color: var(--uxdsl__surface__outlined-color); border: var(--uxdsl__surface__outlined-border); box-shadow: var(--uxdsl__surface__outlined-shadow); caret-color: var(--uxdsl__input__outlined-base-caret);
+  font-family: var(--uxdsl__typography__code-font-family);
+  font-size: var(--uxdsl__typography__code-font-size);
+  line-height: var(--uxdsl__typography__code-line-height);
+  font-weight: var(--uxdsl__typography__code-font-weight);
+  letter-spacing: var(--uxdsl__typography__code-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__code-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__code-margin-block-end);
+  max-width: var(--uxdsl__space__15);
+}
+
+.spe__text::placeholder { color: var(--uxdsl__input__outlined-base-placeholder); }
+
+.spe__text:focus { border: var(--uxdsl__input__outlined-focus-border); }
+
+.spe__text:invalid, .spe__text[aria-invalid="true"] { border: var(--uxdsl__input__outlined-invalid-border); }
+
+.spe__text:disabled, .spe__text[aria-disabled="true"] { opacity: var(--uxdsl__input__outlined-disabled-opacity); cursor: var(--uxdsl__input__outlined-disabled-cursor); }
+
+.spe__error {
+  font-family: var(--uxdsl__typography__caption-font-family);
+  font-size: var(--uxdsl__typography__caption-font-size);
+  line-height: var(--uxdsl__typography__caption-line-height);
+  font-weight: var(--uxdsl__typography__caption-font-weight);
+  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+  color: var(--uxdsl__palette__error-main);
+}
+
+.spe__consumers {
+  padding: var(--uxdsl__surface__outlined-padding);
+  border-radius: var(--uxdsl__radius__2);
+  background: var(--uxdsl__surface__outlined-bg);
+  color: var(--uxdsl__surface__outlined-color);
+  border: var(--uxdsl__surface__outlined-border);
+  box-shadow: var(--uxdsl__surface__outlined-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__density__2);
+}
+
+.spe__consumers-title {
+  font-family: var(--uxdsl__typography__body-sm-font-family);
+  font-size: var(--uxdsl__typography__body-sm-font-size);
+  line-height: var(--uxdsl__typography__body-sm-line-height);
+  font-weight: var(--uxdsl__typography__body-sm-font-weight);
+  letter-spacing: var(--uxdsl__typography__body-sm-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__body-sm-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__body-sm-margin-block-end);
+}
+
+.spe__family {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__density__1);
+}
+
+.spe__family-name {
+  font-family: var(--uxdsl__typography__subtitle2-font-family);
+  font-size: var(--uxdsl__typography__subtitle2-font-size);
+  line-height: var(--uxdsl__typography__subtitle2-line-height);
+  font-weight: var(--uxdsl__typography__subtitle2-font-weight);
+  letter-spacing: var(--uxdsl__typography__subtitle2-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__subtitle2-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__subtitle2-margin-block-end);
+}
+
+.spe__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--uxdsl__density__1);
+  margin: 0;
+  padding: var(--uxdsl__density__0);
+  list-style: none;
+}
+
+.spe__consumer {
+  padding: var(--uxdsl__surface__contained-padding);
+  border-radius: var(--uxdsl__radius__1);
+  background: var(--uxdsl__palette__light-main);
+  color: var(--uxdsl__palette__light-contrast);
+  border: var(--uxdsl__surface__contained-border);
+  box-shadow: var(--uxdsl__surface__contained-shadow);
+  font-family: var(--uxdsl__typography__caption-font-family);
+  font-size: var(--uxdsl__typography__caption-font-size);
+  line-height: var(--uxdsl__typography__caption-line-height);
+  font-weight: var(--uxdsl__typography__caption-font-weight);
+  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+  display: inline-flex;
+  gap: var(--uxdsl__density__1);
+  padding: var(--uxdsl__density__1) var(--uxdsl__density__2);
+}
+
+.spe__at {
+  color: var(--uxdsl__palette__text-secondary);
 }
 
 /* Spacing explanation. Was SpacingExplanation.module.css (MIG-B7-17 phase B): classes are

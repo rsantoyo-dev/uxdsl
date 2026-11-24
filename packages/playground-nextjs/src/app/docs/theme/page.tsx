@@ -149,7 +149,7 @@ export default function DocsThemePage() {
         <ul>
           <li><strong>Palette</strong>: choose a role (primary, secondary, surface…), then pick each of its variants from the color collection (<code>color(purple.700)</code>), link it to another role (<code>palette(secondary.main)</code>) or give it a color of its own. The Light/Dark switch edits <code>palette</code> or <code>modes.dark.palette</code>.</li>
           <li><strong>Breakpoints</strong>: slide sm, md, lg and xl and the page switches at the new widths. It is a preview: the theme cannot move a breakpoint at run time, so it moves this page’s compiled media rules and gives you the JSON for your theme file.</li>
-          <li><strong>Density</strong>: pick a token and see what it gives at each breakpoint, as squares around the same content; set its spacing step per breakpoint, or write its definition, and a live example uses it as padding and gap.</li>
+          <li><strong>Spacing / Density</strong>: the spacing scale as squares of their size: change a step and see everything that names it, densities first, which move with it. Below, pick a Density token and see what it gives at each breakpoint, as squares around the same content; set its spacing step per breakpoint, or write its definition, and a live example uses it as padding and gap.</li>
           <li><strong>JSON</strong>: the whole active theme as a tree: expand a family, edit a value in place, and the editor checks it against the packaged schema as you type. Text and table views are in its menu.</li>
         </ul>
       </div>
