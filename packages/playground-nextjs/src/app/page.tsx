@@ -4,7 +4,7 @@ import CodeBlock from '@/components/CodeBlock'
 import ParadigmFrame from '@/components/ParadigmFrame'
 import { AIPrompt } from '@/components/AIPrompt'
 import HeroFeed from '@/components/HeroFeed'
-import LiveThemeHandler from '@/components/LiveThemeHandler'
+import HomeThemeEditor from '@/components/HomeThemeEditor'
 import { GITHUB_URL, NPM_URL } from '@/lib/docs'
 import generated from '@/generated/examples.json'
 
@@ -24,16 +24,11 @@ const PILLARS = [
 export default function Home() {
   return (
     <main className="home">
-      <HeroFeed />
+      <HeroFeed>
+        <AIPrompt />
+      </HeroFeed>
 
-      <section className="home-live" aria-labelledby="home-live-title">
-        <h2 id="home-live-title" className="home-section-title">Edit the theme, watch it change</h2>
-        <p className="home-live__text">
-          The banners above are UXDSL only. Change a color, a spacing step, a density or a breakpoint below and they follow —
-          through <code>applyTheme</code>, the same call your app makes. Nothing is saved: export the JSON for your theme file.
-        </p>
-        <LiveThemeHandler showcase={false} />
-      </section>
+      <HomeThemeEditor />
 
       <section className="home-hero" aria-labelledby="home-title">
         <div className="home-hero__intro">
@@ -78,15 +73,6 @@ export default function Home() {
             </Link>
           ))}
         </div>
-      </section>
-
-      <section className="home-experiment" aria-labelledby="home-experiment-title">
-        <h2 id="home-experiment-title" className="home-section-title">Experiment: a theme from a name</h2>
-        <p className="home-experiment__text">
-          Type a name and a language model writes a theme override for this site; it is validated and applied with
-          <code> applyTheme</code>, like the header&apos;s theme buttons. It changes values only — the components are not rebuilt.
-        </p>
-        <AIPrompt />
       </section>
 
       <footer className="home-footer">

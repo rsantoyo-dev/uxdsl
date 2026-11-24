@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import { ArrowRight, Github, Pause, Play } from 'lucide-react'
 import { GITHUB_URL } from '@/lib/docs'
@@ -97,9 +97,9 @@ function Showcase({ show }: { show: Banner['show'] }) {
  * showing a part of the theme in its own tone, layout and density. Everything is UXDSL
  * (HeroFeed.uxdsl), so the Live theme handler below changes it as you edit. It moves on by
  * itself and stops while the pointer or focus is on it, when paused, and for anyone who
- * asked for reduced motion.
+ * asked for reduced motion. `children` sits between the brand line and the banners.
  */
-export default function HeroFeed() {
+export default function HeroFeed({ children }: { children?: ReactNode }) {
   const [index, setIndex] = useState(0)
   const [paused, setPaused] = useState(false)
   const [hovered, setHovered] = useState(false)
@@ -145,6 +145,9 @@ export default function HeroFeed() {
           </a>
         </div>
       </div>
+
+      {/* Above the banners, what lets a visitor change them: the page puts "Name a theme" here. */}
+      {children && <div className="hf__play">{children}</div>}
 
       <div
         key={banner.id}

@@ -283,6 +283,19 @@
     min-width: 0;
     display: flex;
     align-items: center;
+    /* The field's pill: it used to come from AIPrompt's global .input-wrapper rule, which
+       reached this element by accident; it is written here now that AIPrompt has its own class. */
+    padding: density(2);
+    border: border(1);
+    border-color: palette(divider.main);
+    border-radius: radius(pill);
+    background: palette(surface.paper);
+    transition: border-color 0.2s ease;
+
+    &:focus-within {
+      border-color: palette(primary.main);
+      box-shadow: 0 0 0 2px palette(primary.light);
+    }
     
     .ai-icon-btn {
       position: absolute;
