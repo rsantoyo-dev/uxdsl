@@ -1,0 +1,173 @@
+/* The Spacing editor of the Live theme handler (/docs/theme). Every value is a UXDSL token,
+   role or directive; the literals left are layout (grid, flex). */
+
+/* One square per step of the base scale, drawn with the real space(k), so it follows every
+   edit: in the scale at 40%, every step in proportion; in the editor at its real size. */
+@for $k from 0 through 16 {
+  .spe-size--#{$k} {
+    width: calc(space(#{$k}) * 0.4);
+    height: calc(space(#{$k}) * 0.4);
+  }
+
+  .spe-real--#{$k} {
+    width: space(#{$k});
+    height: space(#{$k});
+  }
+}
+
+.spe__hint {
+  @ds-typo(caption);
+
+  color: palette(text.secondary);
+}
+
+.spe {
+  display: grid;
+  grid-template-columns: xs(minmax(0, 1fr)) lg(minmax(0, 3fr) minmax(0, 2fr));
+  gap: density(4);
+}
+
+/* The scale as a staircase of squares, each a card to choose. */
+.spe__scale {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: density(2);
+  min-width: 0;
+}
+
+.spe__step {
+  @ds-button(flat 2);
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: density(1);
+  border: border(1);
+  border-color: transparent;
+
+  &.is-selected {
+    border-color: palette(primary.main);
+    background: palette(surface.light);
+  }
+}
+
+.spe__square {
+  min-width: space(1);
+  min-height: space(1);
+  border-radius: radius(1);
+  background: palette(primary.main);
+}
+
+.spe__name {
+  @ds-typo(code);
+
+  color: palette(text.primary);
+}
+
+.spe__value {
+  @ds-typo(caption);
+
+  color: palette(text.secondary);
+}
+
+.spe__count {
+  @ds-typo(caption);
+
+  color: palette(text.secondary);
+}
+
+/* The chosen step: its value and what follows it. */
+.spe__editor {
+  display: flex;
+  flex-direction: column;
+  gap: density(3);
+  min-width: 0;
+}
+
+.spe__real {
+  display: flex;
+  align-items: flex-end;
+  gap: density(2);
+}
+
+.spe__real-label {
+  @ds-typo(caption);
+
+  color: palette(text.secondary);
+}
+
+.spe__written {
+  @ds-typo(code);
+
+  overflow-wrap: anywhere;
+}
+
+.spe__px {
+  color: palette(text.secondary);
+}
+
+.spe__field {
+  @ds-typo(body-sm);
+
+  display: flex;
+  flex-direction: column;
+  gap: density(1);
+}
+
+.spe__text {
+  @ds-input(outlined);
+  @ds-typo(code);
+
+  max-width: space(15);
+}
+
+.spe__error {
+  @ds-typo(caption);
+
+  color: palette(error.main);
+}
+
+.spe__consumers {
+  @ds-surface(outlined radius(2));
+
+  display: flex;
+  flex-direction: column;
+  gap: density(2);
+}
+
+.spe__consumers-title {
+  @ds-typo(body-sm);
+}
+
+.spe__family {
+  display: flex;
+  flex-direction: column;
+  gap: density(1);
+}
+
+.spe__family-name {
+  @ds-typo(subtitle2);
+}
+
+.spe__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: density(1);
+  margin: 0;
+  padding: density(0);
+  list-style: none;
+}
+
+.spe__consumer {
+  @ds-surface(contained light radius(1));
+  @ds-typo(caption);
+
+  display: inline-flex;
+  gap: density(1);
+  padding: density(1) density(2);
+}
+
+.spe__at {
+  color: palette(text.secondary);
+}

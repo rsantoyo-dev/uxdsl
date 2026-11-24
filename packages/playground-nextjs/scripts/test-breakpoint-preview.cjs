@@ -66,3 +66,23 @@ test('rules are rewritten from their compiled condition, so crossing a neighbour
   assert.equal(b.applyToDocument(doc, compiled, compiled, originals), 0);
   assert.deepEqual([md, lg, nested].map((r) => r.media.mediaText), ['(min-width: 768px)', '(min-width: 1024px)', '(min-width: 768px)']);
 });
+
+test('an edit of the whole theme: the breakpoints go to the preview, the rest to applyTheme', () => {
+  const theme = { palette: { primary: { main: 'red' } }, breakpoints: { ...compiled } };
+  // Moved: the theme gets its compiled breakpoints back, the preview gets the new ones.
+  const moved = b.splitThemeEdit(compiled, { ...theme, breakpoints: { ...compiled, md: 900 } });
+  assert.deepEqual(moved.theme.breakpoints, compiled);
+  assert.equal(moved.theme.palette.primary.main, 'red');
+  assert.deepEqual(moved.preview, { ...compiled, md: 900 });
+  // Unchanged: no preview.
+  assert.equal(b.splitThemeEdit(compiled, theme).preview, null);
+  // Added, removed, or out of order: refused with the reason, nothing to apply.
+  assert.match(b.splitThemeEdit(compiled, { ...theme, breakpoints: { ...compiled, xxl: 1600 } }).error, /not added or removed/);
+  const { xl, ...withoutXl } = compiled;
+  assert.match(b.splitThemeEdit(compiled, { ...theme, breakpoints: withoutXl }).error, /not added or removed/);
+  assert.match(b.splitThemeEdit(compiled, { ...theme, breakpoints: { ...compiled, md: 2000 } }).error, /must be wider/);
+  // What the JSON tab shows: the previewed breakpoints, in the theme's own key order.
+  const shown = b.withBreakpoints({ colors: {}, breakpoints: compiled, palette: {} }, { ...compiled, lg: 1200 });
+  assert.deepEqual(Object.keys(shown), ['colors', 'breakpoints', 'palette']);
+  assert.equal(shown.breakpoints.lg, 1200);
+});

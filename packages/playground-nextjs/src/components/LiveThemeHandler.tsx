@@ -3,6 +3,9 @@
 import Tabs from './Tabs'
 import PaletteFamilyEditor from './PaletteFamilyEditor'
 import BreakpointsEditor from './BreakpointsEditor'
+import DensityEditor from './DensityEditor'
+import SpacingEditor from './SpacingEditor'
+import ThemeShowcase from './ThemeShowcase'
 import ThemeConfigJsonEditor from './ThemeConfigJsonEditor'
 
 /**
@@ -12,10 +15,19 @@ import ThemeConfigJsonEditor from './ThemeConfigJsonEditor'
  */
 export default function LiveThemeHandler() {
   return (
-    <Tabs labels={['Palette', 'Breakpoints', 'JSON']}>
-      <PaletteFamilyEditor />
-      <BreakpointsEditor />
-      <ThemeConfigJsonEditor />
-    </Tabs>
+    <>
+      {/* The showcase first: a small page in UXDSL alone, which every tab below changes. */}
+      <ThemeShowcase />
+      <Tabs labels={['Palette', 'Breakpoints', 'Spacing / Density', 'JSON']}>
+        <PaletteFamilyEditor />
+        <BreakpointsEditor />
+        {/* Two editors, one tab: Density is built from Spacing, so an edit above shows below. */}
+        <div className="lth__stack">
+          <SpacingEditor />
+          <DensityEditor />
+        </div>
+        <ThemeConfigJsonEditor />
+      </Tabs>
+    </>
   )
 }
