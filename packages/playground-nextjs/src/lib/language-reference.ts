@@ -1,13 +1,13 @@
 // What each value function and directive of the language does, for /docs/language.
 //
-// The LIST is not here: the page iterates LANGUAGE_COMPLETIONS (uxdsl/language), the same
-// metadata the editor extension completes from, and fails the build (`describe()` throws)
-// when the language gains a function or directive this file does not describe, or loses one
-// it still describes. So the page cannot silently miss a construct.
+// The page shows these tables in the order written here, the order a reader meets the
+// constructs in. Which names exist is not decided here: `describe()` compares each table
+// with LANGUAGE_COMPLETIONS (uxdsl/language), the metadata the editor extension completes
+// from, and fails the build when the language gains a function or directive this file does
+// not describe, or loses one it still describes. So the page cannot silently miss a construct.
 
 export type FunctionReference = {
   signature: string
-  compilesTo: string
   example: string
   notes: string
 }
@@ -15,45 +15,38 @@ export type FunctionReference = {
 export const FUNCTIONS: Record<string, FunctionReference> = {
   space: {
     signature: 'space(k)',
-    compilesTo: 'var(--uxdsl__space__k)',
     example: 'gap: space(4);',
-    notes: 'A step of the spacing scale, the same at every width. k is a key of the theme’s spacing, not a number of pixels.',
+    notes: 'A step of the spacing scale, the same at every width.',
   },
   density: {
     signature: 'density(k)',
-    compilesTo: 'var(--uxdsl__density__k)',
     example: 'padding: density(4);',
-    notes: 'A spacing step that the theme moves at its breakpoints. The preferred way to space a component.',
-  },
-  color: {
-    signature: 'color(family.shade[, alpha])',
-    compilesTo: 'var(--uxdsl__color__family-shade)',
-    example: 'background: color(gray.300, 0.5);',
-    notes: 'A specific color of the collection, for a swatch or an identity. With an alpha (0–1) it compiles to color-mix(… transparent).',
+    notes: 'Spacing that changes at the theme’s breakpoints. The usual choice for a component’s padding and gap.',
   },
   palette: {
-    signature: 'palette(family[.variant][, alpha])',
-    compilesTo: 'var(--uxdsl__palette__family-variant)',
+    signature: 'palette(family.variant)',
     example: 'color: palette(primary.contrast);',
-    notes: 'A semantic role; palette(primary) is palette(primary.main). Follows dark mode (modes.dark.palette).',
+    notes: 'A color by its role: primary, surface, error. It changes with dark mode. palette(primary) is palette(primary.main).',
+  },
+  color: {
+    signature: 'color(family.shade)',
+    example: 'background: color(gray.300);',
+    notes: 'One exact color of the theme’s collection, the same in both modes. For when the color itself is the point, such as a swatch.',
   },
   radius: {
-    signature: 'radius(k | pill | circle)',
-    compilesTo: 'var(--uxdsl__radius__k), 9999px, 50%',
+    signature: 'radius(k)',
     example: 'border-radius: radius(2);',
-    notes: 'A corner preset, or one of the two built-in shapes.',
+    notes: 'A corner preset. radius(pill) and radius(circle) are built in: 9999px and 50%.',
   },
   border: {
     signature: 'border(k)',
-    compilesTo: 'var(--uxdsl__border__k)',
     example: 'border: border(1);',
-    notes: 'A whole edge (width, style, color). Change the color or style locally with the longhands after it.',
+    notes: 'A whole edge: width, style and color. To change one of them in a rule, write border-color or border-style after it.',
   },
   shadow: {
     signature: 'shadow(k)',
-    compilesTo: 'var(--uxdsl__shadow__k)',
     example: 'box-shadow: shadow(2);',
-    notes: 'A box-shadow preset; shadow(0) is none.',
+    notes: 'A box-shadow preset. shadow(0) is none.',
   },
 }
 
@@ -65,33 +58,33 @@ export type DirectiveReference = {
 
 export const DIRECTIVES: Record<string, DirectiveReference> = {
   'ds-surface': {
-    signature: '@ds-surface(role [tone] [size] [radius(k)] [shadow(k)])',
+    signature: '@ds-surface(role)',
     example: '.card { @ds-surface(contained); }',
-    notes: 'A container role: padding, radius, background, color, border and shadow. A tone swaps its colors for a Palette family; a size picks density(n) and radius(n).',
+    notes: 'A container: padding, corners, background, text color, border and shadow.',
   },
   'ds-typo': {
     signature: '@ds-typo(role)',
     example: '.title { @ds-typo(h2); }',
-    notes: 'A text role from typography_details: one declaration per field the theme defines for it, and nothing else.',
+    notes: 'A text style: the font, size, weight, line height and margins the theme defines for that role.',
   },
   'ds-button': {
-    signature: '@ds-button(role [tone] [size] [radius(k)] [shadow(k)])',
-    example: '.save { @ds-button(contained primary); }',
-    notes: 'An action role and its states (hover, active, focus, focusvisible, selected, disabled). Hover and active exclude a disabled control.',
+    signature: '@ds-button(role)',
+    example: '.save { @ds-button(contained); }',
+    notes: 'A button with its states: hover, keyboard focus, selected and disabled.',
   },
   'ds-input': {
-    signature: '@ds-input(role [tone] [size] [radius(k)] [shadow(k)])',
+    signature: '@ds-input(role)',
     example: '.email { @ds-input(outlined); }',
-    notes: 'A text-field role: the surface, caret, placeholder and states (hover, focus, focusvisible, readonly, invalid, disabled).',
+    notes: 'A text field: its surface, caret and placeholder, with the focus, invalid and disabled states.',
   },
 }
 
-/** Every listed name described, and nothing described that is not listed. */
+/** The table's entries in its own order, once it describes exactly the listed names. */
 export function describe<T>(names: readonly string[], table: Record<string, T>, kind: string): Array<[string, T]> {
   const missing = names.filter((name) => !(name in table))
   const extra = Object.keys(table).filter((name) => !names.includes(name))
   if (missing.length || extra.length) {
     throw new Error(`/docs/language is out of date with LANGUAGE_COMPLETIONS: ${kind} ${missing.length ? `not described: ${missing.join(', ')}` : ''}${extra.length ? ` described but not in the language: ${extra.join(', ')}` : ''}`)
   }
-  return names.map((name) => [name, table[name]])
+  return Object.entries(table)
 }
