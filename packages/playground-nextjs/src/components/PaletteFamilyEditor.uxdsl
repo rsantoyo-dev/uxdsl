@@ -78,6 +78,45 @@ $pfe-palette: (
   gap: density(3);
 }
 
+.pfe__families {
+  display: flex;
+  flex-wrap: wrap;
+  gap: space(1);
+  grid-column: xs(1) lg(1 / -1);
+}
+
+.pfe__family {
+  display: inline-flex;
+  align-items: center;
+  gap: space(1);
+  padding: space(1) space(2);
+  border: border(1);
+  border-radius: radius(pill);
+  background: transparent;
+  color: palette(text.primary);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+
+  &[aria-checked="true"] {
+    border-color: palette(text.primary);
+    background: palette(surface.light);
+    font-weight: 600;
+  }
+
+  &:focus-visible {
+    outline: 2px solid palette(primary.main);
+    outline-offset: 2px;
+  }
+}
+
+.pfe__dot {
+  width: 0.9rem;
+  height: 0.9rem;
+  border: border(1);
+  border-radius: radius(circle);
+}
+
 .pfe__variants {
   display: flex;
   flex-direction: column;

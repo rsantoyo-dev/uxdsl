@@ -147,7 +147,7 @@ export default function DocsThemePage() {
           your <code>uxdsl.theme.json</code>.
         </p>
         <ul>
-          <li><strong>Palette</strong>: pick each variant of a role from the color collection (<code>color(purple.700)</code>), link it to another role (<code>palette(secondary.main)</code>) or give it a color of its own. The Light/Dark switch edits <code>palette</code> or <code>modes.dark.palette</code>.</li>
+          <li><strong>Palette</strong>: choose a role (primary, secondary, surface…), then pick each of its variants from the color collection (<code>color(purple.700)</code>), link it to another role (<code>palette(secondary.main)</code>) or give it a color of its own. The Light/Dark switch edits <code>palette</code> or <code>modes.dark.palette</code>.</li>
           <li><strong>JSON</strong>: the whole active theme.</li>
         </ul>
       </div>

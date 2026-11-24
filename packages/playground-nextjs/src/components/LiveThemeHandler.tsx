@@ -12,7 +12,7 @@ import ThemeConfigJsonEditor from './ThemeConfigJsonEditor'
 export default function LiveThemeHandler() {
   return (
     <Tabs labels={['Palette', 'JSON']}>
-      <PaletteFamilyEditor family="primary" />
+      <PaletteFamilyEditor />
       <ThemeConfigJsonEditor />
     </Tabs>
   )

@@ -47,16 +47,26 @@ function renderedRgb(element: HTMLElement | null, property: 'backgroundColor' | 
 }
 
 /**
- * Edits one Palette family of the active theme, variant by variant, in light or dark mode.
+ * Edits the Palette of the active theme: pick a role (primary, secondary, surface…), then
+ * each of its variants, in light or dark mode.
  * Every change goes through `setCustomTheme`, the same path as the JSON editor, so the
  * two stay in step and the runtime (`applyTheme`) validates each one.
  */
-export default function PaletteFamilyEditor({ family }: { family: string }) {
+export default function PaletteFamilyEditor({ defaultFamily = 'primary' }: { defaultFamily?: string }) {
   const { activeThemeData, setCustomTheme, customThemeName, isDark, toggleDarkMode } = useTheme()
   const mode: Mode = isDark ? 'dark' : 'light'
   const palette = useMemo(() => paletteFor(activeThemeData, mode), [activeThemeData, mode])
+  // The roles are the families of the active theme's palette, in its order.
+  const families = useMemo(() => roleGroups(activeThemeData?.palette), [activeThemeData])
+  const [family, setFamily] = useState(defaultFamily)
   const variants = useMemo(() => Object.keys(activeThemeData?.palette?.[family] || {}), [activeThemeData, family])
   const [variant, setVariant] = useState(() => variants[0] || 'main')
+  const chooseFamily = (next: string) => {
+    setFamily(next)
+    setVariant(Object.keys(activeThemeData?.palette?.[next] || {})[0] || 'main')
+  }
+  // main with contrast text is the role's sample; text, divider and action have no such pair.
+  const hasPair = variants.includes('main') && variants.includes('contrast')
   const current: string = palette?.[family]?.[variant] ?? ''
   const classified = classifyValue(current)
   const [source, setSource] = useState<Source>(classified.source)
@@ -87,7 +97,7 @@ export default function PaletteFamilyEditor({ family }: { family: string }) {
       setRenderedHex(shown ? `#${shown.map((c) => c.toString(16).padStart(2, '0')).join('')}` : null)
     })
     return () => cancelAnimationFrame(frame)
-  }, [activeThemeData, mode, variant])
+  }, [activeThemeData, mode, family, variant])
 
   const write = (value: string) => {
     try {
@@ -118,7 +128,7 @@ export default function PaletteFamilyEditor({ family }: { family: string }) {
 
   return (
     <InteractiveDemoContainer
-      title={`Palette · ${family}`}
+      title="Palette"
       toolbar={
         <div className="pfe__toolbar">
           <div className="pfe__segmented" role="radiogroup" aria-label="Mode to edit">
@@ -133,6 +143,22 @@ export default function PaletteFamilyEditor({ family }: { family: string }) {
       }
     >
       <div className="pfe">
+        <div className="pfe__families" role="radiogroup" aria-label="Role">
+          {families.map((group: { family: string; keys: string[] }) => (
+            <button
+              key={group.family}
+              type="button"
+              role="radio"
+              aria-checked={family === group.family}
+              className="pfe__family"
+              onClick={() => chooseFamily(group.family)}
+            >
+              <span className={`pfe__dot ${fill(group.keys.includes(`${group.family}.main`) ? `${group.family}.main` : group.keys[0])}`} />
+              {group.family}
+            </button>
+          ))}
+        </div>
+
         <div className="pfe__variants" role="radiogroup" aria-label={`Variant of ${family}`}>
           {variants.map((name) => {
             const value: string = palette?.[family]?.[name] ?? ''
@@ -251,20 +277,30 @@ export default function PaletteFamilyEditor({ family }: { family: string }) {
           {error && <p className="pfe__error" role="alert">{error}</p>}
         </div>
 
-        <div className="pfe__preview">
-          <div ref={sampleRef} className={`pfe__sample ${fill(`${family}.main`)} ${ink(`${family}.contrast`)}`}>
-            Aa {family}
-          </div>
-          {variants.filter((name) => name !== 'main' && name !== 'contrast').map((name) => (
-            <div key={name} className={`pfe__sample pfe__sample--small ${fill(`${family}.${name}`)} ${ink(`${family}.contrast`)}`}>
-              {name}
+        {hasPair ? (
+          <div className="pfe__preview">
+            <div ref={sampleRef} className={`pfe__sample ${fill(`${family}.main`)} ${ink(`${family}.contrast`)}`}>
+              Aa {family}
             </div>
-          ))}
-          <p className="pfe__ratio">
-            contrast on main:{' '}
-            {ratio === null ? '—' : <strong>{ratio.toFixed(2)}:1 {ratio >= 4.5 ? '(AA)' : ratio >= 3 ? '(AA large text only)' : '(below AA)'}</strong>}
-          </p>
-        </div>
+            {variants.filter((name) => name !== 'main' && name !== 'contrast').map((name) => (
+              <div key={name} className={`pfe__sample pfe__sample--small ${fill(`${family}.${name}`)} ${ink(`${family}.contrast`)}`}>
+                {name}
+              </div>
+            ))}
+            <p className="pfe__ratio">
+              contrast on main:{' '}
+              {ratio === null ? '—' : <strong>{ratio.toFixed(2)}:1 {ratio >= 4.5 ? '(AA)' : ratio >= 3 ? '(AA large text only)' : '(below AA)'}</strong>}
+            </p>
+          </div>
+        ) : (
+          <div className="pfe__preview pfe-fill--surface-main">
+            {variants.map((name) => (
+              <span key={name} className={`pfe__sample pfe__sample--small ${family === 'text' ? ink(`${family}.${name}`) : fill(`${family}.${name}`)}`}>
+                {family === 'text' ? `Aa ${name}` : name}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
     </InteractiveDemoContainer>
   )
