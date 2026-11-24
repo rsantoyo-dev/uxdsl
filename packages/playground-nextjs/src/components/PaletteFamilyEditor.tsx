@@ -21,6 +21,8 @@ import {
 
 // A Palette variant's color comes from a class PaletteFamilyEditor.uxdsl generates for every
 // family and variant of the theme: .pfe-fill--primary-main { background: palette(primary.main) }.
+// The theme's Button `selected` state matches .is-selected; a radio's aria-checked does not.
+const selected = (on: boolean) => (on ? ' is-selected' : '')
 const fill = (key: string) => `pfe-fill--${key.replace('.', '-')}`
 const ink = (key: string) => `pfe-ink--${key.replace('.', '-')}`
 
@@ -134,7 +136,7 @@ export default function PaletteFamilyEditor({ defaultFamily = 'primary' }: { def
         <div className="pfe__toolbar">
           <div className="pfe__segmented" role="radiogroup" aria-label="Mode to edit">
             {(['light', 'dark'] as Mode[]).map((m) => (
-              <button key={m} type="button" role="radio" aria-checked={mode === m} className="pfe__segment" onClick={() => setMode(m)}>
+              <button key={m} type="button" role="radio" aria-checked={mode === m} className={`pfe__segment${selected(mode === m)}`} onClick={() => setMode(m)}>
                 {m === 'light' ? 'Light' : 'Dark'}
               </button>
             ))}
@@ -164,7 +166,7 @@ export default function PaletteFamilyEditor({ defaultFamily = 'primary' }: { def
                       type="button"
                       role="radio"
                       aria-checked={family === role.family}
-                      className="pfe__role"
+                      className={`pfe__role${selected(family === role.family)}`}
                       onClick={() => chooseFamily(role.family)}
                     >
                       <span className={`pfe__role-face ${face}`}>{role.family === 'text' || has('contrast') ? 'Aa' : ''}</span>
@@ -189,7 +191,7 @@ export default function PaletteFamilyEditor({ defaultFamily = 'primary' }: { def
                 type="button"
                 role="radio"
                 aria-checked={variant === name}
-                className="pfe__variant"
+                className={`pfe__variant${selected(variant === name)}`}
                 onClick={() => setVariant(name)}
               >
                 <span className={`pfe__swatch ${fill(`${family}.${name}`)}`} />
@@ -210,7 +212,7 @@ export default function PaletteFamilyEditor({ defaultFamily = 'primary' }: { def
 
           <div className="pfe__segmented" role="radiogroup" aria-label="Where the color comes from">
             {SOURCES.map((s) => (
-              <button key={s.id} type="button" role="radio" aria-checked={source === s.id} className="pfe__segment" onClick={() => setSource(s.id)}>
+              <button key={s.id} type="button" role="radio" aria-checked={source === s.id} className={`pfe__segment${selected(source === s.id)}`} onClick={() => setSource(s.id)}>
                 {s.label}
               </button>
             ))}

@@ -1,4 +1,5 @@
-/* The palette editor of the Live theme handler (/docs/theme). */
+/* The palette editor of the Live theme handler (/docs/theme). Every value is a UXDSL token,
+   role or directive; the literals left are layout (grid, flex) and motion, which have no family. */
 
 /* One fill and one ink class per Palette family and variant of the base theme, so the
    editor shows any variant through palette() rather than an inline style. */
@@ -31,53 +32,39 @@ $pfe-palette: (
   }
 }
 
+/* Toolbar: the Light/Dark switch and its hint. */
 .pfe__toolbar {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: space(3);
+  gap: density(2);
 }
 
 .pfe__hint {
-  margin: 0;
-  font-size: 0.8rem;
+  @ds-typo(caption);
+
   color: palette(text.secondary);
 }
 
+/* A segmented control: Buttons of the theme, the chosen one in its selected state. */
 .pfe__segmented {
   display: inline-flex;
   flex-wrap: wrap;
-  border: border(1);
-  border-radius: radius(1);
-  overflow: hidden;
+  gap: space(1);
 }
 
 .pfe__segment {
-  padding: space(2) space(3);
-  border: 0;
-  background: transparent;
-  color: palette(text.primary);
-  font: inherit;
-  font-size: 0.85rem;
-  cursor: pointer;
-
-  &[aria-checked="true"] {
-    background: palette(primary.main);
-    color: palette(primary.contrast);
-  }
-
-  &:focus-visible {
-    outline: 2px solid palette(primary.main);
-    outline-offset: -2px;
-  }
+  @ds-button(outlined 2);
+  @ds-typo(body-sm);
 }
 
 .pfe {
   display: grid;
-  grid-template-columns: xs(minmax(0, 1fr)) lg(minmax(0, 16rem) minmax(0, 1fr));
+  grid-template-columns: xs(minmax(0, 1fr)) lg(minmax(0, space(16)) minmax(0, 1fr));
   gap: density(3);
 }
 
+/* The roles, grouped, as swatch cards. */
 .pfe__families {
   display: flex;
   flex-wrap: wrap;
@@ -88,7 +75,7 @@ $pfe-palette: (
 .pfe__group {
   display: flex;
   flex-direction: column;
-  gap: space(1);
+  gap: space(2);
 }
 
 .pfe__group-label {
@@ -96,59 +83,55 @@ $pfe-palette: (
 
   color: palette(text.secondary);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
 }
 
 .pfe__group-roles {
   display: flex;
   flex-wrap: wrap;
-  gap: space(2);
+  gap: space(3);
 }
 
-/* A role as a swatch card: its main color with "Aa" in its contrast, a band per variant, its name. */
 .pfe__role {
+  @ds-surface(outlined radius(2));
+
   display: flex;
   flex-direction: column;
-  width: 5.75rem;
+  width: space(12);
   padding: 0;
   overflow: hidden;
-  border: border(1);
-  border-radius: radius(2);
   background: palette(surface.main);
-  color: palette(text.primary);
-  font: inherit;
   text-align: left;
   cursor: pointer;
   transition: transform 120ms ease, box-shadow 120ms ease;
 
   &:hover {
-    transform: translateY(-2px);
+    transform: translateY(calc(-1 * space(1)));
     box-shadow: shadow(2);
   }
 
-  &[aria-checked="true"] {
-    outline: 2px solid palette(text.primary);
-    outline-offset: 2px;
+  &.is-selected {
+    outline: space(1) solid palette(text.primary);
+    outline-offset: space(1);
   }
 
   &:focus-visible {
-    outline: 2px solid palette(primary.main);
-    outline-offset: 2px;
+    outline: space(1) solid palette(primary.main);
+    outline-offset: space(1);
   }
 }
 
 .pfe__role-face {
+  @ds-typo(h6);
+
   display: flex;
   align-items: flex-end;
-  height: 2.75rem;
-  padding: space(1) space(2);
-  font-size: 1.1rem;
-  font-weight: 700;
+  height: space(9);
+  padding: space(2) space(3);
 }
 
 .pfe__role-strip {
   display: flex;
-  height: 0.5rem;
+  height: space(3);
 }
 
 .pfe__role-band {
@@ -156,91 +139,86 @@ $pfe-palette: (
 }
 
 .pfe__role-name {
-  padding: space(1) space(2);
-  font-size: 0.8rem;
-  font-weight: 600;
+  @ds-typo(subtitle2);
+
+  padding: space(2) space(3);
 }
 
+/* The variants of the chosen role. */
 .pfe__variants {
   display: flex;
   flex-direction: column;
-  gap: space(1);
+  gap: space(2);
 }
 
 .pfe__variant {
+  @ds-button(flat 2);
+
   display: grid;
   grid-template-columns: auto auto minmax(0, 1fr);
   align-items: center;
-  column-gap: space(2);
-  padding: space(2);
-  border: 1px solid transparent;
-  border-radius: radius(1);
-  background: transparent;
-  color: palette(text.primary);
-  font: inherit;
+  gap: space(1) space(3);
+  border: border(1);
+  border-color: transparent;
   text-align: left;
-  cursor: pointer;
 
-  &:hover {
-    background: palette(surface.light);
-  }
-
-  &[aria-checked="true"] {
+  &.is-selected {
     border-color: palette(primary.main);
     background: palette(surface.light);
-  }
-
-  &:focus-visible {
-    outline: 2px solid palette(primary.main);
-    outline-offset: 1px;
   }
 }
 
 .pfe__swatch {
-  width: 1.75rem;
-  height: 1.75rem;
+  width: space(7);
+  height: space(7);
   border: border(1);
   border-radius: radius(1);
 }
 
 .pfe__variant-name {
-  font-weight: 600;
+  @ds-typo(subtitle2);
+
+  color: palette(text.primary);
 }
 
 .pfe__variant-value {
+  @ds-typo(code);
+
   overflow: hidden;
-  font-size: 0.75rem;
   color: palette(text.secondary);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .pfe__badge {
+  @ds-typo(caption);
+
   grid-column: 3;
   justify-self: start;
-  font-size: 0.7rem;
   color: palette(text.secondary);
 }
 
+/* The editor of the chosen variant. */
 .pfe__editor {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: space(3);
+  gap: density(2);
   min-width: 0;
 }
 
 /* Measured, never seen: the color the edited variant renders as, for the picker. */
 .pfe__probe {
   position: absolute;
-  width: 1px;
-  height: 1px;
+  width: space(1);
+  height: space(1);
   opacity: 0;
   pointer-events: none;
 }
 
 .pfe__written {
-  font-size: 0.85rem;
+  @ds-typo(code);
+
   overflow-wrap: anywhere;
 }
 
@@ -252,71 +230,73 @@ $pfe-palette: (
   display: flex;
   flex-direction: column;
   gap: space(2);
-  max-height: 22rem;
+  max-height: space(16);
   overflow-y: auto;
 }
 
 .pfe__row {
   display: grid;
-  grid-template-columns: 4.5rem minmax(0, 1fr);
+  grid-template-columns: space(11) minmax(0, 1fr);
   align-items: center;
-  gap: space(2);
+  gap: space(3);
 }
 
 .pfe__row-name {
-  font-size: 0.75rem;
+  @ds-typo(caption);
+
   color: palette(text.secondary);
 }
 
 .pfe__row-swatches {
   display: flex;
   flex-wrap: wrap;
-  gap: space(1);
+  gap: space(2);
 }
 
 .pfe__chip {
-  width: 1.5rem;
-  height: 1.5rem;
+  width: space(6);
+  height: space(6);
   padding: 0;
   border: border(1);
   border-radius: radius(1);
   cursor: pointer;
 
   &[aria-pressed="true"] {
-    outline: 2px solid palette(text.primary);
-    outline-offset: 2px;
+    outline: space(1) solid palette(text.primary);
+    outline-offset: space(1);
   }
 
   &:focus-visible {
-    outline: 2px solid palette(primary.main);
-    outline-offset: 2px;
+    outline: space(1) solid palette(primary.main);
+    outline-offset: space(1);
   }
 }
 
 .pfe__field {
+  @ds-typo(body-sm);
+
   display: flex;
   flex-direction: column;
-  gap: space(1);
-  font-size: 0.85rem;
+  gap: space(2);
 }
 
 .pfe__select,
 .pfe__text {
   @ds-input(outlined);
 
-  max-width: 24rem;
+  max-width: space(16);
 }
 
 .pfe__free {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: space(2);
+  gap: space(3);
 }
 
 .pfe__picker {
-  width: 3rem;
-  height: 2.5rem;
+  width: space(8);
+  height: space(8);
   padding: 0;
   border: border(1);
   border-radius: radius(1);
@@ -325,41 +305,47 @@ $pfe-palette: (
 }
 
 .pfe__text {
-  flex: 1 1 12rem;
-  font-family: var(--uxdsl__font__code, ui-monospace, monospace);
+  @ds-typo(code);
+
+  flex: 1 1 space(14);
 }
 
 .pfe__apply {
-  @ds-button(outlined);
+  @ds-button(outlined 2);
 }
 
 .pfe__error {
-  margin: 0;
-  font-size: 0.8rem;
+  @ds-typo(caption);
+
   color: palette(error.main);
 }
 
+/* The sample: main with its contrast text, the other variants, the ratio. */
 .pfe__preview {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: space(2);
+  gap: space(3);
   grid-column: xs(1) lg(1 / -1);
+  padding: space(2);
+  border-radius: radius(2);
 }
 
 .pfe__sample {
-  padding: space(3) space(4);
+  @ds-typo(h6);
+
+  padding: density(2) density(3);
   border-radius: radius(2);
-  font-weight: 600;
 }
 
 .pfe__sample--small {
-  padding: space(2) space(3);
-  font-size: 0.8rem;
+  @ds-typo(subtitle2);
+
+  padding: space(2) space(4);
 }
 
 .pfe__ratio {
-  margin: 0;
-  font-size: 0.85rem;
+  @ds-typo(body-sm);
+
   color: palette(text.secondary);
 }
