@@ -226,52 +226,6 @@ $pfe-palette: (
   color: palette(text.secondary);
 }
 
-.pfe__collection {
-  display: flex;
-  flex-direction: column;
-  gap: density(2);
-  max-height: space(16);
-  overflow-y: auto;
-}
-
-.pfe__row {
-  display: grid;
-  grid-template-columns: space(11) minmax(0, 1fr);
-  align-items: center;
-  gap: density(3);
-}
-
-.pfe__row-name {
-  @ds-typo(caption);
-
-  color: palette(text.secondary);
-}
-
-.pfe__row-swatches {
-  display: flex;
-  flex-wrap: wrap;
-  gap: density(2);
-}
-
-.pfe__chip {
-  width: space(6);
-  height: space(6);
-  padding: density(0);
-  border: border(1);
-  border-radius: radius(1);
-  cursor: pointer;
-
-  &[aria-pressed="true"] {
-    outline: space(1) solid palette(text.primary);
-    outline-offset: space(1);
-  }
-
-  &:focus-visible {
-    outline: space(1) solid palette(primary.main);
-    outline-offset: space(1);
-  }
-}
-
 .pfe__field {
   @ds-typo(body-sm);
 
