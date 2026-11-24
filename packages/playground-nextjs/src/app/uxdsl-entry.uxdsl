@@ -31,6 +31,7 @@
 @use '../components/InteractiveDemoContainer.uxdsl' as components-interactivedemocontainer;
 @use '../components/PageTitle.uxdsl' as components-pagetitle;
 @use '../components/PageToolbar.uxdsl' as components-pagetoolbar;
+@use '../components/PaletteFamilyEditor.uxdsl' as components-palettefamilyeditor;
 @use '../components/PalettePlayground.uxdsl' as components-paletteplayground;
 @use '../components/ParadigmFrame.uxdsl' as components-paradigmframe;
 @use '../components/ResponsiveSyntaxExplainer.uxdsl' as components-responsivesyntaxexplainer;

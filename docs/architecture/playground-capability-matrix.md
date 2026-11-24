@@ -39,7 +39,7 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | hexColorsInUxdsl | 0 | 0 |
 | rgbHslInUxdsl | 0 | 0 |
 | cssModuleFiles | 0 | 0 |
-| inlineStyleObjects | 20 | 20 |
+| inlineStyleObjects | 21 | 21 |
 | hexColorsInTsx | 10 | 10 |
 
 ## Directives

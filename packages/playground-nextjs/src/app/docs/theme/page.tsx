@@ -3,7 +3,7 @@ import schema from 'uxdsl/schema/theme.schema.json'
 import base from 'uxdsl/theme/base.json'
 import { deepMergeTheme, validateTheme, googleFontsImportUrls } from 'uxdsl/theme'
 import { PageTitle } from '@/components/PageTitle'
-import ThemeConfigJsonEditor from '@/components/ThemeConfigJsonEditor'
+import LiveThemeHandler from '@/components/LiveThemeHandler'
 import { ThemeResolution, FontsImport, ValueGrammar } from '@/components/RuntimeEngines'
 import { describeFamilies } from '@/lib/theme-reference'
 
@@ -140,10 +140,18 @@ export default function DocsThemePage() {
       </div>
 
       <div className="doc-section">
-        <h2 id="editor">The active theme, as JSON</h2>
-        <p>The theme this site is showing. Edit it and the page follows through <code>applyTheme</code>; a change of structure is refused. Nothing is saved to a file.</p>
+        <h2 id="editor">Live theme handler</h2>
+        <p>
+          The theme this site is showing, to edit live. Every tab writes the same theme through <code>applyTheme</code>, so the page and
+          the other tabs follow at once; a change of structure is refused. Nothing is saved to a file: copy the JSON, or export it, into
+          your <code>uxdsl.theme.json</code>.
+        </p>
+        <ul>
+          <li><strong>Palette</strong>: pick each variant of a role from the color collection (<code>color(purple.700)</code>), link it to another role (<code>palette(secondary.main)</code>) or give it a color of its own. The Light/Dark switch edits <code>palette</code> or <code>modes.dark.palette</code>.</li>
+          <li><strong>JSON</strong>: the whole active theme.</li>
+        </ul>
       </div>
-      <ThemeConfigJsonEditor />
+      <LiveThemeHandler />
     </>
   )
 }

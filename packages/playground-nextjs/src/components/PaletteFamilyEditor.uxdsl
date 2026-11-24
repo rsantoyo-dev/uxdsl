@@ -1,0 +1,282 @@
+/* The palette editor of the Live theme handler (/docs/theme). */
+
+/* One fill and one ink class per Palette family and variant of the base theme, so the
+   editor shows any variant through palette() rather than an inline style. */
+$pfe-palette: (
+  primary: (main, light, dark, contrast),
+  secondary: (main, light, dark, contrast),
+  tertiary: (main, light, dark, contrast),
+  success: (main, light, dark, contrast),
+  info: (main, light, dark, contrast),
+  warning: (main, light, dark, contrast),
+  error: (main, light, dark, contrast),
+  dark: (main, light, dark, contrast),
+  neutral: (main, light, dark, contrast),
+  light: (main, light, dark, contrast),
+  surface: (main, light, dark, contrast, paper, subtle),
+  text: (main, primary, secondary, disabled),
+  divider: (main),
+  action: (disabled),
+);
+
+@each $family, $variants in $pfe-palette {
+  @each $variant in $variants {
+    .pfe-fill--#{$family}-#{$variant} {
+      background: palette(#{$family}.#{$variant});
+    }
+
+    .pfe-ink--#{$family}-#{$variant} {
+      color: palette(#{$family}.#{$variant});
+    }
+  }
+}
+
+.pfe__toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: space(3);
+}
+
+.pfe__hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: palette(text.secondary);
+}
+
+.pfe__segmented {
+  display: inline-flex;
+  flex-wrap: wrap;
+  border: border(1);
+  border-radius: radius(1);
+  overflow: hidden;
+}
+
+.pfe__segment {
+  padding: space(2) space(3);
+  border: 0;
+  background: transparent;
+  color: palette(text.primary);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+
+  &[aria-checked="true"] {
+    background: palette(primary.main);
+    color: palette(primary.contrast);
+  }
+
+  &:focus-visible {
+    outline: 2px solid palette(primary.main);
+    outline-offset: -2px;
+  }
+}
+
+.pfe {
+  display: grid;
+  grid-template-columns: xs(minmax(0, 1fr)) lg(minmax(0, 16rem) minmax(0, 1fr));
+  gap: density(3);
+}
+
+.pfe__variants {
+  display: flex;
+  flex-direction: column;
+  gap: space(1);
+}
+
+.pfe__variant {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: center;
+  column-gap: space(2);
+  padding: space(2);
+  border: 1px solid transparent;
+  border-radius: radius(1);
+  background: transparent;
+  color: palette(text.primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    background: palette(surface.light);
+  }
+
+  &[aria-checked="true"] {
+    border-color: palette(primary.main);
+    background: palette(surface.light);
+  }
+
+  &:focus-visible {
+    outline: 2px solid palette(primary.main);
+    outline-offset: 1px;
+  }
+}
+
+.pfe__swatch {
+  width: 1.75rem;
+  height: 1.75rem;
+  border: border(1);
+  border-radius: radius(1);
+}
+
+.pfe__variant-name {
+  font-weight: 600;
+}
+
+.pfe__variant-value {
+  overflow: hidden;
+  font-size: 0.75rem;
+  color: palette(text.secondary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pfe__badge {
+  grid-column: 3;
+  justify-self: start;
+  font-size: 0.7rem;
+  color: palette(text.secondary);
+}
+
+.pfe__editor {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: space(3);
+  min-width: 0;
+}
+
+/* Measured, never seen: the color the edited variant renders as, for the picker. */
+.pfe__probe {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.pfe__written {
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+
+.pfe__note {
+  color: palette(text.secondary);
+}
+
+.pfe__collection {
+  display: flex;
+  flex-direction: column;
+  gap: space(2);
+  max-height: 22rem;
+  overflow-y: auto;
+}
+
+.pfe__row {
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr);
+  align-items: center;
+  gap: space(2);
+}
+
+.pfe__row-name {
+  font-size: 0.75rem;
+  color: palette(text.secondary);
+}
+
+.pfe__row-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: space(1);
+}
+
+.pfe__chip {
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  border: border(1);
+  border-radius: radius(1);
+  cursor: pointer;
+
+  &[aria-pressed="true"] {
+    outline: 2px solid palette(text.primary);
+    outline-offset: 2px;
+  }
+
+  &:focus-visible {
+    outline: 2px solid palette(primary.main);
+    outline-offset: 2px;
+  }
+}
+
+.pfe__field {
+  display: flex;
+  flex-direction: column;
+  gap: space(1);
+  font-size: 0.85rem;
+}
+
+.pfe__select,
+.pfe__text {
+  @ds-input(outlined);
+
+  max-width: 24rem;
+}
+
+.pfe__free {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: space(2);
+}
+
+.pfe__picker {
+  width: 3rem;
+  height: 2.5rem;
+  padding: 0;
+  border: border(1);
+  border-radius: radius(1);
+  background: transparent;
+  cursor: pointer;
+}
+
+.pfe__text {
+  flex: 1 1 12rem;
+  font-family: var(--uxdsl__font__code, ui-monospace, monospace);
+}
+
+.pfe__apply {
+  @ds-button(outlined);
+}
+
+.pfe__error {
+  margin: 0;
+  font-size: 0.8rem;
+  color: palette(error.main);
+}
+
+.pfe__preview {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: space(2);
+  grid-column: xs(1) lg(1 / -1);
+}
+
+.pfe__sample {
+  padding: space(3) space(4);
+  border-radius: radius(2);
+  font-weight: 600;
+}
+
+.pfe__sample--small {
+  padding: space(2) space(3);
+  font-size: 0.8rem;
+}
+
+.pfe__ratio {
+  margin: 0;
+  font-size: 0.85rem;
+  color: palette(text.secondary);
+}
