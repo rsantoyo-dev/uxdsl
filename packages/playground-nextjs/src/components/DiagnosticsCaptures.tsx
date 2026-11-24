@@ -23,7 +23,7 @@ export function DiagnosticsList() {
           </>) : null}
           <p className="cap-note"><code>src/example.uxdsl</code></p>
           <pre className="cap-terminal"><code>{d.source.trimEnd()}</code></pre>
-          <pre className="cap-terminal"><code><span className="cap-terminal__prompt">$ uxdsl {d.argv.join(' ')}</span><span className="cap-terminal__err">{`\n${d.stderr.trimEnd()}`}</span></code></pre>
+          <pre className="cap-terminal"><code><span className="cap-terminal__prompt">$ npx uxdsl {d.argv.join(' ')}</span><span className="cap-terminal__err">{`\n${d.stderr.trimEnd()}`}</span></code></pre>
         </details>
       ))}
     </div>

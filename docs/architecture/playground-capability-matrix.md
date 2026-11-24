@@ -69,7 +69,7 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | --- | --- | --- | --- |
 | `lg` | live | live | `src/app/layout.uxdsl`, `src/app/page.uxdsl`, `src/components/CapabilityDocs.uxdsl` |
 | `md` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/layout.uxdsl`, `src/app/page.uxdsl` |
-| `sm` | live | live | `src/components/AppHeader.uxdsl`, `src/components/PageToolbar.uxdsl` |
+| `sm` | live | live | `src/components/AppHeader.uxdsl`, `src/components/PageToolbar.uxdsl`, `src/components/Tabs.uxdsl` |
 | `xl` | live | live | `src/app/page.uxdsl`, `src/components/CapabilityDocs.uxdsl`, `src/components/SurfaceGrid.uxdsl` |
 | `xs` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/layout.uxdsl`, `src/app/page.uxdsl` |
 

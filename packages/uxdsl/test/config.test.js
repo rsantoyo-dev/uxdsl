@@ -306,3 +306,20 @@ test('MIG-B6-19: discovery registers the theme file as a PostCSS dependency mess
   const dependencyFiles = result.messages.filter((m) => m.type === 'dependency').map((m) => m.file);
   assert.ok(dependencyFiles.includes(themeFile));
 });
+
+test('discovery registers each theme-file name no file has yet as a missing-dependency message, and none with discovery off or a theme option (negative control)', async () => {
+  const dir = mkTmpDir();
+  const missing = async (options) => (await postcss([plugin(options)]).process('.a { color: red; }', { from: undefined }))
+    .messages.filter((m) => m.type === 'missing-dependency').map((m) => path.basename(m.file)).sort();
+
+  assert.deepEqual(await missing({ configRoot: dir }), ['uxdsl.theme.cjs', 'uxdsl.theme.js', 'uxdsl.theme.json']);
+  const messages = (await postcss([plugin({ configRoot: dir })]).process('.a { color: red; }', { from: undefined })).messages.filter((m) => m.type === 'missing-dependency');
+  assert.ok(messages.every((m) => path.dirname(m.file) === dir && m.plugin === 'uxdsl'), JSON.stringify(messages));
+
+  // The one that exists is a dependency; the names that take precedence over it stay missing.
+  write(dir, 'uxdsl.theme.json', '{}');
+  assert.deepEqual(await missing({ configRoot: dir }), ['uxdsl.theme.cjs', 'uxdsl.theme.js']);
+
+  assert.deepEqual(await missing({ configRoot: dir, discoverTheme: false }), []);
+  assert.deepEqual(await missing({ configRoot: dir, theme: {} }), []);
+});

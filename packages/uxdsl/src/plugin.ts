@@ -63,7 +63,7 @@ import { directiveInner, parseTypoArguments } from './directives';
 import { buildVarName } from './naming';
 import { resolveTheme } from './default-theme';
 import { diagnostic, locateError, missingKeyMessage, closestKey, suggestKeys, didYouMean, formatKeyList, editDistance, DIAGNOSTIC_CATALOG as CATALOG } from './diagnostics';
-import { discoverThemeSync, removedOptionWarnings } from './config';
+import { absentThemeCandidatePaths, discoverThemeSync, removedOptionWarnings } from './config';
 import {
   resolveResponsiveValue, analyzeResponsiveValue, getDensityTokens, removedSyntaxMessage, unknownFunctionMessage, parseTokenReference, tokenReferenceToCss,
   TOKEN_FUNCTIONS, REMOVED_RADIUS_FULL, LANGUAGE_COMPLETIONS, KNOWN_CSS_FUNCTIONS, DEFAULT_BREAKPOINTS,
@@ -147,6 +147,12 @@ function validateOptions(root: Root, result: Result, opts: UxdslOptions): Compil
       for (const file of discovered.dependencies) {
         result.messages.push({ type: 'dependency', plugin: PLUGIN, file, parent: result.opts.from });
       }
+    }
+    // Each name the theme file can have and no file has yet, as the message
+    // postcss-loader (and Next.js's own) registers a missing dependency from:
+    // a theme file created while a dev server runs recompiles the stylesheet.
+    for (const file of absentThemeCandidatePaths(configRoot)) {
+      result.messages.push({ type: 'missing-dependency', plugin: PLUGIN, file, parent: result.opts.from });
     }
   }
   // The effective theme — DEFAULT_THEME with whatever the caller provided (or,

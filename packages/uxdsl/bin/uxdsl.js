@@ -1683,6 +1683,15 @@ function startWatch(initialConfig, argv, cwd, builder, initialResults, initialSe
   }
   let watchedTargets = config ? watchTargets() : bootstrapWatchTargets(argv, cwd);
   let watcher = createWatcher(watchedTargets);
+  // Every name the theme file can have, where the config loader looks for it
+  // (loadConfig's themeSearchDir). The one that exists is in the config's
+  // watch list; the others are followed, so a theme file created while the
+  // session runs is reported and the build that follows loads it.
+  function themeCandidatePaths() {
+    if (!config) return []; // Bootstrap mode watches them already.
+    const dir = config.configPath ? path.dirname(config.configPath) : cwd;
+    return uxdslConfig.themeCandidatePaths(dir);
+  }
   // Follows every entry of the current config and every file of the graph.
   // `loadedSince` is when the successful build that produced the graph
   // started (see createWatcher).
@@ -1690,6 +1699,7 @@ function startWatch(initialConfig, argv, cwd, builder, initialResults, initialSe
     if (!config) return;
     const files = new Set(configEntryFiles(config));
     for (const dependencies of dependencyGraph.values()) for (const file of dependencies) files.add(file);
+    for (const file of themeCandidatePaths()) files.add(file);
     watcher.follow([...files], loadedSince);
   }
   followAll();
@@ -1713,6 +1723,8 @@ function startWatch(initialConfig, argv, cwd, builder, initialResults, initialSe
       paths.add(path.resolve(config.themeConfigPath));
       for (const id of collectLocalRequireTree(config.themeConfigPath)) paths.add(id);
     }
+    // A theme file that appears changes the theme of every entry.
+    for (const file of themeCandidatePaths()) paths.add(file);
     return paths;
   }
 
@@ -2358,8 +2370,19 @@ const SASS_CONFIG_COMMENT = `  // Dart Sass options for every entry: the depreca
 
 async function init(argv) {
   const cwd = process.cwd();
-  const isNext = ['next.config.js', 'next.config.mjs', 'next.config.ts'].some(file => fs.existsSync(path.join(cwd, file)));
-  const isVite = fs.existsSync(path.join(cwd, 'vite.config.js')) || fs.existsSync(path.join(cwd, 'vite.config.ts'));
+  // A framework is detected by its config file, under any extension it
+  // reads, or by its package in the project's own package.json: a Next.js
+  // project needs no next.config at all, and init must still write its
+  // PostCSS config.
+  const listed = (() => {
+    try {
+      const pkg = JSON.parse(fs.readFileSync(path.join(cwd, 'package.json'), 'utf8'));
+      return { ...pkg.dependencies, ...pkg.devDependencies };
+    } catch (_) { return {}; }
+  })();
+  const uses = (name, extensions) => extensions.some(ext => fs.existsSync(path.join(cwd, `${name}.config.${ext}`))) || typeof listed[name] === 'string';
+  const isNext = uses('next', ['js', 'mjs', 'ts', 'mts']);
+  const isVite = uses('vite', ['js', 'mjs', 'cjs', 'ts', 'mts', 'cts']);
   // Opt-in only: without --multi, init writes exactly what
   // fixtures/mig-b2-03-cli-init/ pins.
   const isMulti = !!argv.multi;
@@ -2543,10 +2566,13 @@ ${SASS_CONFIG_COMMENT}};
     console.log('3. Add more component entries to the "builds" array in uxdsl.config.cjs as the project grows.');
   } else {
     const outFileRel = path.relative(cwd, path.join(srcDir, 'uxdsl.css')).split(path.sep).join('/');
-    console.log(`1. Edit src/styles.uxdsl. The entry src/uxdsl-entry.uxdsl is generated: the watch below regenerates it when a .uxdsl file is added or removed; without it, run "npx uxdsl generate-entry".`);
+    console.log('1. Edit src/styles.uxdsl. The entry src/uxdsl-entry.uxdsl is generated: the');
+    console.log('   watch below regenerates it when a .uxdsl file is added or removed; without');
+    console.log('   it, run "npx uxdsl generate-entry".');
     console.log(`2. Build: ${addedScripts ? 'npm run uxdsl:build' : 'npx uxdsl build'}`);
     console.log(`   Watch:  ${addedScripts ? 'npm run uxdsl:watch' : 'npx uxdsl build --watch'}${isNext ? ' (alongside next dev)' : isVite ? ' (alongside vite)' : ''}`);
-    console.log(`3. Import the generated CSS once, from your root layout or app entry (path relative to that file):`);
+    console.log('3. Import the generated CSS once, from your root layout or app entry (path');
+    console.log('   relative to that file):');
     console.log(`   import './${outFileRel}';`);
     if (isVite) {
       console.log("   For direct .uxdsl imports instead of a generated file, add uxdsl/vite to vite.config's plugins.");

@@ -147,6 +147,62 @@ test('watch mode reloads config and theme on change instead of serving a stale r
   assert.ok(!fs.readFileSync(cssPath, 'utf8').includes('#111111'), 'rebuilt CSS must not still carry the stale value');
 });
 
+// The quick start starts the watch first and adds uxdsl.theme.json later. The
+// session used to follow only the theme file that existed when the config was
+// loaded: one created afterwards was not reported, and a source edit rebuilt
+// with the theme in memory, so nothing but a restart applied it.
+test('watch mode picks up a theme file created after it started, under each of its names, again after it is deleted, and builds nothing for another new file beside it (negative control)', async (t) => {
+  const dir = mkProject();
+  installPostcssUxdsl(dir);
+  fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), "module.exports = { entry: './src/uxdsl-entry.uxdsl', outFile: './src/uxdsl.css', watch: ['src/**/*.uxdsl'] };\n");
+  fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl'), '@uxdsl theme;\n.a { color: palette(primary.main); }\n');
+
+  const child = spawn(process.execPath, [CLI_BIN, 'build', '--watch'], { cwd: dir, stdio: 'pipe' });
+  t.after(() => child.kill());
+  let logs = '';
+  child.stdout.on('data', data => { logs += posixSeparators(String(data)); });
+  child.stderr.on('data', data => { logs += posixSeparators(String(data)); });
+  const cssPath = path.join(dir, 'src', 'uxdsl.css');
+  const css = () => (fs.existsSync(cssPath) ? fs.readFileSync(cssPath, 'utf8') : '');
+  const builds = () => (logs.match(/\[uxdsl\] built/g) || []).length;
+  const main = (value) => `--uxdsl__palette__primary-main: ${value}`;
+  const themeJson = path.join(dir, 'uxdsl.theme.json');
+  const themeCjs = path.join(dir, 'uxdsl.theme.cjs');
+
+  await waitFor(() => css().includes('--uxdsl__palette__primary-main'));
+  const baseMain = css().match(/--uxdsl__palette__primary-main: [^;]+/)[0];
+  await delay(WATCHER_SETTLE_MS);
+
+  // Created after the session started: reported, and its value is built.
+  fs.writeFileSync(themeJson, JSON.stringify({ palette: { primary: { main: '#111111' } } }));
+  await waitFor(() => css().includes(main('#111111')));
+  assert.match(logs, /\[uxdsl\] add uxdsl\.theme\.json/, logs);
+
+  // Still followed once it exists: an edit, then its deletion.
+  fs.writeFileSync(themeJson, JSON.stringify({ palette: { primary: { main: '#222222' } } }));
+  await waitFor(() => css().includes(main('#222222')));
+  fs.unlinkSync(themeJson);
+  await waitFor(() => css().includes(baseMain));
+
+  // Created again after the deletion, and under another of its names.
+  fs.writeFileSync(themeJson, JSON.stringify({ palette: { primary: { main: '#333333' } } }));
+  await waitFor(() => css().includes(main('#333333')));
+  fs.unlinkSync(themeJson);
+  await waitFor(() => css().includes(baseMain));
+  fs.writeFileSync(themeCjs, "module.exports = { palette: { primary: { main: '#444444' } } };\n");
+  await waitFor(() => css().includes(main('#444444')));
+
+  // Negative control: the directory is followed for those names only.
+  await delay(300);
+  const before = builds();
+  fs.writeFileSync(path.join(dir, 'notes.json'), '{}');
+  fs.writeFileSync(path.join(dir, 'uxdsl.theme.txt'), 'not a theme file');
+  await delay(700);
+  assert.equal(builds(), before, logs);
+  assert.doesNotMatch(logs, /notes\.json|uxdsl\.theme\.txt/, logs);
+});
+
 test('watch mode reloads a theme value that comes from a nested require() (e.g. a separate JSON file), not just the top-level theme file', async (t) => {
   const dir = mkProject();
   installPostcssUxdsl(dir);

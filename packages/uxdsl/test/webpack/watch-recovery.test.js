@@ -343,3 +343,35 @@ test('MIG-B9-39: a webpack module whose compile failed carries no theme flags, s
   assert.deepEqual(errors, []);
   assert.equal(warnings.filter((message) => /UXD_THEME_MARKER/.test(message)).length, 1, `the complete count warns\n${warnings.join('\n')}`);
 });
+
+test('webpack watch loads a theme file created after it started, edited, deleted and created again under another name; with discovery off it is not followed (negative control)', async (t) => {
+  const files = { 'styles/main.uxdsl': '@uxdsl theme;\n.main { color: palette(primary.main); }\n' };
+  const themeJson = (color) => `{ "palette": { "primary": { "main": "${color}" } } }\n`;
+  const primaryMain = (dir) => (fs.readFileSync(output(dir, 'extract'), 'utf8').match(/--uxdsl__palette__primary-main:\s*([^;]+);/) || [])[1];
+  const dir = project(t, files);
+  const off = project(t, files);
+  const builds = watch(t, config(dir, 'extract', {}));
+  assert.deepEqual(errorsOf(await builds.next('the first build')), []);
+  const base = primaryMain(dir);
+  assert.ok(base && base.startsWith('var(--uxdsl__color__'), `with no theme file, the base theme's reference: ${base}`);
+
+  const expectValue = async (step, value) => {
+    assert.deepEqual(errorsOf(await builds.next(step, (stats) => clean(stats) && primaryMain(dir) === value)), []);
+  };
+  await edit(dir, 'uxdsl.theme.json', themeJson('#111111'));
+  await expectValue('the build after uxdsl.theme.json is created', '#111111');
+  await edit(dir, 'uxdsl.theme.json', themeJson('#222222'));
+  await expectValue('the build after uxdsl.theme.json is edited', '#222222');
+  await delay(300);
+  fs.rmSync(path.join(dir, 'uxdsl.theme.json'));
+  await expectValue('the build after uxdsl.theme.json is deleted', base);
+  await edit(dir, 'uxdsl.theme.cjs', "module.exports = { palette: { primary: { main: '#333333' } } };\n");
+  await expectValue('the build after uxdsl.theme.cjs is created', '#333333');
+
+  // Negative control: with discovery off, the theme file's names are not registered.
+  const offBuilds = watch(t, config(off, 'extract', { discoverTheme: false }));
+  assert.deepEqual(errorsOf(await offBuilds.next('the first build with discovery off')), []);
+  await edit(off, 'uxdsl.theme.json', themeJson('#111111'));
+  await offBuilds.quiet('a theme file created with discoverTheme: false', 2000, path.join(off, 'uxdsl.theme.json'));
+  assert.equal(primaryMain(off), base);
+});

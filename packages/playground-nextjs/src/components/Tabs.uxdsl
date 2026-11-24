@@ -15,7 +15,9 @@
 .tabs__tab {
   @ds-typo(span);
   margin: 0;
-  padding: space(2) space(4);
+  /* Narrower below sm, so four short labels share one row on a phone. */
+  padding-block: space(2);
+  padding-inline: xs(space(3)) sm(space(4));
   border: 0;
   border-bottom: 3px solid transparent;
   background: transparent;

@@ -24,6 +24,13 @@ the five former names are deprecated in favour of `uxdsl`
 is the release gate: one tarball, installed the documented way, plus real
 Vite, Webpack, Next.js and Chrome runs.
 
+A theme file (`uxdsl.theme.json`, `.js` or `.cjs`) created while a watch or
+a development server runs is loaded without a restart: by `uxdsl build
+--watch`, `uxdsl/vite`, `uxdsl/webpack` and a host of `uxdsl/postcss` that
+honours `missing-dependency` messages. `uxdsl init` recognizes a Next.js or
+a Vite project by the package in its `package.json` as well as by its config
+file ([CHANGELOG](packages/uxdsl/CHANGELOG.md)).
+
 **The project:** [stability policy](STABILITY.md) ·
 [roadmap](docs/ROADMAP.md) · [release records](docs/releases/README.md) ·
 [what is in `docs/`](docs/README.md) ·

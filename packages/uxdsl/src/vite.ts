@@ -3,7 +3,7 @@ import path from 'path';
 import type { Plugin, ResolvedConfig } from 'vite';
 import { compile, referencesThemeTokens, themeEmissionWarning } from './compile';
 import type { CompileConfig, CompileWarning, ThemeEmission } from './compile';
-import { collectLocalRequireTree, findThemeConfigPath, removedOptionWarnings } from './config';
+import { absentThemeCandidatePaths, collectLocalRequireTree, findThemeConfigPath, removedOptionWarnings } from './config';
 
 // The bundler delivers real CSS through its own pipeline; UXDSL only
 // compiles. `resolveId` turns `./panel.uxdsl`
@@ -20,6 +20,12 @@ import { collectLocalRequireTree, findThemeConfigPath, removedOptionWarnings } f
 // Sass. Every file Dart Sass loaded is added with `addWatchFile`, and each
 // compile() warning reaches `this.warn()` at its file (relative to Vite's
 // root), line and column.
+//
+// A theme file that does not exist yet is watched for: with discovery on,
+// `transform` adds each name it could have and no file has. `transform`, not
+// `load`, because Rollup gives a transform's dependencies a watcher of their
+// own, while the shared one reports only the first of several missing files
+// in a directory under polling, on Linux and on Windows.
 //
 // A load that fails emits the warnings it produced, then adds with
 // `addWatchFile` the module's own file, the files of its last successful load,
@@ -135,6 +141,16 @@ function themeFiles(options: UxDslPluginOptions, root: string): string[] {
   } catch {
     return [];
   }
+}
+
+// The names a discovered theme file can have under `root` that no file has
+// yet. A load adds each with `addWatchFile`, so the dev server and
+// `vite build --watch` see one created (or one of a name that takes
+// precedence) and load it. Empty when a `theme` option or
+// `discoverTheme: false` turns discovery off.
+function absentThemeFiles(options: UxDslPluginOptions, root: string): string[] {
+  if (options.theme !== undefined || options.discoverTheme === false) return [];
+  return absentThemeCandidatePaths(root);
 }
 
 const ANSI_RE = /\x1b\[[0-9;]*m/g;
@@ -259,7 +275,7 @@ export default function uxdsl(userOptions: UxDslPluginOptions = {}): Plugin {
         for (const warning of (error as { warnings?: CompileWarning[] } | null)?.warnings ?? []) this.warn(formatWarning(warning, projectRoot));
         const failure = (error && typeof error === 'object' ? error : {}) as { file?: unknown; line?: unknown; column?: unknown; code?: unknown; sassFrame?: unknown; showSourceCode?: unknown; loc?: unknown; frame?: unknown };
         const errorFile = typeof failure.file === 'string' && path.isAbsolute(failure.file) ? failure.file : undefined;
-        const files = new Set([absPath, ...(lastGoodFiles.get(id) ?? []), ...(errorFile ? [errorFile] : []), ...themeFiles(userOptions, userOptions.configRoot ?? projectRoot)]);
+        const files = new Set([absPath, ...(lastGoodFiles.get(id) ?? []), ...(errorFile ? [errorFile] : []), ...themeFiles(userOptions, userOptions.configRoot ?? projectRoot), ...absentThemeFiles(userOptions, userOptions.configRoot ?? projectRoot)]);
         for (const file of files) {
           this.addWatchFile(file);
           if (command !== 'serve') continue;
@@ -301,6 +317,16 @@ export default function uxdsl(userOptions: UxDslPluginOptions = {}): Plugin {
       // never as the map of a JavaScript module wrapping it.
       const meta: ThemeMeta = { themeEmitted, referencesTokens: referencesThemeTokens(css) };
       return { code: css, map: map ? JSON.parse(map) : null, meta: { uxdsl: meta } };
+    },
+    // The names the theme file can have and no file has yet, added from
+    // `transform` and not from `load`: Rollup gives each file a transform
+    // adds a watcher of its own, and the watcher all the other files share
+    // reports, of several missing files in one directory, only the first
+    // (where it does not use FSEvents: Linux, Windows, polling).
+    transform(_code: string, id: string) {
+      if (!isVirtualId(id)) return null;
+      for (const file of absentThemeFiles(userOptions, userOptions.configRoot ?? projectRoot)) this.addWatchFile(file);
+      return null;
     },
     // Vite 6 and later, per environment.
     hotUpdate(context) {

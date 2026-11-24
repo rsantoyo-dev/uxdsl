@@ -7420,7 +7420,9 @@ input[type=range]::-moz-range-thumb:hover {
   margin-block-start: var(--uxdsl__typography__span-margin-block-start);
   margin-block-end: var(--uxdsl__typography__span-margin-block-end);
   margin: 0;
-  padding: var(--uxdsl__space__2) var(--uxdsl__space__4);
+  /* Narrower below sm, so four short labels share one row on a phone. */
+  padding-block: var(--uxdsl__space__2);
+  padding-inline: var(--uxdsl__space__3);
   border: 0;
   border-bottom: 3px solid transparent;
   background: transparent;
@@ -7428,6 +7430,12 @@ input[type=range]::-moz-range-thumb:hover {
   font-weight: 600;
   cursor: pointer;
 }
+
+@media (min-width: 480px){
+
+.tabs__tab {
+  padding-inline: var(--uxdsl__space__4);
+} }
 .tabs__tab:hover {
   color: var(--uxdsl__palette__primary-main);
 }

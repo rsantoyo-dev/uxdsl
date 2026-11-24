@@ -146,19 +146,25 @@ function excerpt(root, tokens) {
   return root;
 }
 
-/** One declaration per line; a rule with a single declaration on one line. */
+// The widest line that fits the "CSS you get" pane of a 1280px page without a
+// horizontal scroll (the pane holds 71 characters there).
+const MAX_LINE = 68;
+
+/** One declaration per line. A rule with a single declaration, and an at-rule
+ * around a single line, stay on one line while that line fits MAX_LINE. */
 function print(container, indent = '') {
   const lines = [];
   container.each((node) => {
     if (node.type === 'rule') {
       const decls = node.nodes.filter((d) => d.type === 'decl').map((d) => `${d.prop}: ${d.value}${d.important ? ' !important' : ''};`);
       const selector = node.selector.replace(/\s*\n\s*/g, ' ');
-      if (decls.length <= 1) lines.push(`${indent}${selector} { ${decls.join('')} }`);
+      const oneLine = `${indent}${selector} { ${decls.join('')} }`;
+      if (decls.length <= 1 && oneLine.length <= MAX_LINE) lines.push(oneLine);
       else lines.push(`${indent}${selector} {`, ...decls.map((d) => `${indent}  ${d}`), `${indent}}`);
     } else if (node.type === 'atrule') {
       const inner = print(node, `${indent}  `);
-      const oneLine = inner.length === 1 && inner[0].length + node.params.length + indent.length < 90;
-      if (oneLine) lines.push(`${indent}@${node.name} ${node.params} { ${inner[0].trim()} }`);
+      const oneLine = `${indent}@${node.name} ${node.params} { ${inner[0].trim()} }`;
+      if (inner.length === 1 && oneLine.length <= MAX_LINE) lines.push(oneLine);
       else lines.push(`${indent}@${node.name} ${node.params} {`, ...inner, `${indent}}`);
     }
   });
