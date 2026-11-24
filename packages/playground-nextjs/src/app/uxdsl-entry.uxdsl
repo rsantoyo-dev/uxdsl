@@ -45,6 +45,7 @@
 @use '../components/SurfaceGrid.uxdsl' as components-surfacegrid;
 @use '../components/Tabs.uxdsl' as components-tabs;
 @use '../components/ThemeConfigJsonEditor.uxdsl' as components-themeconfigjsoneditor;
+@use '../components/ThemeShowcase.uxdsl' as components-themeshowcase;
 @use '../components/VersionLine.uxdsl' as components-versionline;
 @use '../components/WriteGet.uxdsl' as components-writeget;
 @use './docs/breakpoints/breakpoints.uxdsl' as app-docs-breakpoints-breakpoints;

@@ -1,0 +1,140 @@
+/* The Live theme handler's showcase (/docs/theme): a small page styled only with UXDSL.
+   Roles for every surface, button and text; density() for every gap and padding;
+   palette() for every color; responsive values for the layout, which changes at md. */
+
+.shw {
+  @ds-surface(outlined radius(3));
+
+  display: flex;
+  flex-direction: column;
+  gap: density(4);
+  margin-block: density(4);
+}
+
+/* Menu: stacked on a phone, one row from md. */
+.shw__nav {
+  display: flex;
+  flex-direction: xs(column) md(row);
+  align-items: xs(flex-start) md(center);
+  justify-content: space-between;
+  gap: density(3);
+  padding-bottom: density(3);
+  border-bottom: border(1);
+}
+
+.shw__brand {
+  @ds-typo(h5);
+
+  color: palette(primary.main);
+}
+
+.shw__menu {
+  display: flex;
+  flex-direction: xs(column) md(row);
+  gap: density(1);
+}
+
+.shw__link {
+  @ds-button(flat 2);
+  @ds-typo(subtitle2);
+}
+
+.shw__cta {
+  @ds-button(contained primary 2);
+}
+
+/* Hero: the primary color with its contrast text, the secondary color for the main action. */
+.shw__hero {
+  @ds-surface(contained primary radius(3));
+
+  display: flex;
+  flex-direction: column;
+  gap: density(3);
+  padding: density(6);
+}
+
+.shw__eyebrow {
+  @ds-typo(caption);
+
+  text-transform: uppercase;
+}
+
+.shw__title {
+  @ds-typo(h1);
+}
+
+.shw__subtitle {
+  @ds-typo(body);
+
+  max-width: calc(space(16) * 2);
+}
+
+.shw__actions {
+  display: flex;
+  flex-direction: xs(column) sm(row);
+  gap: density(2);
+}
+
+.shw__primary {
+  @ds-button(contained secondary 3);
+}
+
+.shw__secondary {
+  @ds-button(contained light 3);
+}
+
+/* News: one column on a phone, two from md, three from lg. */
+.shw__news {
+  display: grid;
+  grid-template-columns: xs(minmax(0, 1fr)) md(repeat(2, minmax(0, 1fr))) lg(repeat(3, minmax(0, 1fr)));
+  gap: density(3);
+}
+
+.shw__card {
+  @ds-surface(outlined radius(2));
+
+  display: flex;
+  flex-direction: column;
+  gap: density(2);
+}
+
+/* A tag in its tone; the rule after it keeps the tag's own size. */
+.shw__tag--secondary { @ds-surface(contained secondary radius(pill)); }
+.shw__tag--info { @ds-surface(contained info radius(pill)); }
+.shw__tag--success { @ds-surface(contained success radius(pill)); }
+
+.shw__tag {
+  @ds-typo(caption);
+
+  align-self: flex-start;
+  padding: density(1) density(2);
+}
+
+.shw__card-title {
+  @ds-typo(h5);
+}
+
+.shw__card-body {
+  @ds-typo(body-sm);
+
+  color: palette(text.secondary);
+}
+
+.shw__meta {
+  @ds-typo(caption);
+
+  color: palette(primary.main);
+}
+
+/* The breakpoint the layout is at, written by a responsive value alone. */
+.shw__bp {
+  @ds-surface(contained dark radius(pill));
+  @ds-typo(caption);
+
+  align-self: flex-end;
+  padding: density(1) density(3);
+
+  &::after {
+    content: xs("xs") sm("sm") md("md") lg("lg") xl("xl");
+  }
+}
