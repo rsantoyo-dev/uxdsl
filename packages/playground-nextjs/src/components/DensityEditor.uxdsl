@@ -1,0 +1,220 @@
+/* The Density tab of the Live theme handler (/docs/theme). Every value is a UXDSL token,
+   role or directive; the literals left are layout (grid, flex) and SVG geometry. */
+
+/* One class per Density token of the base theme, so the live example uses density(n) for real.
+   It is written on the example itself, so it wins over the outlined Surface's own padding. */
+@for $n from 0 through 15 {
+  .dte__demo.dte-use--#{$n} {
+    padding: density(#{$n});
+    gap: density(#{$n});
+  }
+}
+
+.dte__toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: density(2);
+}
+
+.dte__keys {
+  display: flex;
+  flex-wrap: wrap;
+  gap: density(1);
+}
+
+.dte__key {
+  @ds-button(outlined 1);
+  @ds-typo(code);
+
+  min-width: space(8);
+}
+
+.dte__hint {
+  @ds-typo(caption);
+
+  color: palette(text.secondary);
+}
+
+.dte {
+  display: grid;
+  grid-template-columns: xs(minmax(0, 1fr)) lg(minmax(0, 1fr) minmax(0, 1fr));
+  gap: density(4);
+}
+
+/* The squares and their legend. */
+.dte__drawing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: density(3);
+  min-width: 0;
+}
+
+/* Drawn at one size whatever the token: the squares keep their proportions, the legend gives the pixels. */
+.dte__svg {
+  width: space(15);
+  max-width: 100%;
+  height: auto;
+}
+
+.dte__content {
+  fill: palette(primary.main);
+}
+
+.dte__ring {
+  fill: transparent;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+
+  &.is-active {
+    fill: palette(primary.light, 0.15);
+    stroke-width: 4;
+  }
+}
+
+.dte__ring--0 { stroke: palette(neutral.main); }
+.dte__ring--1 { stroke: palette(info.main); }
+.dte__ring--2 { stroke: palette(success.main); }
+.dte__ring--3 { stroke: palette(warning.main); }
+.dte__ring--4 { stroke: palette(error.main); }
+
+.dte__dot {
+  width: space(4);
+  height: space(4);
+  border-radius: radius(circle);
+}
+
+.dte__dot--0 { background: palette(neutral.main); }
+.dte__dot--1 { background: palette(info.main); }
+.dte__dot--2 { background: palette(success.main); }
+.dte__dot--3 { background: palette(warning.main); }
+.dte__dot--4 { background: palette(error.main); }
+
+.dte__legend {
+  display: flex;
+  flex-direction: column;
+  gap: density(1);
+  width: 100%;
+  margin: 0;
+  padding: density(0);
+  list-style: none;
+}
+
+.dte__legend-row {
+  @ds-typo(body-sm);
+
+  display: grid;
+  grid-template-columns: auto space(8) minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: density(2);
+  padding: density(1) density(2);
+  border: border(1);
+  border-color: transparent;
+  border-radius: radius(1);
+
+  &.is-active {
+    border-color: palette(primary.main);
+    background: palette(surface.light);
+  }
+}
+
+.dte__bp {
+  @ds-typo(code);
+}
+
+.dte__value {
+  @ds-typo(code);
+
+  overflow: hidden;
+  color: palette(text.secondary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dte__px {
+  @ds-typo(subtitle2);
+}
+
+.dte__tag {
+  @ds-typo(caption);
+
+  color: palette(text.secondary);
+}
+
+/* The editor: one value per breakpoint, or the definition as text. */
+.dte__editor {
+  display: flex;
+  flex-direction: column;
+  gap: density(3);
+  min-width: 0;
+}
+
+.dte__written {
+  @ds-typo(code);
+
+  overflow-wrap: anywhere;
+}
+
+.dte__rows {
+  display: flex;
+  flex-direction: column;
+  gap: density(2);
+}
+
+.dte__row {
+  display: grid;
+  grid-template-columns: auto space(8) minmax(0, 1fr);
+  align-items: center;
+  gap: density(2);
+}
+
+.dte__select,
+.dte__text {
+  @ds-input(outlined);
+  @ds-typo(body-sm);
+}
+
+.dte__text {
+  @ds-typo(code);
+}
+
+.dte__field {
+  @ds-typo(body-sm);
+
+  display: flex;
+  flex-direction: column;
+  gap: density(1);
+}
+
+.dte__error {
+  @ds-typo(caption);
+
+  color: palette(error.main);
+}
+
+/* The live example: the token used as padding and gap, at the window's breakpoint. */
+.dte__example {
+  display: flex;
+  flex-direction: column;
+  gap: density(2);
+  grid-column: xs(1) lg(1 / -1);
+}
+
+.dte__example-title {
+  @ds-typo(body-sm);
+
+  color: palette(text.secondary);
+}
+
+.dte__demo {
+  @ds-surface(outlined radius(2));
+
+  display: flex;
+  flex-wrap: wrap;
+  background: palette(primary.light, 0.15);
+}
+
+.dte__item {
+  @ds-surface(contained primary radius(1));
+  @ds-typo(subtitle2);
+}

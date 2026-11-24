@@ -25,6 +25,7 @@
 @use '../components/DemoShadows.uxdsl' as components-demoshadows;
 @use '../components/DemoSpacing.uxdsl' as components-demospacing;
 @use '../components/DemoSurfaces.uxdsl' as components-demosurfaces;
+@use '../components/DensityEditor.uxdsl' as components-densityeditor;
 @use '../components/DensityExplanation.uxdsl' as components-densityexplanation;
 @use '../components/DocumentationSection.uxdsl' as components-documentationsection;
 @use '../components/EditDialog.uxdsl' as components-editdialog;

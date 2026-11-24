@@ -157,15 +157,15 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | `inspectEdgeTheme` | live | live | `src/components/DemoBorders.tsx` |
 | `inspectInputTheme` | live | live | `src/components/InputDemo.tsx` |
 | `inspectReferences` | live | live | `src/components/RuntimeEngines.tsx` |
-| `inspectResponsiveValue` | live | live | `src/components/DemoBreakpoints.tsx`, `src/components/DemoDensity.tsx`, `src/components/ResponsiveSyntaxExplainer.tsx` |
+| `inspectResponsiveValue` | live | live | `src/components/DemoBreakpoints.tsx`, `src/components/DemoDensity.tsx`, `src/components/DensityEditor.tsx` |
 | `inspectShadowTheme` | live | live | `src/components/DemoShadows.tsx` |
 | `inspectSurfaceTheme` | live | live | `src/components/DemoSurfaces.tsx` |
 | `loadPersistedTheme` | live | live | `src/runtime-sandbox/sandbox-entry.ts` |
 | `resetTheme` | live | live | `src/runtime-sandbox/sandbox-entry.ts` |
-| `resolveResponsiveValue` | live | live | `src/components/DemoDensity.tsx` |
+| `resolveResponsiveValue` | live | live | `src/components/DemoDensity.tsx`, `src/components/DensityEditor.tsx` |
 | `resolveTheme` | live | live | `src/components/ContrastReport.tsx`, `src/components/RuntimeEngines.tsx` |
 | `resolveTypographyRole` | live | live | `src/components/RuntimeEngines.tsx` |
-| `responsiveEntries` | live | live | `src/components/DemoDensity.tsx` |
+| `responsiveEntries` | live | live | `src/components/DemoDensity.tsx`, `src/components/DensityEditor.tsx` |
 | `spacingValueToCss` | live | live | `src/components/RussianDoll.tsx` |
 | `subscribeTheme` | live | live | `src/components/RuntimeLab.tsx`, `src/runtime-sandbox/sandbox-entry.ts` |
 | `surfaceDeclarations` | live | live | `src/components/DemoSurfaces.tsx` |
