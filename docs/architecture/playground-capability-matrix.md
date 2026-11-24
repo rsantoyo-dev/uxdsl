@@ -106,7 +106,7 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | Capability | Requires | Level | Evidence |
 | --- | --- | --- | --- |
 | `button.contained` | live | live | `src/components/AIPrompt.uxdsl`, `src/components/CapabilityDocs.uxdsl`, `src/components/DemoButtons.tsx` |
-| `button.flat` | live | live | `src/components/AIPrompt.uxdsl`, `src/components/DemoButtons.tsx`, `src/components/PaletteFamilyEditor.uxdsl` |
+| `button.flat` | live | live | `src/components/AIPrompt.uxdsl`, `src/components/DemoButtons.tsx`, `src/components/EdgesEditor.uxdsl` |
 | `button.outlined` | live | live | `src/components/AIPrompt.uxdsl`, `src/components/BreakpointsEditor.uxdsl`, `src/components/CapabilityDocs.uxdsl` |
 | `input.contained` | live | live | `src/components/InputDemo.tsx`, `src/components/RuntimeEngines.tsx` |
 | `input.outlined` | live | live | `src/components/BreakpointsEditor.uxdsl`, `src/components/CapabilityDocs.uxdsl`, `src/components/ColorsEditor.uxdsl` |
@@ -162,10 +162,10 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | `inspectSurfaceTheme` | live | live | `src/components/DemoSurfaces.tsx` |
 | `loadPersistedTheme` | live | live | `src/runtime-sandbox/sandbox-entry.ts` |
 | `resetTheme` | live | live | `src/runtime-sandbox/sandbox-entry.ts` |
-| `resolveResponsiveValue` | live | live | `src/components/DemoDensity.tsx`, `src/components/DensityEditor.tsx`, `src/components/TypographyEditor.tsx` |
+| `resolveResponsiveValue` | live | live | `src/components/DemoDensity.tsx`, `src/components/DensityEditor.tsx`, `src/components/EdgesEditor.tsx` |
 | `resolveTheme` | live | live | `src/components/ContrastReport.tsx`, `src/components/RuntimeEngines.tsx` |
 | `resolveTypographyRole` | live | live | `src/components/RuntimeEngines.tsx` |
-| `responsiveEntries` | live | live | `src/components/DemoDensity.tsx`, `src/components/DensityEditor.tsx`, `src/components/SpacingEditor.tsx` |
+| `responsiveEntries` | live | live | `src/components/DemoDensity.tsx`, `src/components/DensityEditor.tsx`, `src/components/EdgesEditor.tsx` |
 | `spacingValueToCss` | live | live | `src/components/RussianDoll.tsx` |
 | `subscribeTheme` | live | live | `src/components/RuntimeLab.tsx`, `src/runtime-sandbox/sandbox-entry.ts` |
 | `surfaceDeclarations` | live | live | `src/components/DemoSurfaces.tsx` |

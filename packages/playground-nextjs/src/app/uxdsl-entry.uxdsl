@@ -30,6 +30,7 @@
 @use '../components/DensityEditor.uxdsl' as components-densityeditor;
 @use '../components/DensityExplanation.uxdsl' as components-densityexplanation;
 @use '../components/DocumentationSection.uxdsl' as components-documentationsection;
+@use '../components/EdgesEditor.uxdsl' as components-edgeseditor;
 @use '../components/EditDialog.uxdsl' as components-editdialog;
 @use '../components/HeroFeed.uxdsl' as components-herofeed;
 @use '../components/InputDemo.uxdsl' as components-inputdemo;
