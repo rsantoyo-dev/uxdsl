@@ -5250,12 +5250,12 @@ input[type=range]::-moz-range-thumb:hover {
 
 .dte__ring {
   fill: transparent;
-  stroke-width: 2;
+  stroke-width: 4;
   vector-effect: non-scaling-stroke;
 }
 .dte__ring.is-active {
   fill: color-mix(in srgb, var(--uxdsl__palette__primary-light) 15%, transparent);
-  stroke-width: 4;
+  stroke-width: 7;
 }
 
 .dte__ring--0 {

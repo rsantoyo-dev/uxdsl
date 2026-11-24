@@ -63,12 +63,12 @@
 
 .dte__ring {
   fill: transparent;
-  stroke-width: 2;
+  stroke-width: 4;
   vector-effect: non-scaling-stroke;
 
   &.is-active {
     fill: palette(primary.light, 0.15);
-    stroke-width: 4;
+    stroke-width: 7;
   }
 }
 
