@@ -8,6 +8,7 @@ import DensityEditor from './DensityEditor'
 import SpacingEditor from './SpacingEditor'
 import TypographyEditor from './TypographyEditor'
 import EdgesEditor from './EdgesEditor'
+import ShadowsEditor from './ShadowsEditor'
 import ThemeShowcase from './ThemeShowcase'
 import ThemeConfigJsonEditor from './ThemeConfigJsonEditor'
 
@@ -22,7 +23,7 @@ export default function LiveThemeHandler({ showcase = true }: { showcase?: boole
     <>
       {/* The showcase first: a small page in UXDSL alone, which every tab below changes. */}
       {showcase && <ThemeShowcase />}
-      <Tabs labels={['Colors / Palette', 'Breakpoints', 'Spacing / Density', 'Typography', 'Borders / Radii', 'JSON']}>
+      <Tabs labels={['Colors / Palette', 'Breakpoints', 'Spacing / Density', 'Typography', 'Borders / Radii', 'Shadows', 'JSON']}>
         {/* Two editors, one tab: the Palette draws from the Colors, so a shade edited above moves the roles below. */}
         <div className="lth__stack">
           <ColorsEditor />
@@ -36,6 +37,7 @@ export default function LiveThemeHandler({ showcase = true }: { showcase?: boole
         </div>
         <TypographyEditor />
         <EdgesEditor />
+        <ShadowsEditor />
         <ThemeConfigJsonEditor />
       </Tabs>
     </>
