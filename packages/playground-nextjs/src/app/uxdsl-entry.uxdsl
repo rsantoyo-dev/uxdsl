@@ -43,6 +43,7 @@
 @use '../components/ParadigmFrame.uxdsl' as components-paradigmframe;
 @use '../components/ResponsiveSyntaxExplainer.uxdsl' as components-responsivesyntaxexplainer;
 @use '../components/RussianDoll.uxdsl' as components-russiandoll;
+@use '../components/ShadowsEditor.uxdsl' as components-shadowseditor;
 @use '../components/SideNav.uxdsl' as components-sidenav;
 @use '../components/SpacingEditor.uxdsl' as components-spacingeditor;
 @use '../components/SpacingExplanation.uxdsl' as components-spacingexplanation;
