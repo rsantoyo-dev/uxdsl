@@ -112,7 +112,7 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | `input.outlined` | live | live | `src/components/BreakpointsEditor.uxdsl`, `src/components/CapabilityDocs.uxdsl`, `src/components/ColorsEditor.uxdsl` |
 | `input.underline` | live | live | `src/components/InputDemo.tsx`, `src/components/RuntimeEngines.tsx`, `src/components/TypographyEditor.uxdsl` |
 | `surface.contained` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/not-found.uxdsl`, `src/components/CapabilityDocs.uxdsl` |
-| `surface.flat` | live | live | `src/components/DemoSurfaces.tsx`, `src/components/SideNav.uxdsl`, `src/components/SurfaceGrid.tsx` |
+| `surface.flat` | live | live | `src/components/ControlsEditor.tsx`, `src/components/DemoSurfaces.tsx`, `src/components/SideNav.uxdsl` |
 | `surface.outlined` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/page.uxdsl`, `src/components/AIPrompt.uxdsl` |
 
 ## Interaction states
@@ -209,7 +209,7 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | --- | --- | --- | --- |
 | `.` | live | live | `package.json` |
 | `./config` | live | live | `uxdsl.config.cjs` |
-| `./engine` | live | live | `src/components/BreakpointEditor.tsx`, `src/components/ButtonDocumentation.tsx`, `src/components/DemoBorders.tsx` |
+| `./engine` | live | live | `src/components/BreakpointEditor.tsx`, `src/components/ButtonDocumentation.tsx`, `src/components/ControlsEditor.tsx` |
 | `./language` | live | live | `src/app/docs/language/page.tsx`, `src/components/DemoBreakpoints.tsx`, `src/components/DemoDensity.tsx` |
 | `./postcss` | live | live | `package.json` |
 | `./runtime` | live | live | `src/components/RuntimeLab.tsx`, `src/components/ThemeContext.tsx`, `src/runtime-sandbox/sandbox-entry.ts` |
