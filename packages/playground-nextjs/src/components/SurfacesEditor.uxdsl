@@ -1,0 +1,122 @@
+/* The Surfaces editor of the Live theme handler (/docs/theme). Every value is a UXDSL token,
+   role or directive; the literals left are layout (grid, flex). */
+
+$esf-roles: contained, outlined, flat;
+$esf-tones: primary, secondary, tertiary, success, info, warning, error, neutral, dark, light, surface;
+
+/* One class per role and per role and tone, so every card is @ds-surface itself. */
+@each $role in $esf-roles {
+  .esf-s--#{$role} {
+    @ds-surface(#{$role});
+  }
+
+  @each $tone in $esf-tones {
+    .esf-s--#{$role}-#{$tone} {
+      @ds-surface(#{$role} #{$tone});
+    }
+  }
+}
+
+/* Shared by the Surfaces and the Buttons / Inputs tabs. */
+.esf__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: density(3);
+}
+
+.esf__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: density(1);
+}
+
+.esf__chip {
+  @ds-button(outlined 1);
+  @ds-typo(code);
+}
+
+.esf__tone {
+  display: flex;
+  align-items: center;
+  gap: density(2);
+}
+
+.esf__hint,
+.esf__note {
+  @ds-typo(caption);
+
+  color: palette(text.secondary);
+}
+
+.esf__select {
+  @ds-input(outlined);
+  @ds-typo(body-sm);
+}
+
+.esf {
+  display: grid;
+  grid-template-columns: xs(minmax(0, 1fr)) lg(minmax(0, 3fr) minmax(0, 2fr));
+  gap: density(4);
+}
+
+.esf__preview,
+.esf__editor {
+  display: flex;
+  flex-direction: column;
+  gap: density(3);
+  min-width: 0;
+}
+
+.esf__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(space(15), 1fr));
+  gap: density(3);
+}
+
+/* A card is the role; the selected one is marked outside it, so the role itself stays as the theme draws it. */
+.esf__card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: density(1);
+  min-height: space(14);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+
+  &.is-selected {
+    outline: border(2);
+    outline-color: palette(primary.main);
+    outline-offset: space(2);
+  }
+}
+
+.esf__card-title,
+.esf__written {
+  @ds-typo(code);
+}
+
+.esf__card-text {
+  @ds-typo(body-sm);
+}
+
+.esf__title {
+  @ds-typo(subtitle2);
+}
+
+.esf__users {
+  display: flex;
+  flex-direction: column;
+  gap: density(1);
+}
+
+.esf__list {
+  @ds-typo(body-sm);
+
+  display: flex;
+  flex-direction: column;
+  gap: density(0);
+  margin: density(0);
+  padding-inline-start: density(4);
+}

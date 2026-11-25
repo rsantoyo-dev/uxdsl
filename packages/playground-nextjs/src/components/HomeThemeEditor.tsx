@@ -17,7 +17,7 @@ export default function HomeThemeEditor() {
         <summary className="home-live__summary">
           <SlidersHorizontal size={16} aria-hidden="true" />
           <span>Fine-tune the theme by hand</span>
-          <span className="home-live__hint">colors · palette · breakpoints · spacing · density · typography · borders · radii · shadows · JSON</span>
+          <span className="home-live__hint">colors · palette · breakpoints · spacing · density · typography · borders · radii · shadows · surfaces · buttons · inputs · JSON</span>
         </summary>
         {open && <LiveThemeHandler showcase={false} />}
       </details>
