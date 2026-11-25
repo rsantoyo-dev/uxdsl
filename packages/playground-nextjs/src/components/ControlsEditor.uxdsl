@@ -1,0 +1,97 @@
+/* The Buttons / Inputs editor of the Live theme handler (/docs/theme). Every value is a UXDSL
+   token, role or directive; the literals left are layout (grid, flex). Shares the layout
+   classes of SurfacesEditor.uxdsl (esf__*). */
+
+$ecl-tones: primary, secondary, tertiary, success, info, warning, error, neutral, dark, light, surface;
+
+/* One class per role and per role and tone, so every control is the directive itself. */
+@each $role in contained, outlined, flat {
+  .ecl-b--#{$role} {
+    @ds-button(#{$role} 2);
+  }
+
+  @each $tone in $ecl-tones {
+    .ecl-b--#{$role}-#{$tone} {
+      @ds-button(#{$role} #{$tone} 2);
+    }
+  }
+}
+
+@each $role in contained, outlined, underline {
+  .ecl-i--#{$role} {
+    @ds-input(#{$role});
+  }
+
+  @each $tone in $ecl-tones {
+    .ecl-i--#{$role}-#{$tone} {
+      @ds-input(#{$role} #{$tone});
+    }
+  }
+}
+
+.ecl__stage {
+  @ds-surface(outlined radius(3));
+
+  display: flex;
+  flex-direction: column;
+  gap: density(3);
+}
+
+.ecl__stage-label {
+  @ds-typo(code);
+
+  color: palette(primary.main);
+}
+
+.ecl__states {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(space(14), 1fr));
+  align-items: start;
+  gap: density(3);
+}
+
+.ecl__state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: density(1);
+  margin: density(0);
+
+  figcaption {
+    @ds-typo(caption);
+
+    color: palette(text.secondary);
+  }
+}
+
+.ecl__roles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: density(2);
+}
+
+.ecl__roles input {
+  flex: 1 1 space(14);
+  width: auto;
+}
+
+.ecl__state-fields {
+  display: flex;
+  flex-direction: column;
+  gap: density(2);
+  padding-block-start: density(2);
+  border-top: border(1);
+}
+
+.ecl__selector {
+  @ds-typo(caption);
+
+  color: palette(text.secondary);
+}
+
+.ecl__add {
+  display: flex;
+  flex-direction: column;
+  gap: density(1);
+}

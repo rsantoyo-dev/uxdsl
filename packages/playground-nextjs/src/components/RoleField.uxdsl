@@ -1,0 +1,83 @@
+/* One field of a Surface, Button or Input role in the Live theme handler. */
+
+.rf {
+  display: flex;
+  flex-direction: column;
+  gap: density(1);
+}
+
+.rf__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: density(2);
+}
+
+.rf__name {
+  @ds-typo(code);
+
+  color: palette(text.primary);
+}
+
+.rf__property {
+  @ds-typo(caption);
+
+  color: palette(text.secondary);
+}
+
+.rf__badge {
+  @ds-surface(contained primary radius(pill));
+  @ds-typo(caption);
+
+  padding: density(0) density(2);
+
+  &.is-inherited {
+    @ds-surface(outlined radius(pill));
+
+    padding: density(0) density(2);
+  }
+}
+
+.rf__action {
+  @ds-button(flat primary 1);
+  @ds-typo(caption);
+
+  margin-inline-start: auto;
+}
+
+.rf__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: density(2);
+}
+
+.rf__select {
+  @ds-input(outlined);
+  @ds-typo(body-sm);
+
+  flex: 1 1 space(13);
+  width: auto;
+  min-width: 0;
+}
+
+.rf__text {
+  @ds-input(outlined);
+  @ds-typo(code);
+
+  flex: 2 1 space(14);
+  width: auto;
+  min-width: 0;
+}
+
+.rf__value {
+  @ds-typo(code);
+
+  color: palette(text.secondary);
+  overflow-wrap: anywhere;
+}
+
+.rf__error {
+  @ds-typo(caption);
+
+  color: palette(error.main);
+}
