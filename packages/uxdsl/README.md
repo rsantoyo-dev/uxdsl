@@ -1277,7 +1277,9 @@ reference — always `var(<per-tone>, var(<role's own>))` — falls back to the
 role's own variable. That halves the size of the theme block for the base
 theme (745 → 591 declarations; the 154 dropped ones were byte-identical
 copies). Read a component's value through that fallback, never by looking
-up the per-tone name alone.
+up the per-tone name alone. When a patch drops a variant the project's
+compiled theme defines, `applyTheme` resets it to `initial` so the fallback
+applies.
 
 ### What the base Button and Input roles ship as states
 

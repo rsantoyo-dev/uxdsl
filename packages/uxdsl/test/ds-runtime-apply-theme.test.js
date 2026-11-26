@@ -373,3 +373,50 @@ test('MIG-B6-30: reset does not clear persistence unless asked', () => {
     assert.equal(storage.data.has('uxdsl:theme'), true, 'reset alone leaves the stored theme alone');
   }, { storage });
 });
+
+// A per-tone variant (`--uxdsl__button__<role>-tone-<family>-<state>-<key>`)
+// disappears when its value stops depending on the tone. Compiled references
+// fall back to the role's variable, but a project whose compiled CSS carries
+// the theme (`@uxdsl theme;`) still defines the variant there, with its old
+// value, and that beats the fallback: toned buttons kept their old hover. The
+// managed stylesheet resets exactly those variants. What this proves is what
+// is written; that the fallback then applies in a real cascade is checked in
+// the playground's browser walk.
+test('a per-tone variant the project theme defines and a patch drops is reset to initial', () => {
+  withDocument((doc) => {
+    const variant = '--uxdsl__button__contained-tone-primary-hover-bg';
+    const declared = (text, value) => new RegExp(`${variant}:\\s*${value}`).test(text);
+    const init = applyTheme({}, { replace: true });
+    assert.equal(init.ok, true, init.ok ? '' : init.error.message);
+    assert.ok(declared(styleOf(doc).textContent, 'var\\('), 'the base theme defines the variant');
+    assert.doesNotMatch(styleOf(doc).textContent, /:\s*initial;/, 'nothing is reset at initialization');
+
+    const patched = applyTheme({ buttons: { contained: { states: { hover: { bg: 'palette(error.main)' } } } } });
+    assert.equal(patched.ok, true, patched.ok ? '' : patched.error.message);
+    const text = styleOf(doc).textContent;
+    assert.ok(declared(text, 'initial;'), 'the dropped variant is reset');
+    assert.ok(!declared(text, 'var\\('), 'and not defined with a value');
+    assert.match(text, /--uxdsl__button__contained-hover-bg:\s*var\(--uxdsl__palette__error-main\)/, 'the role variable carries the new value');
+    assert.ok(!/--uxdsl__button__contained-tone-primary-hover-color:\s*initial/.test(text), 'a variant still defined is left alone');
+
+    const back = applyTheme({ buttons: { contained: { states: { hover: { bg: 'tone(dark)' } } } } });
+    assert.equal(back.ok, true, back.ok ? '' : back.error.message);
+    assert.ok(declared(styleOf(doc).textContent, 'var\\('), 'tone(dark) defines the variant again');
+    assert.doesNotMatch(styleOf(doc).textContent, /:\s*initial;/);
+
+    applyTheme({ buttons: { contained: { states: { hover: { bg: 'palette(error.main)' } } } } });
+    const reset = resetTheme();
+    assert.equal(reset.ok, true, reset.ok ? '' : reset.error.message);
+    assert.doesNotMatch(styleOf(doc).textContent, /:\s*initial;/, 'reset restores the project theme with nothing to reset');
+  });
+});
+
+test('a per-tone variant only a patch added is not reset when it goes', () => {
+  withDocument((doc) => {
+    const project = { buttons: { contained: { states: { hover: { bg: 'palette(error.main)' } } } } };
+    assert.equal(applyTheme(project, { replace: true }).ok, true);
+    assert.equal(applyTheme({ buttons: { contained: { states: { hover: { bg: 'tone(dark)' } } } } }).ok, true);
+    assert.equal(applyTheme({ buttons: { contained: { states: { hover: { bg: 'palette(error.main)' } } } } }).ok, true);
+    assert.doesNotMatch(styleOf(doc).textContent, /:\s*initial;/, 'the compiled CSS never defined it');
+  });
+});
