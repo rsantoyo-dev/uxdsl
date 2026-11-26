@@ -13,11 +13,13 @@ import SurfacesEditor from './SurfacesEditor'
 import ControlsEditor from './ControlsEditor'
 import ThemeShowcase from './ThemeShowcase'
 import ThemeConfigJsonEditor from './ThemeConfigJsonEditor'
+import ThemeDownload from './ThemeDownload'
 
 /**
  * The Live theme handler: one editor per part of the theme, plus the whole theme as JSON.
  * Every tab reads and writes the same active theme (ThemeContext → applyTheme), so a change
- * in one shows in the others and on the page. Every family of the theme has its tab.
+ * in one shows in the others and on the page. Every family of the theme has its tab, and
+ * ThemeDownload, above them, takes the result to a project as its uxdsl.theme.json.
  */
 /** `showcase` puts the small UXDSL page above the tabs (/docs/theme); the home page has its own hero instead. */
 export default function LiveThemeHandler({ showcase = true }: { showcase?: boolean }) {
@@ -25,6 +27,7 @@ export default function LiveThemeHandler({ showcase = true }: { showcase?: boole
     <>
       {/* The showcase first: a small page in UXDSL alone, which every tab below changes. */}
       {showcase && <ThemeShowcase />}
+      <ThemeDownload />
       <Tabs labels={['Colors / Palette', 'Breakpoints', 'Spacing / Density', 'Typography', 'Borders / Radii', 'Shadows', 'Surfaces', 'Buttons / Inputs', 'JSON']}>
         {/* Two editors, one tab: the Palette draws from the Colors, so a shade edited above moves the roles below. */}
         <div className="lth__stack">

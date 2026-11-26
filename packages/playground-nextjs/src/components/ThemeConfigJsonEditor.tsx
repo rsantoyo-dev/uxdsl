@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Download, RefreshCcw } from 'lucide-react'
+import { RefreshCcw } from 'lucide-react'
 import { validateTheme } from 'uxdsl/theme'
 import schema from 'uxdsl/schema/theme.schema.json'
 import type { Content, OnChangeStatus, createJSONEditor as CreateJSONEditor } from 'vanilla-jsoneditor'
@@ -26,6 +26,9 @@ function jsonOf(content: Content): unknown {
  * values are edited in place, and the editor checks each edit against the packaged theme
  * schema as you type. A valid edit is applied through `setCustomTheme` (ThemeContext →
  * applyTheme), the same path as the other tabs, so they and the page follow it.
+ *
+ * The download above the tabs (ThemeDownload) saves what this tree shows as a project's
+ * uxdsl.theme.json.
  *
  * Breakpoints are the exception: applyTheme refuses them, so the tree shows the Breakpoints
  * tab's preview, and a moved width here moves that preview (BreakpointsProvider) instead.
@@ -144,23 +147,6 @@ export default function ThemeConfigJsonEditor() {
     setStatus('synced')
   }
 
-  const handleExport = () => {
-    const content = (() => {
-      try {
-        return prettyJson(editorRef.current ? jsonOf(editorRef.current.get()) : activeThemeData)
-      } catch {
-        return prettyJson(activeThemeData)
-      }
-    })()
-    const blob = new Blob([content], { type: 'application/json;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'uxdsl.theme.runtime.json'
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-
   return (
     <InteractiveDemoContainer
       title="Runtime Config JSON"
@@ -172,9 +158,6 @@ export default function ThemeConfigJsonEditor() {
           <div className="config-editor__buttons">
             <button type="button" onClick={handleReset} className="config-editor__button">
               <RefreshCcw size={14} /> Reset
-            </button>
-            <button type="button" onClick={handleExport} className="config-editor__button config-editor__button--primary">
-              <Download size={14} /> Export
             </button>
           </div>
         </div>
