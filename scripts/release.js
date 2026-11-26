@@ -19,10 +19,12 @@ const EXTENSION = { name: 'uxdsl-vscode', dir: 'packages/uxdsl-vscode' };
 
 // A fixed budget, not a moving target recomputed from whatever is on disk at
 // check time: uxdsl packed to 222 KB when the five packages became one
-// (276 KB for the five together before), so 300 KB leaves room for growth
-// while still catching a stray asset or an unpruned `files` entry.
+// (276 KB for the five together before), so 300 KB left room for growth
+// while still catching a stray asset or an unpruned `files` entry. The owner
+// raised it to 320 KB on 2026-11-26, when beta.9 had grown to its edge (299.8
+// KB) and every further fix crossed it (MIG-B9-91, owner flag 1).
 const PACK_BUDGETS_KB = {
-  uxdsl: 300,
+  uxdsl: 320,
 };
 
 function isValidSemver(input) {
