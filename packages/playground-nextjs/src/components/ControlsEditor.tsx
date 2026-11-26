@@ -16,6 +16,8 @@ import RoleField from './RoleField'
 import { TONES } from './SurfacesEditor'
 import { suggestions, rolePatch, baseFields, stateFields } from '../lib/role-editing'
 import { checkPatch } from '../lib/theme-patch'
+import UsageExample, { jsonBlock } from './UsageExample'
+import { controlUsage } from '../lib/usage-snippets'
 
 type Family = 'buttons' | 'inputs'
 type Token = { surface?: string; base?: Record<string, string>; states?: Record<string, Record<string, string>> }
@@ -107,6 +109,7 @@ export default function ControlsEditor() {
   }
   const firstSuggestion = (field: string) => suggestions(activeThemeData, field, { controls: true })[0]?.values[0] ?? 'none'
 
+  const usage = useMemo(() => controlUsage(activeThemeData, family, role, tone), [activeThemeData, family, role, tone])
   return (
     <InteractiveDemoContainer
       title="Buttons / Inputs"
@@ -216,6 +219,10 @@ export default function ControlsEditor() {
           </p>
         </div>
       </div>
+      <UsageExample
+        note={<>The states come with the role: hover, keyboard focus, selected (<code>aria-pressed</code>, <code>.is-selected</code>), disabled. Keep the real element, <code>&lt;button&gt;</code> or <code>&lt;input&gt;</code>, for behavior and accessibility.</>}
+        blocks={[{ label: 'In a stylesheet (.uxdsl)', code: usage.stylesheet }, jsonBlock(usage.excerpt)]}
+      />
     </InteractiveDemoContainer>
   )
 }

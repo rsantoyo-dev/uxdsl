@@ -8,6 +8,8 @@ import { useBreakpoints } from './BreakpointsProvider'
 import { InteractiveDemoContainer } from './InteractiveDemoContainer'
 import { lengthPx, buildDefinition, densityKeys, spaceKeyOf } from '../lib/density-editing'
 import { STYLES, KINDS, parseBorder, buildBorder, edgeKeys, edgePatch, edgeConsumers, borderColorOptions } from '../lib/edge-editing'
+import UsageExample, { jsonBlock } from './UsageExample'
+import { edgeUsage } from '../lib/usage-snippets'
 
 type Kind = 'borders' | 'radii'
 
@@ -126,6 +128,7 @@ export default function EdgesEditor() {
   const setAt = (bp: string, value: string) => write(buildDefinition({ ...entries, [bp]: value }, order))
   const pick = (next: Kind) => { setKind(next); setKey(next === 'radii' ? '2' : '1') }
 
+  const usage = useMemo(() => edgeUsage(activeThemeData, kind, key), [activeThemeData, kind, key])
   return (
     <InteractiveDemoContainer
       title="Borders / Radii"
@@ -227,6 +230,10 @@ export default function EdgesEditor() {
           </div>
         </div>
       </div>
+      <UsageExample
+        note={<>A component names the token; for one exception, write a longhand after it and keep the shared token.</>}
+        blocks={[{ label: 'In a stylesheet (.uxdsl)', code: usage.stylesheet }, jsonBlock(usage.excerpt)]}
+      />
     </InteractiveDemoContainer>
   )
 }

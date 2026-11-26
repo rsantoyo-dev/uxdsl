@@ -91,7 +91,7 @@ export default function ColorsEditor({ defaultKey = 'purple.700' }: { defaultKey
       }
     >
       <div className="cle">
-        <ColorCollection colors={colors} selectedKey={key} onPick={setKey} label="Shade to edit" />
+        <ColorCollection colors={colors} selectedKey={key} onPick={setKey} label="Shade to edit" full />
 
         <div className="cle__editor">
           <div className="cle__written">

@@ -1,0 +1,77 @@
+/* The "Use it in your project" block that ends every tab of the Live theme handler
+   (UsageExample.tsx). Every value is a UXDSL token, role or directive; the literals left are
+   layout (grid, flex) and the code block's whitespace. */
+
+.use {
+  display: flex;
+  flex-direction: column;
+  gap: density(3);
+  margin-top: density(4);
+  padding-top: density(4);
+  border-top: border(1);
+}
+
+.use__title {
+  @ds-typo(subtitle2);
+
+  margin: density(0);
+  color: palette(text.primary);
+}
+
+.use__note {
+  @ds-typo(body-sm);
+
+  margin: density(0);
+  color: palette(text.secondary);
+}
+
+.use__live {
+  @ds-surface(outlined radius(3));
+}
+
+.use__blocks {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, calc(space(16) * 1.5)), 1fr));
+  gap: density(3);
+}
+
+.use__block {
+  display: flex;
+  flex-direction: column;
+  gap: density(1);
+  min-width: 0;
+  margin: density(0);
+}
+
+.use__label {
+  @ds-typo(caption);
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: density(2);
+  color: palette(text.secondary);
+}
+
+.use__copy {
+  @ds-button(flat 1);
+  @ds-typo(caption);
+
+  display: inline-flex;
+  align-items: center;
+  gap: density(1);
+}
+
+.use__code {
+  @ds-typo(code);
+
+  margin: density(0);
+  padding: density(3);
+  max-height: calc(space(16) * 1.5);
+  overflow: auto;
+  white-space: pre;
+  border-radius: radius(2);
+  background: palette(surface.light);
+  color: palette(text.primary);
+  border: border(1);
+}

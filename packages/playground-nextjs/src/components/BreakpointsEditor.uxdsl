@@ -178,3 +178,22 @@
 
   color: palette(text.secondary);
 }
+
+/* "Use it in your project": the layout of its stylesheet, live. Compiled like any component,
+   so the breakpoint preview above moves its md rule too. */
+.bpe-demo {
+  display: flex;
+  flex-direction: xs(column) md(row);
+  gap: density(3);
+}
+
+.bpe-demo__item {
+  @ds-surface(contained primary);
+  @ds-typo(body-sm);
+}
+
+@media (--lg) {
+  .bpe-demo__item {
+    flex: 1;
+  }
+}

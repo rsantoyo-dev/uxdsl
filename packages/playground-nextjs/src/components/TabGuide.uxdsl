@@ -1,0 +1,34 @@
+/* The head of every tab of the Live theme handler (TabGuide.tsx). Every value is a UXDSL
+   token, role or directive; the literals left are layout (flex). */
+
+.tgd {
+  display: flex;
+  flex-direction: column;
+  gap: density(2);
+  margin-bottom: density(3);
+}
+
+.tgd__what {
+  @ds-typo(body);
+
+  margin: density(0);
+  color: palette(text.primary);
+}
+
+.tgd__try {
+  @ds-surface(contained primary radius(2));
+  @ds-typo(body-sm);
+
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: density(2);
+  margin: density(0);
+}
+
+.tgd__badge {
+  @ds-typo(caption);
+
+  font-weight: 700;
+  text-transform: uppercase;
+}

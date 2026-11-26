@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTheme } from './ThemeContext'
+import UsageExample, { jsonBlock } from './UsageExample'
+import { paletteUsage } from '../lib/usage-snippets'
 import { InteractiveDemoContainer } from './InteractiveDemoContainer'
 import ColorCollection from './ColorCollection'
 import {
@@ -127,6 +129,7 @@ export default function PaletteFamilyEditor({ defaultFamily = 'primary' }: { def
   const groups = useMemo(() => roleGroups(palette), [palette])
   const inherited = mode === 'dark' && isInherited(activeThemeData, family, variant)
 
+  const usage = useMemo(() => paletteUsage(activeThemeData, family), [activeThemeData, family])
   return (
     <InteractiveDemoContainer
       title="Palette"
@@ -303,6 +306,10 @@ export default function PaletteFamilyEditor({ defaultFamily = 'primary' }: { def
           </div>
         )}
       </div>
+      <UsageExample
+        note={<>Components name the role, never the color, so a theme with another <code>{family}</code> recolors them without a rebuild. The dark-mode values live under <code>modes.dark.palette</code>.</>}
+        blocks={[{ label: 'In a stylesheet (.uxdsl)', code: usage.stylesheet }, jsonBlock(usage.excerpt)]}
+      />
     </InteractiveDemoContainer>
   )
 }
