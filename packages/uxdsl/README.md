@@ -1279,7 +1279,8 @@ theme (745 → 591 declarations; the 154 dropped ones were byte-identical
 copies). Read a component's value through that fallback, never by looking
 up the per-tone name alone. When a patch drops a variant the project's
 compiled theme defines, `applyTheme` resets it to `initial` so the fallback
-applies.
+applies: its managed stylesheet then ends with a rule such as
+`:root { --uxdsl__button__contained-tone-primary-hover-bg: initial; }`.
 
 ### What the base Button and Input roles ship as states
 
