@@ -48,6 +48,21 @@ them. See `docs/releases/0.5.0-beta.9.md`.
 - Some colors, focus rings and disabled states of the base theme change: read
   the `Visual changes` tables before upgrading.
 
+### `applyTheme` and per-tone variants
+
+#### Fixed
+
+- A patch that makes a Button/Input state value tone-independent
+  (`hover.bg: "palette(error.main)"`) now reaches toned components. Its
+  per-tone variants left the managed stylesheet, but a theme compiled into
+  the CSS (`@uxdsl theme;`) kept them with the old value, beating the
+  fallback. The managed stylesheet now resets each variant the project's
+  theme defines and the applied one does not (`initial`).
+
+#### Visual changes
+
+- None at build time.
+
 ### The release candidate: Node 20.19 or later, and the release gate (MIG-B9-91)
 
 #### Breaking

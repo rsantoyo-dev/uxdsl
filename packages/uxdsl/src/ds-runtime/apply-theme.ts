@@ -15,7 +15,7 @@
 import { renderThemeCss } from './theme-generator';
 import { validateTheme, deepMergeTheme } from './theme-validate';
 import { resolveTheme } from '../default-theme';
-import { themeStructure, structuralChanges, structuralChangeError, ThemeStructure } from './theme-structure';
+import { themeStructure, structuralChanges, structuralChangeError, toneVariables, ThemeStructure } from './theme-structure';
 
 export type ThemeOverride = Record<string, any>;
 
@@ -48,6 +48,9 @@ interface ThemeState {
   projectOverride: ThemeOverride;
   applied: ThemeOverride;
   structure: ThemeStructure | null;
+  /** The Button/Input per-tone variants the project's theme defines: what its
+   * compiled CSS carries when it writes `@uxdsl theme;`. */
+  projectToneVariables: string[];
   listeners: Set<Listener>;
 }
 
@@ -105,6 +108,7 @@ function stateFor(doc: any): ThemeState {
       projectOverride: {},
       applied: {},
       structure: null,
+      projectToneVariables: [],
       listeners: new Set(),
     };
     states.set(doc, state);
@@ -252,14 +256,28 @@ export function applyTheme(patch: ThemeOverride = {}, options: ApplyThemeOptions
     return { ok: false, error: cause instanceof Error ? cause : new Error(String(cause)) };
   }
 
+  // A per-tone variant the project's theme defines and this one does not (a
+  // value that stopped depending on the tone) is not a structural change: every
+  // compiled reference falls back to the role's variable. But the project's
+  // compiled CSS may carry its theme too (`@uxdsl theme;`), and there the
+  // variant keeps its old value and beats the fallback. Resetting it here, in
+  // the stylesheet that wins the cascade, lets the fallback apply.
+  const projectVariants = state.initialized ? state.projectToneVariables : toneVariables(css);
+  const defined = new Set(toneVariables(css));
+  const stale = projectVariants.filter((name) => !defined.has(name));
+  const managedCss = stale.length
+    ? `${css}\n/* Per-tone variants the project's theme defines and this one does not: reset, so components fall back to the role's variable. */\n:root { ${stale.map((name) => `${name}: initial;`).join(' ')} }\n`
+    : css;
+
   // --- commit ---
-  style.textContent = css;
+  style.textContent = managedCss;
   state.style = style;
   state.styleId = state.initialized ? state.styleId : requestedId;
   state.applied = nextOverride;
   state.structure = structure;
   if (!state.initialized) {
     state.projectOverride = copy(nextOverride);
+    state.projectToneVariables = projectVariants;
     state.initialized = true;
   }
 

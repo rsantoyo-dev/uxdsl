@@ -193,11 +193,15 @@ test('T8: making a value tone-independent at run time is a value change, not a s
     require('../dist/ds-runtime/apply-theme').__resetThemeStateForTests();
     assert.equal(runtime.applyTheme({}, { replace: true }).ok, true);
     // contained.hover.bg goes from tone(dark) (a variant per tone family) to
-    // a fixed color (none): the variants disappear, and every compiled
-    // reference falls back to the role's own variable.
+    // a fixed color (none): no variant carries a value any more, and every
+    // compiled reference falls back to the role's own variable. Each variant
+    // the project's theme defined is reset to `initial`, so a copy of that
+    // theme compiled into the CSS (`@uxdsl theme;`) cannot keep the old value.
     const result = runtime.applyTheme({ buttons: { contained: { states: { hover: { bg: '#123456' } } } } });
     assert.equal(result.ok, true, result.ok ? '' : result.error.message);
-    assert.doesNotMatch(byId.get('uxdsl-theme').textContent, /--uxdsl__button__contained-tone-[a-z]+-hover-bg:/);
+    const text = byId.get('uxdsl-theme').textContent;
+    assert.doesNotMatch(text, /--uxdsl__button__contained-tone-[a-z]+-hover-bg:(?!\s*initial;)/);
+    assert.match(text, /--uxdsl__button__contained-tone-primary-hover-bg:\s*initial;/);
   } finally {
     globalThis.document = previous;
   }

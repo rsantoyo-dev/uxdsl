@@ -653,6 +653,11 @@ Surfaces own the container composition. HTML/application code own interaction.
   (`--uxdsl__button__<role>-tone-<family>-<state>-<key>`) exists only where the
   tone changes the value; a component always references it with the role's
   own variable as the `var()` fallback, so resolve through that fallback.
+  When a patch makes such a value tone-independent, `applyTheme` ends its
+  managed stylesheet with `:root { <variant>: initial; … }` for each
+  per-tone variable the project's theme defined, because a theme compiled
+  into the CSS (`@uxdsl theme;`) keeps defining it with the old value and
+  would beat the fallback.
 - Supported fields: padding, radius, bg, color, border, shadow, opacity, outline,
   outline-offset, transform, cursor, font-weight. States: hover, active, focus,
   focusvisible, disabled, selected. The base roles supply hover, focusvisible
