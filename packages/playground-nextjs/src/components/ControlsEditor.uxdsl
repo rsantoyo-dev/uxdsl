@@ -4,15 +4,17 @@
 
 $ecl-tones: primary, secondary, tertiary, success, info, warning, error, neutral, dark, light, surface;
 
-/* One class per role and per role and tone, so every control is the directive itself. */
+/* One class per role and per role and tone, so every control is the directive itself, as its
+   label writes it: no size argument, which would put density(n) and radius(n) over the padding
+   and corners the role takes from its Surface, so a Surface edit would not show here. */
 @each $role in contained, outlined, flat {
   .ecl-b--#{$role} {
-    @ds-button(#{$role} 2);
+    @ds-button(#{$role});
   }
 
   @each $tone in $ecl-tones {
     .ecl-b--#{$role}-#{$tone} {
-      @ds-button(#{$role} #{$tone} 2);
+      @ds-button(#{$role} #{$tone});
     }
   }
 }

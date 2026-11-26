@@ -2024,15 +2024,17 @@ input[type=range]::-moz-range-thumb:hover {
 /* The Buttons / Inputs editor of the Live theme handler (/docs/theme). Every value is a UXDSL
    token, role or directive; the literals left are layout (grid, flex). Shares the layout
    classes of SurfacesEditor.uxdsl (esf__*). */
-/* One class per role and per role and tone, so every control is the directive itself. */
-.ecl-b--contained { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: var(--uxdsl__surface__contained-bg); color: var(--uxdsl__surface__contained-color); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow);
+/* One class per role and per role and tone, so every control is the directive itself, as its
+   label writes it: no size argument, which would put density(n) and radius(n) over the padding
+   and corners the role takes from its Surface, so a Surface edit would not show here. */
+.ecl-b--contained { padding: var(--uxdsl__surface__contained-padding); border-radius: var(--uxdsl__surface__contained-radius); background: var(--uxdsl__surface__contained-bg); color: var(--uxdsl__surface__contained-color); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow);
 }
 .ecl-b--contained:hover:not(:where(:disabled, [aria-disabled="true"])) { background: var(--uxdsl__button__contained-hover-bg); color: var(--uxdsl__button__contained-hover-color); }
 .ecl-b--contained:focus-visible { outline: var(--uxdsl__button__contained-focusvisible-outline); outline-offset: var(--uxdsl__button__contained-focusvisible-outline-offset); }
 .ecl-b--contained.is-selected, .ecl-b--contained[aria-pressed="true"], .ecl-b--contained[aria-selected="true"] { background: var(--uxdsl__button__contained-selected-bg); color: var(--uxdsl__button__contained-selected-color); }
 .ecl-b--contained:disabled, .ecl-b--contained[aria-disabled="true"] { opacity: var(--uxdsl__button__contained-disabled-opacity); cursor: var(--uxdsl__button__contained-disabled-cursor); }
 
-.ecl-b--contained-primary { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: var(--uxdsl__palette__primary-main); color: var(--uxdsl__palette__primary-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast);
+.ecl-b--contained-primary { padding: var(--uxdsl__surface__contained-padding); border-radius: var(--uxdsl__surface__contained-radius); background: var(--uxdsl__palette__primary-main); color: var(--uxdsl__palette__primary-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast);
 }
 
 .ecl-b--contained-primary:hover:not(:where(:disabled, [aria-disabled="true"])) { background: var(--uxdsl__button__contained-tone-primary-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-primary-hover-color, var(--uxdsl__button__contained-hover-color)); }
@@ -2043,7 +2045,7 @@ input[type=range]::-moz-range-thumb:hover {
 
 .ecl-b--contained-primary:disabled, .ecl-b--contained-primary[aria-disabled="true"] { opacity: var(--uxdsl__button__contained-tone-primary-disabled-opacity, var(--uxdsl__button__contained-disabled-opacity)); cursor: var(--uxdsl__button__contained-tone-primary-disabled-cursor, var(--uxdsl__button__contained-disabled-cursor)); }
 
-.ecl-b--contained-secondary { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: var(--uxdsl__palette__secondary-main); color: var(--uxdsl__palette__secondary-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__secondary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__secondary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__secondary-contrast);
+.ecl-b--contained-secondary { padding: var(--uxdsl__surface__contained-padding); border-radius: var(--uxdsl__surface__contained-radius); background: var(--uxdsl__palette__secondary-main); color: var(--uxdsl__palette__secondary-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__secondary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__secondary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__secondary-contrast);
 }
 
 .ecl-b--contained-secondary:hover:not(:where(:disabled, [aria-disabled="true"])) { background: var(--uxdsl__button__contained-tone-secondary-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-secondary-hover-color, var(--uxdsl__button__contained-hover-color)); }
@@ -2054,7 +2056,7 @@ input[type=range]::-moz-range-thumb:hover {
 
 .ecl-b--contained-secondary:disabled, .ecl-b--contained-secondary[aria-disabled="true"] { opacity: var(--uxdsl__button__contained-tone-secondary-disabled-opacity, var(--uxdsl__button__contained-disabled-opacity)); cursor: var(--uxdsl__button__contained-tone-secondary-disabled-cursor, var(--uxdsl__button__contained-disabled-cursor)); }
 
-.ecl-b--contained-tertiary { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: var(--uxdsl__palette__tertiary-main); color: var(--uxdsl__palette__tertiary-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__tertiary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__tertiary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__tertiary-contrast);
+.ecl-b--contained-tertiary { padding: var(--uxdsl__surface__contained-padding); border-radius: var(--uxdsl__surface__contained-radius); background: var(--uxdsl__palette__tertiary-main); color: var(--uxdsl__palette__tertiary-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__tertiary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__tertiary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__tertiary-contrast);
 }
 
 .ecl-b--contained-tertiary:hover:not(:where(:disabled, [aria-disabled="true"])) { background: var(--uxdsl__button__contained-tone-tertiary-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-tertiary-hover-color, var(--uxdsl__button__contained-hover-color)); }
@@ -2065,7 +2067,7 @@ input[type=range]::-moz-range-thumb:hover {
 
 .ecl-b--contained-tertiary:disabled, .ecl-b--contained-tertiary[aria-disabled="true"] { opacity: var(--uxdsl__button__contained-tone-tertiary-disabled-opacity, var(--uxdsl__button__contained-disabled-opacity)); cursor: var(--uxdsl__button__contained-tone-tertiary-disabled-cursor, var(--uxdsl__button__contained-disabled-cursor)); }
 
-.ecl-b--contained-success { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: var(--uxdsl__palette__success-main); color: var(--uxdsl__palette__success-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__success-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__success-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__success-contrast);
+.ecl-b--contained-success { padding: var(--uxdsl__surface__contained-padding); border-radius: var(--uxdsl__surface__contained-radius); background: var(--uxdsl__palette__success-main); color: var(--uxdsl__palette__success-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__success-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__success-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__success-contrast);
 }
 
 .ecl-b--contained-success:hover:not(:where(:disabled, [aria-disabled="true"])) { background: var(--uxdsl__button__contained-tone-success-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-success-hover-color, var(--uxdsl__button__contained-hover-color)); }
@@ -2076,7 +2078,7 @@ input[type=range]::-moz-range-thumb:hover {
 
 .ecl-b--contained-success:disabled, .ecl-b--contained-success[aria-disabled="true"] { opacity: var(--uxdsl__button__contained-tone-success-disabled-opacity, var(--uxdsl__button__contained-disabled-opacity)); cursor: var(--uxdsl__button__contained-tone-success-disabled-cursor, var(--uxdsl__button__contained-disabled-cursor)); }
 
-.ecl-b--contained-info { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: var(--uxdsl__palette__info-main); color: var(--uxdsl__palette__info-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__info-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__info-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__info-contrast);
+.ecl-b--contained-info { padding: var(--uxdsl__surface__contained-padding); border-radius: var(--uxdsl__surface__contained-radius); background: var(--uxdsl__palette__info-main); color: var(--uxdsl__palette__info-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__info-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__info-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__info-contrast);
 }
 
 .ecl-b--contained-info:hover:not(:where(:disabled, [aria-disabled="true"])) { background: var(--uxdsl__button__contained-tone-info-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-info-hover-color, var(--uxdsl__button__contained-hover-color)); }
@@ -2087,7 +2089,7 @@ input[type=range]::-moz-range-thumb:hover {
 
 .ecl-b--contained-info:disabled, .ecl-b--contained-info[aria-disabled="true"] { opacity: var(--uxdsl__button__contained-tone-info-disabled-opacity, var(--uxdsl__button__contained-disabled-opacity)); cursor: var(--uxdsl__button__contained-tone-info-disabled-cursor, var(--uxdsl__button__contained-disabled-cursor)); }
 
-.ecl-b--contained-warning { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: var(--uxdsl__palette__warning-main); color: var(--uxdsl__palette__warning-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__warning-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__warning-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__warning-contrast);
+.ecl-b--contained-warning { padding: var(--uxdsl__surface__contained-padding); border-radius: var(--uxdsl__surface__contained-radius); background: var(--uxdsl__palette__warning-main); color: var(--uxdsl__palette__warning-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__warning-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__warning-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__warning-contrast);
 }
 
 .ecl-b--contained-warning:hover:not(:where(:disabled, [aria-disabled="true"])) { background: var(--uxdsl__button__contained-tone-warning-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-warning-hover-color, var(--uxdsl__button__contained-hover-color)); }
@@ -2098,7 +2100,7 @@ input[type=range]::-moz-range-thumb:hover {
 
 .ecl-b--contained-warning:disabled, .ecl-b--contained-warning[aria-disabled="true"] { opacity: var(--uxdsl__button__contained-tone-warning-disabled-opacity, var(--uxdsl__button__contained-disabled-opacity)); cursor: var(--uxdsl__button__contained-tone-warning-disabled-cursor, var(--uxdsl__button__contained-disabled-cursor)); }
 
-.ecl-b--contained-error { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: var(--uxdsl__palette__error-main); color: var(--uxdsl__palette__error-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__error-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__error-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__error-contrast);
+.ecl-b--contained-error { padding: var(--uxdsl__surface__contained-padding); border-radius: var(--uxdsl__surface__contained-radius); background: var(--uxdsl__palette__error-main); color: var(--uxdsl__palette__error-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__error-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__error-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__error-contrast);
 }
 
 .ecl-b--contained-error:hover:not(:where(:disabled, [aria-disabled="true"])) { background: var(--uxdsl__button__contained-tone-error-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-error-hover-color, var(--uxdsl__button__contained-hover-color)); }
@@ -2109,7 +2111,7 @@ input[type=range]::-moz-range-thumb:hover {
 
 .ecl-b--contained-error:disabled, .ecl-b--contained-error[aria-disabled="true"] { opacity: var(--uxdsl__button__contained-tone-error-disabled-opacity, var(--uxdsl__button__contained-disabled-opacity)); cursor: var(--uxdsl__button__contained-tone-error-disabled-cursor, var(--uxdsl__button__contained-disabled-cursor)); }
 
-.ecl-b--contained-neutral { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: var(--uxdsl__palette__neutral-main); color: var(--uxdsl__palette__neutral-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__neutral-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__neutral-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__neutral-contrast);
+.ecl-b--contained-neutral { padding: var(--uxdsl__surface__contained-padding); border-radius: var(--uxdsl__surface__contained-radius); background: var(--uxdsl__palette__neutral-main); color: var(--uxdsl__palette__neutral-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__neutral-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__neutral-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__neutral-contrast);
 }
 
 .ecl-b--contained-neutral:hover:not(:where(:disabled, [aria-disabled="true"])) { background: var(--uxdsl__button__contained-tone-neutral-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-neutral-hover-color, var(--uxdsl__button__contained-hover-color)); }
@@ -2120,7 +2122,7 @@ input[type=range]::-moz-range-thumb:hover {
 
 .ecl-b--contained-neutral:disabled, .ecl-b--contained-neutral[aria-disabled="true"] { opacity: var(--uxdsl__button__contained-tone-neutral-disabled-opacity, var(--uxdsl__button__contained-disabled-opacity)); cursor: var(--uxdsl__button__contained-tone-neutral-disabled-cursor, var(--uxdsl__button__contained-disabled-cursor)); }
 
-.ecl-b--contained-dark { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: var(--uxdsl__palette__dark-main); color: var(--uxdsl__palette__dark-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__dark-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__dark-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__dark-contrast);
+.ecl-b--contained-dark { padding: var(--uxdsl__surface__contained-padding); border-radius: var(--uxdsl__surface__contained-radius); background: var(--uxdsl__palette__dark-main); color: var(--uxdsl__palette__dark-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__dark-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__dark-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__dark-contrast);
 }
 
 .ecl-b--contained-dark:hover:not(:where(:disabled, [aria-disabled="true"])) { background: var(--uxdsl__button__contained-tone-dark-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-dark-hover-color, var(--uxdsl__button__contained-hover-color)); }
@@ -2131,7 +2133,7 @@ input[type=range]::-moz-range-thumb:hover {
 
 .ecl-b--contained-dark:disabled, .ecl-b--contained-dark[aria-disabled="true"] { opacity: var(--uxdsl__button__contained-tone-dark-disabled-opacity, var(--uxdsl__button__contained-disabled-opacity)); cursor: var(--uxdsl__button__contained-tone-dark-disabled-cursor, var(--uxdsl__button__contained-disabled-cursor)); }
 
-.ecl-b--contained-light { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: var(--uxdsl__palette__light-main); color: var(--uxdsl__palette__light-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__light-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__light-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__light-contrast);
+.ecl-b--contained-light { padding: var(--uxdsl__surface__contained-padding); border-radius: var(--uxdsl__surface__contained-radius); background: var(--uxdsl__palette__light-main); color: var(--uxdsl__palette__light-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__light-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__light-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__light-contrast);
 }
 
 .ecl-b--contained-light:hover:not(:where(:disabled, [aria-disabled="true"])) { background: var(--uxdsl__button__contained-tone-light-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-light-hover-color, var(--uxdsl__button__contained-hover-color)); }
@@ -2142,7 +2144,7 @@ input[type=range]::-moz-range-thumb:hover {
 
 .ecl-b--contained-light:disabled, .ecl-b--contained-light[aria-disabled="true"] { opacity: var(--uxdsl__button__contained-tone-light-disabled-opacity, var(--uxdsl__button__contained-disabled-opacity)); cursor: var(--uxdsl__button__contained-tone-light-disabled-cursor, var(--uxdsl__button__contained-disabled-cursor)); }
 
-.ecl-b--contained-surface { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: var(--uxdsl__palette__surface-main); color: var(--uxdsl__palette__surface-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__surface-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__surface-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__surface-contrast);
+.ecl-b--contained-surface { padding: var(--uxdsl__surface__contained-padding); border-radius: var(--uxdsl__surface__contained-radius); background: var(--uxdsl__palette__surface-main); color: var(--uxdsl__palette__surface-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__surface-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__surface-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__surface-contrast);
 }
 
 .ecl-b--contained-surface:hover:not(:where(:disabled, [aria-disabled="true"])) { background: var(--uxdsl__button__contained-tone-surface-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-surface-hover-color, var(--uxdsl__button__contained-hover-color)); }
@@ -2153,7 +2155,7 @@ input[type=range]::-moz-range-thumb:hover {
 
 .ecl-b--contained-surface:disabled, .ecl-b--contained-surface[aria-disabled="true"] { opacity: var(--uxdsl__button__contained-tone-surface-disabled-opacity, var(--uxdsl__button__contained-disabled-opacity)); cursor: var(--uxdsl__button__contained-tone-surface-disabled-cursor, var(--uxdsl__button__contained-disabled-cursor)); }
 
-.ecl-b--outlined { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: var(--uxdsl__surface__outlined-bg); color: var(--uxdsl__surface__outlined-color); border: var(--uxdsl__surface__outlined-border); box-shadow: var(--uxdsl__surface__outlined-shadow);
+.ecl-b--outlined { padding: var(--uxdsl__surface__outlined-padding); border-radius: var(--uxdsl__surface__outlined-radius); background: var(--uxdsl__surface__outlined-bg); color: var(--uxdsl__surface__outlined-color); border: var(--uxdsl__surface__outlined-border); box-shadow: var(--uxdsl__surface__outlined-shadow);
 }
 
 .ecl-b--outlined:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__outlined-hover-color); border: var(--uxdsl__button__outlined-hover-border); }
@@ -2164,7 +2166,7 @@ input[type=range]::-moz-range-thumb:hover {
 
 .ecl-b--outlined:disabled, .ecl-b--outlined[aria-disabled="true"] { opacity: var(--uxdsl__button__outlined-disabled-opacity); cursor: var(--uxdsl__button__outlined-disabled-cursor); }
 
-.ecl-b--outlined-primary { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: transparent; color: var(--uxdsl__palette__primary-main); border: 1px solid var(--uxdsl__palette__primary-main); box-shadow: var(--uxdsl__surface__outlined-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast);
+.ecl-b--outlined-primary { padding: var(--uxdsl__surface__outlined-padding); border-radius: var(--uxdsl__surface__outlined-radius); background: transparent; color: var(--uxdsl__palette__primary-main); border: 1px solid var(--uxdsl__palette__primary-main); box-shadow: var(--uxdsl__surface__outlined-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast);
 }
 
 .ecl-b--outlined-primary:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__outlined-tone-primary-hover-color, var(--uxdsl__button__outlined-hover-color)); border: var(--uxdsl__button__outlined-tone-primary-hover-border, var(--uxdsl__button__outlined-hover-border)); }
@@ -2175,7 +2177,7 @@ input[type=range]::-moz-range-thumb:hover {
 
 .ecl-b--outlined-primary:disabled, .ecl-b--outlined-primary[aria-disabled="true"] { opacity: var(--uxdsl__button__outlined-tone-primary-disabled-opacity, var(--uxdsl__button__outlined-disabled-opacity)); cursor: var(--uxdsl__button__outlined-tone-primary-disabled-cursor, var(--uxdsl__button__outlined-disabled-cursor)); }
 
-.ecl-b--outlined-secondary { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: transparent; color: var(--uxdsl__palette__secondary-main); border: 1px solid var(--uxdsl__palette__secondary-main); box-shadow: var(--uxdsl__surface__outlined-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__secondary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__secondary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__secondary-contrast);
+.ecl-b--outlined-secondary { padding: var(--uxdsl__surface__outlined-padding); border-radius: var(--uxdsl__surface__outlined-radius); background: transparent; color: var(--uxdsl__palette__secondary-main); border: 1px solid var(--uxdsl__palette__secondary-main); box-shadow: var(--uxdsl__surface__outlined-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__secondary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__secondary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__secondary-contrast);
 }
 
 .ecl-b--outlined-secondary:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__outlined-tone-secondary-hover-color, var(--uxdsl__button__outlined-hover-color)); border: var(--uxdsl__button__outlined-tone-secondary-hover-border, var(--uxdsl__button__outlined-hover-border)); }
@@ -2186,7 +2188,7 @@ input[type=range]::-moz-range-thumb:hover {
 
 .ecl-b--outlined-secondary:disabled, .ecl-b--outlined-secondary[aria-disabled="true"] { opacity: var(--uxdsl__button__outlined-tone-secondary-disabled-opacity, var(--uxdsl__button__outlined-disabled-opacity)); cursor: var(--uxdsl__button__outlined-tone-secondary-disabled-cursor, var(--uxdsl__button__outlined-disabled-cursor)); }
 
-.ecl-b--outlined-tertiary { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: transparent; color: var(--uxdsl__palette__tertiary-main); border: 1px solid var(--uxdsl__palette__tertiary-main); box-shadow: var(--uxdsl__surface__outlined-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__tertiary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__tertiary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__tertiary-contrast);
+.ecl-b--outlined-tertiary { padding: var(--uxdsl__surface__outlined-padding); border-radius: var(--uxdsl__surface__outlined-radius); background: transparent; color: var(--uxdsl__palette__tertiary-main); border: 1px solid var(--uxdsl__palette__tertiary-main); box-shadow: var(--uxdsl__surface__outlined-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__tertiary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__tertiary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__tertiary-contrast);
 }
 
 .ecl-b--outlined-tertiary:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__outlined-tone-tertiary-hover-color, var(--uxdsl__button__outlined-hover-color)); border: var(--uxdsl__button__outlined-tone-tertiary-hover-border, var(--uxdsl__button__outlined-hover-border)); }
@@ -2197,7 +2199,7 @@ input[type=range]::-moz-range-thumb:hover {
 
 .ecl-b--outlined-tertiary:disabled, .ecl-b--outlined-tertiary[aria-disabled="true"] { opacity: var(--uxdsl__button__outlined-tone-tertiary-disabled-opacity, var(--uxdsl__button__outlined-disabled-opacity)); cursor: var(--uxdsl__button__outlined-tone-tertiary-disabled-cursor, var(--uxdsl__button__outlined-disabled-cursor)); }
 
-.ecl-b--outlined-success { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: transparent; color: var(--uxdsl__palette__success-main); border: 1px solid var(--uxdsl__palette__success-main); box-shadow: var(--uxdsl__surface__outlined-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__success-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__success-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__success-contrast);
+.ecl-b--outlined-success { padding: var(--uxdsl__surface__outlined-padding); border-radius: var(--uxdsl__surface__outlined-radius); background: transparent; color: var(--uxdsl__palette__success-main); border: 1px solid var(--uxdsl__palette__success-main); box-shadow: var(--uxdsl__surface__outlined-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__success-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__success-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__success-contrast);
 }
 
 .ecl-b--outlined-success:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__outlined-tone-success-hover-color, var(--uxdsl__button__outlined-hover-color)); border: var(--uxdsl__button__outlined-tone-success-hover-border, var(--uxdsl__button__outlined-hover-border)); }
@@ -2208,7 +2210,7 @@ input[type=range]::-moz-range-thumb:hover {
 
 .ecl-b--outlined-success:disabled, .ecl-b--outlined-success[aria-disabled="true"] { opacity: var(--uxdsl__button__outlined-tone-success-disabled-opacity, var(--uxdsl__button__outlined-disabled-opacity)); cursor: var(--uxdsl__button__outlined-tone-success-disabled-cursor, var(--uxdsl__button__outlined-disabled-cursor)); }
 
-.ecl-b--outlined-info { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: transparent; color: var(--uxdsl__palette__info-main); border: 1px solid var(--uxdsl__palette__info-main); box-shadow: var(--uxdsl__surface__outlined-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__info-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__info-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__info-contrast);
+.ecl-b--outlined-info { padding: var(--uxdsl__surface__outlined-padding); border-radius: var(--uxdsl__surface__outlined-radius); background: transparent; color: var(--uxdsl__palette__info-main); border: 1px solid var(--uxdsl__palette__info-main); box-shadow: var(--uxdsl__surface__outlined-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__info-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__info-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__info-contrast);
 }
 
 .ecl-b--outlined-info:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__outlined-tone-info-hover-color, var(--uxdsl__button__outlined-hover-color)); border: var(--uxdsl__button__outlined-tone-info-hover-border, var(--uxdsl__button__outlined-hover-border)); }
@@ -2219,7 +2221,7 @@ input[type=range]::-moz-range-thumb:hover {
 
 .ecl-b--outlined-info:disabled, .ecl-b--outlined-info[aria-disabled="true"] { opacity: var(--uxdsl__button__outlined-tone-info-disabled-opacity, var(--uxdsl__button__outlined-disabled-opacity)); cursor: var(--uxdsl__button__outlined-tone-info-disabled-cursor, var(--uxdsl__button__outlined-disabled-cursor)); }
 
-.ecl-b--outlined-warning { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: transparent; color: var(--uxdsl__palette__warning-main); border: 1px solid var(--uxdsl__palette__warning-main); box-shadow: var(--uxdsl__surface__outlined-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__warning-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__warning-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__warning-contrast);
+.ecl-b--outlined-warning { padding: var(--uxdsl__surface__outlined-padding); border-radius: var(--uxdsl__surface__outlined-radius); background: transparent; color: var(--uxdsl__palette__warning-main); border: 1px solid var(--uxdsl__palette__warning-main); box-shadow: var(--uxdsl__surface__outlined-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__warning-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__warning-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__warning-contrast);
 }
 
 .ecl-b--outlined-warning:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__outlined-tone-warning-hover-color, var(--uxdsl__button__outlined-hover-color)); border: var(--uxdsl__button__outlined-tone-warning-hover-border, var(--uxdsl__button__outlined-hover-border)); }
@@ -2230,7 +2232,7 @@ input[type=range]::-moz-range-thumb:hover {
 
 .ecl-b--outlined-warning:disabled, .ecl-b--outlined-warning[aria-disabled="true"] { opacity: var(--uxdsl__button__outlined-tone-warning-disabled-opacity, var(--uxdsl__button__outlined-disabled-opacity)); cursor: var(--uxdsl__button__outlined-tone-warning-disabled-cursor, var(--uxdsl__button__outlined-disabled-cursor)); }
 
-.ecl-b--outlined-error { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: transparent; color: var(--uxdsl__palette__error-main); border: 1px solid var(--uxdsl__palette__error-main); box-shadow: var(--uxdsl__surface__outlined-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__error-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__error-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__error-contrast);
+.ecl-b--outlined-error { padding: var(--uxdsl__surface__outlined-padding); border-radius: var(--uxdsl__surface__outlined-radius); background: transparent; color: var(--uxdsl__palette__error-main); border: 1px solid var(--uxdsl__palette__error-main); box-shadow: var(--uxdsl__surface__outlined-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__error-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__error-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__error-contrast);
 }
 
 .ecl-b--outlined-error:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__outlined-tone-error-hover-color, var(--uxdsl__button__outlined-hover-color)); border: var(--uxdsl__button__outlined-tone-error-hover-border, var(--uxdsl__button__outlined-hover-border)); }
@@ -2241,7 +2243,7 @@ input[type=range]::-moz-range-thumb:hover {
 
 .ecl-b--outlined-error:disabled, .ecl-b--outlined-error[aria-disabled="true"] { opacity: var(--uxdsl__button__outlined-tone-error-disabled-opacity, var(--uxdsl__button__outlined-disabled-opacity)); cursor: var(--uxdsl__button__outlined-tone-error-disabled-cursor, var(--uxdsl__button__outlined-disabled-cursor)); }
 
-.ecl-b--outlined-neutral { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: transparent; color: var(--uxdsl__palette__neutral-main); border: 1px solid var(--uxdsl__palette__neutral-main); box-shadow: var(--uxdsl__surface__outlined-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__neutral-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__neutral-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__neutral-contrast);
+.ecl-b--outlined-neutral { padding: var(--uxdsl__surface__outlined-padding); border-radius: var(--uxdsl__surface__outlined-radius); background: transparent; color: var(--uxdsl__palette__neutral-main); border: 1px solid var(--uxdsl__palette__neutral-main); box-shadow: var(--uxdsl__surface__outlined-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__neutral-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__neutral-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__neutral-contrast);
 }
 
 .ecl-b--outlined-neutral:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__outlined-tone-neutral-hover-color, var(--uxdsl__button__outlined-hover-color)); border: var(--uxdsl__button__outlined-tone-neutral-hover-border, var(--uxdsl__button__outlined-hover-border)); }
@@ -2252,7 +2254,7 @@ input[type=range]::-moz-range-thumb:hover {
 
 .ecl-b--outlined-neutral:disabled, .ecl-b--outlined-neutral[aria-disabled="true"] { opacity: var(--uxdsl__button__outlined-tone-neutral-disabled-opacity, var(--uxdsl__button__outlined-disabled-opacity)); cursor: var(--uxdsl__button__outlined-tone-neutral-disabled-cursor, var(--uxdsl__button__outlined-disabled-cursor)); }
 
-.ecl-b--outlined-dark { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: transparent; color: var(--uxdsl__palette__dark-main); border: 1px solid var(--uxdsl__palette__dark-main); box-shadow: var(--uxdsl__surface__outlined-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__dark-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__dark-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__dark-contrast);
+.ecl-b--outlined-dark { padding: var(--uxdsl__surface__outlined-padding); border-radius: var(--uxdsl__surface__outlined-radius); background: transparent; color: var(--uxdsl__palette__dark-main); border: 1px solid var(--uxdsl__palette__dark-main); box-shadow: var(--uxdsl__surface__outlined-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__dark-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__dark-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__dark-contrast);
 }
 
 .ecl-b--outlined-dark:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__outlined-tone-dark-hover-color, var(--uxdsl__button__outlined-hover-color)); border: var(--uxdsl__button__outlined-tone-dark-hover-border, var(--uxdsl__button__outlined-hover-border)); }
@@ -2263,7 +2265,7 @@ input[type=range]::-moz-range-thumb:hover {
 
 .ecl-b--outlined-dark:disabled, .ecl-b--outlined-dark[aria-disabled="true"] { opacity: var(--uxdsl__button__outlined-tone-dark-disabled-opacity, var(--uxdsl__button__outlined-disabled-opacity)); cursor: var(--uxdsl__button__outlined-tone-dark-disabled-cursor, var(--uxdsl__button__outlined-disabled-cursor)); }
 
-.ecl-b--outlined-light { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: transparent; color: var(--uxdsl__palette__light-main); border: 1px solid var(--uxdsl__palette__light-main); box-shadow: var(--uxdsl__surface__outlined-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__light-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__light-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__light-contrast);
+.ecl-b--outlined-light { padding: var(--uxdsl__surface__outlined-padding); border-radius: var(--uxdsl__surface__outlined-radius); background: transparent; color: var(--uxdsl__palette__light-main); border: 1px solid var(--uxdsl__palette__light-main); box-shadow: var(--uxdsl__surface__outlined-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__light-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__light-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__light-contrast);
 }
 
 .ecl-b--outlined-light:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__outlined-tone-light-hover-color, var(--uxdsl__button__outlined-hover-color)); border: var(--uxdsl__button__outlined-tone-light-hover-border, var(--uxdsl__button__outlined-hover-border)); }
@@ -2274,7 +2276,7 @@ input[type=range]::-moz-range-thumb:hover {
 
 .ecl-b--outlined-light:disabled, .ecl-b--outlined-light[aria-disabled="true"] { opacity: var(--uxdsl__button__outlined-tone-light-disabled-opacity, var(--uxdsl__button__outlined-disabled-opacity)); cursor: var(--uxdsl__button__outlined-tone-light-disabled-cursor, var(--uxdsl__button__outlined-disabled-cursor)); }
 
-.ecl-b--outlined-surface { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: transparent; color: var(--uxdsl__palette__surface-main); border: 1px solid var(--uxdsl__palette__surface-main); box-shadow: var(--uxdsl__surface__outlined-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__surface-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__surface-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__surface-contrast);
+.ecl-b--outlined-surface { padding: var(--uxdsl__surface__outlined-padding); border-radius: var(--uxdsl__surface__outlined-radius); background: transparent; color: var(--uxdsl__palette__surface-main); border: 1px solid var(--uxdsl__palette__surface-main); box-shadow: var(--uxdsl__surface__outlined-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__surface-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__surface-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__surface-contrast);
 }
 
 .ecl-b--outlined-surface:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__outlined-tone-surface-hover-color, var(--uxdsl__button__outlined-hover-color)); border: var(--uxdsl__button__outlined-tone-surface-hover-border, var(--uxdsl__button__outlined-hover-border)); }
@@ -2285,7 +2287,7 @@ input[type=range]::-moz-range-thumb:hover {
 
 .ecl-b--outlined-surface:disabled, .ecl-b--outlined-surface[aria-disabled="true"] { opacity: var(--uxdsl__button__outlined-tone-surface-disabled-opacity, var(--uxdsl__button__outlined-disabled-opacity)); cursor: var(--uxdsl__button__outlined-tone-surface-disabled-cursor, var(--uxdsl__button__outlined-disabled-cursor)); }
 
-.ecl-b--flat { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: var(--uxdsl__surface__flat-bg); color: var(--uxdsl__surface__flat-color); border: var(--uxdsl__surface__flat-border); box-shadow: var(--uxdsl__surface__flat-shadow);
+.ecl-b--flat { padding: var(--uxdsl__surface__flat-padding); border-radius: var(--uxdsl__surface__flat-radius); background: var(--uxdsl__surface__flat-bg); color: var(--uxdsl__surface__flat-color); border: var(--uxdsl__surface__flat-border); box-shadow: var(--uxdsl__surface__flat-shadow);
 }
 
 .ecl-b--flat:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__flat-hover-color); }
@@ -2296,7 +2298,7 @@ input[type=range]::-moz-range-thumb:hover {
 
 .ecl-b--flat:disabled, .ecl-b--flat[aria-disabled="true"] { opacity: var(--uxdsl__button__flat-disabled-opacity); cursor: var(--uxdsl__button__flat-disabled-cursor); }
 
-.ecl-b--flat-primary { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: transparent; color: var(--uxdsl__palette__primary-main); border: var(--uxdsl__surface__flat-border); box-shadow: var(--uxdsl__surface__flat-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast);
+.ecl-b--flat-primary { padding: var(--uxdsl__surface__flat-padding); border-radius: var(--uxdsl__surface__flat-radius); background: transparent; color: var(--uxdsl__palette__primary-main); border: var(--uxdsl__surface__flat-border); box-shadow: var(--uxdsl__surface__flat-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast);
 }
 
 .ecl-b--flat-primary:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__flat-tone-primary-hover-color, var(--uxdsl__button__flat-hover-color)); }
@@ -2307,7 +2309,7 @@ input[type=range]::-moz-range-thumb:hover {
 
 .ecl-b--flat-primary:disabled, .ecl-b--flat-primary[aria-disabled="true"] { opacity: var(--uxdsl__button__flat-tone-primary-disabled-opacity, var(--uxdsl__button__flat-disabled-opacity)); cursor: var(--uxdsl__button__flat-tone-primary-disabled-cursor, var(--uxdsl__button__flat-disabled-cursor)); }
 
-.ecl-b--flat-secondary { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: transparent; color: var(--uxdsl__palette__secondary-main); border: var(--uxdsl__surface__flat-border); box-shadow: var(--uxdsl__surface__flat-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__secondary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__secondary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__secondary-contrast);
+.ecl-b--flat-secondary { padding: var(--uxdsl__surface__flat-padding); border-radius: var(--uxdsl__surface__flat-radius); background: transparent; color: var(--uxdsl__palette__secondary-main); border: var(--uxdsl__surface__flat-border); box-shadow: var(--uxdsl__surface__flat-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__secondary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__secondary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__secondary-contrast);
 }
 
 .ecl-b--flat-secondary:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__flat-tone-secondary-hover-color, var(--uxdsl__button__flat-hover-color)); }
@@ -2318,7 +2320,7 @@ input[type=range]::-moz-range-thumb:hover {
 
 .ecl-b--flat-secondary:disabled, .ecl-b--flat-secondary[aria-disabled="true"] { opacity: var(--uxdsl__button__flat-tone-secondary-disabled-opacity, var(--uxdsl__button__flat-disabled-opacity)); cursor: var(--uxdsl__button__flat-tone-secondary-disabled-cursor, var(--uxdsl__button__flat-disabled-cursor)); }
 
-.ecl-b--flat-tertiary { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: transparent; color: var(--uxdsl__palette__tertiary-main); border: var(--uxdsl__surface__flat-border); box-shadow: var(--uxdsl__surface__flat-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__tertiary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__tertiary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__tertiary-contrast);
+.ecl-b--flat-tertiary { padding: var(--uxdsl__surface__flat-padding); border-radius: var(--uxdsl__surface__flat-radius); background: transparent; color: var(--uxdsl__palette__tertiary-main); border: var(--uxdsl__surface__flat-border); box-shadow: var(--uxdsl__surface__flat-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__tertiary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__tertiary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__tertiary-contrast);
 }
 
 .ecl-b--flat-tertiary:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__flat-tone-tertiary-hover-color, var(--uxdsl__button__flat-hover-color)); }
@@ -2329,7 +2331,7 @@ input[type=range]::-moz-range-thumb:hover {
 
 .ecl-b--flat-tertiary:disabled, .ecl-b--flat-tertiary[aria-disabled="true"] { opacity: var(--uxdsl__button__flat-tone-tertiary-disabled-opacity, var(--uxdsl__button__flat-disabled-opacity)); cursor: var(--uxdsl__button__flat-tone-tertiary-disabled-cursor, var(--uxdsl__button__flat-disabled-cursor)); }
 
-.ecl-b--flat-success { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: transparent; color: var(--uxdsl__palette__success-main); border: var(--uxdsl__surface__flat-border); box-shadow: var(--uxdsl__surface__flat-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__success-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__success-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__success-contrast);
+.ecl-b--flat-success { padding: var(--uxdsl__surface__flat-padding); border-radius: var(--uxdsl__surface__flat-radius); background: transparent; color: var(--uxdsl__palette__success-main); border: var(--uxdsl__surface__flat-border); box-shadow: var(--uxdsl__surface__flat-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__success-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__success-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__success-contrast);
 }
 
 .ecl-b--flat-success:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__flat-tone-success-hover-color, var(--uxdsl__button__flat-hover-color)); }
@@ -2340,7 +2342,7 @@ input[type=range]::-moz-range-thumb:hover {
 
 .ecl-b--flat-success:disabled, .ecl-b--flat-success[aria-disabled="true"] { opacity: var(--uxdsl__button__flat-tone-success-disabled-opacity, var(--uxdsl__button__flat-disabled-opacity)); cursor: var(--uxdsl__button__flat-tone-success-disabled-cursor, var(--uxdsl__button__flat-disabled-cursor)); }
 
-.ecl-b--flat-info { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: transparent; color: var(--uxdsl__palette__info-main); border: var(--uxdsl__surface__flat-border); box-shadow: var(--uxdsl__surface__flat-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__info-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__info-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__info-contrast);
+.ecl-b--flat-info { padding: var(--uxdsl__surface__flat-padding); border-radius: var(--uxdsl__surface__flat-radius); background: transparent; color: var(--uxdsl__palette__info-main); border: var(--uxdsl__surface__flat-border); box-shadow: var(--uxdsl__surface__flat-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__info-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__info-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__info-contrast);
 }
 
 .ecl-b--flat-info:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__flat-tone-info-hover-color, var(--uxdsl__button__flat-hover-color)); }
@@ -2351,7 +2353,7 @@ input[type=range]::-moz-range-thumb:hover {
 
 .ecl-b--flat-info:disabled, .ecl-b--flat-info[aria-disabled="true"] { opacity: var(--uxdsl__button__flat-tone-info-disabled-opacity, var(--uxdsl__button__flat-disabled-opacity)); cursor: var(--uxdsl__button__flat-tone-info-disabled-cursor, var(--uxdsl__button__flat-disabled-cursor)); }
 
-.ecl-b--flat-warning { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: transparent; color: var(--uxdsl__palette__warning-main); border: var(--uxdsl__surface__flat-border); box-shadow: var(--uxdsl__surface__flat-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__warning-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__warning-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__warning-contrast);
+.ecl-b--flat-warning { padding: var(--uxdsl__surface__flat-padding); border-radius: var(--uxdsl__surface__flat-radius); background: transparent; color: var(--uxdsl__palette__warning-main); border: var(--uxdsl__surface__flat-border); box-shadow: var(--uxdsl__surface__flat-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__warning-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__warning-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__warning-contrast);
 }
 
 .ecl-b--flat-warning:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__flat-tone-warning-hover-color, var(--uxdsl__button__flat-hover-color)); }
@@ -2362,7 +2364,7 @@ input[type=range]::-moz-range-thumb:hover {
 
 .ecl-b--flat-warning:disabled, .ecl-b--flat-warning[aria-disabled="true"] { opacity: var(--uxdsl__button__flat-tone-warning-disabled-opacity, var(--uxdsl__button__flat-disabled-opacity)); cursor: var(--uxdsl__button__flat-tone-warning-disabled-cursor, var(--uxdsl__button__flat-disabled-cursor)); }
 
-.ecl-b--flat-error { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: transparent; color: var(--uxdsl__palette__error-main); border: var(--uxdsl__surface__flat-border); box-shadow: var(--uxdsl__surface__flat-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__error-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__error-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__error-contrast);
+.ecl-b--flat-error { padding: var(--uxdsl__surface__flat-padding); border-radius: var(--uxdsl__surface__flat-radius); background: transparent; color: var(--uxdsl__palette__error-main); border: var(--uxdsl__surface__flat-border); box-shadow: var(--uxdsl__surface__flat-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__error-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__error-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__error-contrast);
 }
 
 .ecl-b--flat-error:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__flat-tone-error-hover-color, var(--uxdsl__button__flat-hover-color)); }
@@ -2373,7 +2375,7 @@ input[type=range]::-moz-range-thumb:hover {
 
 .ecl-b--flat-error:disabled, .ecl-b--flat-error[aria-disabled="true"] { opacity: var(--uxdsl__button__flat-tone-error-disabled-opacity, var(--uxdsl__button__flat-disabled-opacity)); cursor: var(--uxdsl__button__flat-tone-error-disabled-cursor, var(--uxdsl__button__flat-disabled-cursor)); }
 
-.ecl-b--flat-neutral { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: transparent; color: var(--uxdsl__palette__neutral-main); border: var(--uxdsl__surface__flat-border); box-shadow: var(--uxdsl__surface__flat-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__neutral-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__neutral-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__neutral-contrast);
+.ecl-b--flat-neutral { padding: var(--uxdsl__surface__flat-padding); border-radius: var(--uxdsl__surface__flat-radius); background: transparent; color: var(--uxdsl__palette__neutral-main); border: var(--uxdsl__surface__flat-border); box-shadow: var(--uxdsl__surface__flat-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__neutral-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__neutral-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__neutral-contrast);
 }
 
 .ecl-b--flat-neutral:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__flat-tone-neutral-hover-color, var(--uxdsl__button__flat-hover-color)); }
@@ -2384,7 +2386,7 @@ input[type=range]::-moz-range-thumb:hover {
 
 .ecl-b--flat-neutral:disabled, .ecl-b--flat-neutral[aria-disabled="true"] { opacity: var(--uxdsl__button__flat-tone-neutral-disabled-opacity, var(--uxdsl__button__flat-disabled-opacity)); cursor: var(--uxdsl__button__flat-tone-neutral-disabled-cursor, var(--uxdsl__button__flat-disabled-cursor)); }
 
-.ecl-b--flat-dark { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: transparent; color: var(--uxdsl__palette__dark-main); border: var(--uxdsl__surface__flat-border); box-shadow: var(--uxdsl__surface__flat-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__dark-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__dark-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__dark-contrast);
+.ecl-b--flat-dark { padding: var(--uxdsl__surface__flat-padding); border-radius: var(--uxdsl__surface__flat-radius); background: transparent; color: var(--uxdsl__palette__dark-main); border: var(--uxdsl__surface__flat-border); box-shadow: var(--uxdsl__surface__flat-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__dark-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__dark-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__dark-contrast);
 }
 
 .ecl-b--flat-dark:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__flat-tone-dark-hover-color, var(--uxdsl__button__flat-hover-color)); }
@@ -2395,7 +2397,7 @@ input[type=range]::-moz-range-thumb:hover {
 
 .ecl-b--flat-dark:disabled, .ecl-b--flat-dark[aria-disabled="true"] { opacity: var(--uxdsl__button__flat-tone-dark-disabled-opacity, var(--uxdsl__button__flat-disabled-opacity)); cursor: var(--uxdsl__button__flat-tone-dark-disabled-cursor, var(--uxdsl__button__flat-disabled-cursor)); }
 
-.ecl-b--flat-light { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: transparent; color: var(--uxdsl__palette__light-main); border: var(--uxdsl__surface__flat-border); box-shadow: var(--uxdsl__surface__flat-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__light-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__light-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__light-contrast);
+.ecl-b--flat-light { padding: var(--uxdsl__surface__flat-padding); border-radius: var(--uxdsl__surface__flat-radius); background: transparent; color: var(--uxdsl__palette__light-main); border: var(--uxdsl__surface__flat-border); box-shadow: var(--uxdsl__surface__flat-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__light-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__light-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__light-contrast);
 }
 
 .ecl-b--flat-light:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__flat-tone-light-hover-color, var(--uxdsl__button__flat-hover-color)); }
@@ -2406,7 +2408,7 @@ input[type=range]::-moz-range-thumb:hover {
 
 .ecl-b--flat-light:disabled, .ecl-b--flat-light[aria-disabled="true"] { opacity: var(--uxdsl__button__flat-tone-light-disabled-opacity, var(--uxdsl__button__flat-disabled-opacity)); cursor: var(--uxdsl__button__flat-tone-light-disabled-cursor, var(--uxdsl__button__flat-disabled-cursor)); }
 
-.ecl-b--flat-surface { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: transparent; color: var(--uxdsl__palette__surface-main); border: var(--uxdsl__surface__flat-border); box-shadow: var(--uxdsl__surface__flat-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__surface-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__surface-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__surface-contrast);
+.ecl-b--flat-surface { padding: var(--uxdsl__surface__flat-padding); border-radius: var(--uxdsl__surface__flat-radius); background: transparent; color: var(--uxdsl__palette__surface-main); border: var(--uxdsl__surface__flat-border); box-shadow: var(--uxdsl__surface__flat-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__surface-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__surface-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__surface-contrast);
 }
 
 .ecl-b--flat-surface:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__flat-tone-surface-hover-color, var(--uxdsl__button__flat-hover-color)); }
