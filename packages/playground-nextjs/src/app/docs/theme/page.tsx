@@ -143,8 +143,9 @@ export default function DocsThemePage() {
         <h2 id="editor">Live theme handler</h2>
         <p>
           The theme this site is showing, to edit live. Every tab writes the same theme through <code>applyTheme</code>, so the page and
-          the other tabs follow at once; a change of structure is refused. Nothing is saved to a file: copy the JSON, or export it, into
-          your <code>uxdsl.theme.json</code>.
+          the other tabs follow at once; a change of structure is refused. Nothing is saved for you: above the tabs, download the result
+          as your <code>uxdsl.theme.json</code>, with only what differs from the base theme (the breakpoints you previewed included), or
+          the whole theme. Put it next to <code>uxdsl.config.cjs</code> and rebuild.
         </p>
         <p>
           On top, a showcase: a menu, a hero and news cards styled with UXDSL alone. Every edit below shows there first, and its

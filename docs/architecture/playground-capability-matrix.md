@@ -216,7 +216,7 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | `./schema/theme.schema.json` | live | live | `uxdsl.theme.green.json` |
 | `./theme` | live | live | `src/app/docs/language/page.tsx`, `src/app/docs/theme/page.tsx`, `src/components/agent-guides/BreakpointGuide.tsx` |
 | `./theme/base.contrast-exceptions.json` | live | live | `src/components/ContrastReport.tsx` |
-| `./theme/base.json` | live | live | `src/app/docs/theme/page.tsx`, `themes.js` |
+| `./theme/base.json` | live | live | `src/app/docs/theme/page.tsx`, `src/lib/theme-download.js`, `themes.js` |
 | `./vite` | live | live | `fixtures/vite-adapter/run.js` |
 | `./webpack` | live | live | `fixtures/webpack-adapter/run.js` |
 
