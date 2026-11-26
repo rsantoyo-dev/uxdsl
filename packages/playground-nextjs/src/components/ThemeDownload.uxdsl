@@ -1,0 +1,56 @@
+/* The Live theme handler's download bar (ThemeDownload.tsx): the theme on the page as a
+   uxdsl.theme.json. Every value is a UXDSL token, role or directive; the literals left are
+   layout (flex). */
+
+.tdl {
+  @ds-surface(outlined primary 3);
+
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: density(3);
+}
+
+.tdl__text {
+  display: flex;
+  flex-direction: column;
+  gap: density(1);
+  min-width: 0;
+}
+
+.tdl__title {
+  @ds-typo(body);
+
+  color: palette(text.primary);
+  font-weight: 600;
+}
+
+.tdl__hint {
+  @ds-typo(caption);
+
+  color: palette(text.secondary);
+}
+
+.tdl__code {
+  font-family: var(--uxdsl__font__code, monospace);
+}
+
+.tdl__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: density(2);
+}
+
+.tdl__button {
+  @ds-button(outlined 2);
+  @ds-typo(body-sm);
+
+  display: inline-flex;
+  align-items: center;
+  gap: density(2);
+}
+
+.tdl__button--primary {
+  @ds-button(contained primary 2);
+}

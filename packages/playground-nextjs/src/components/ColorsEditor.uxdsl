@@ -1,0 +1,121 @@
+/* The Colors editor of the Live theme handler (/docs/theme). Every value is a UXDSL token,
+   role or directive; the literals left are layout (grid, flex). */
+
+.cle__hint {
+  @ds-typo(caption);
+
+  color: palette(text.secondary);
+}
+
+.cle {
+  display: grid;
+  grid-template-columns: xs(minmax(0, 1fr)) lg(minmax(0, 1fr) minmax(0, 1fr));
+  gap: density(4);
+}
+
+/* The chosen shade: its value and what follows it. */
+.cle__editor {
+  display: flex;
+  flex-direction: column;
+  gap: density(3);
+  min-width: 0;
+}
+
+.cle__written {
+  @ds-typo(code);
+
+  overflow-wrap: anywhere;
+}
+
+.cle__inputs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: density(3);
+}
+
+.cle__picker {
+  width: space(12);
+  height: space(12);
+  padding: density(0);
+  border: border(1);
+  border-radius: radius(2);
+  background: transparent;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: space(1) solid palette(primary.main);
+    outline-offset: space(1);
+  }
+}
+
+.cle__field {
+  @ds-typo(body-sm);
+
+  display: flex;
+  flex-direction: column;
+  gap: density(1);
+}
+
+.cle__text {
+  @ds-input(outlined);
+  @ds-typo(code);
+
+  max-width: space(16);
+}
+
+.cle__error {
+  @ds-typo(caption);
+
+  color: palette(error.main);
+}
+
+.cle__followers {
+  @ds-surface(outlined radius(2));
+
+  display: flex;
+  flex-direction: column;
+  gap: density(2);
+}
+
+.cle__title {
+  @ds-typo(body-sm);
+}
+
+.cle__group {
+  display: flex;
+  flex-direction: column;
+  gap: density(1);
+}
+
+.cle__group-name {
+  @ds-typo(subtitle2);
+}
+
+.cle__now {
+  @ds-typo(caption);
+
+  color: palette(text.secondary);
+}
+
+.cle__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: density(1);
+  margin: 0;
+  padding: density(0);
+  list-style: none;
+}
+
+.cle__item {
+  @ds-surface(contained light radius(1));
+  @ds-typo(caption);
+
+  display: inline-flex;
+  gap: density(1);
+  padding: density(1) density(2);
+}
+
+.cle__via {
+  color: palette(text.secondary);
+}

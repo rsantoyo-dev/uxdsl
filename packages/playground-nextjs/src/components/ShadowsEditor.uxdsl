@@ -1,0 +1,238 @@
+/* The Shadows editor of the Live theme handler (/docs/theme). Every value is a UXDSL token,
+   role or directive; the literals left are layout (grid, flex). */
+
+/* One class per token of the base theme, so every tile is shadow(n) itself. */
+@for $n from 0 through 5 {
+  .esh-shadow--#{$n} {
+    box-shadow: shadow(#{$n});
+  }
+
+  /* The chosen token on real components, after their directive. */
+  .esh__samples .esh-s--#{$n} {
+    box-shadow: shadow(#{$n});
+  }
+}
+
+.esh__hint,
+.esh__note,
+.esh__value {
+  @ds-typo(caption);
+
+  color: palette(text.secondary);
+}
+
+.esh {
+  display: grid;
+  grid-template-columns: xs(minmax(0, 1fr)) lg(minmax(0, 3fr) minmax(0, 2fr));
+  gap: density(4);
+}
+
+.esh__preview,
+.esh__editor {
+  display: flex;
+  flex-direction: column;
+  gap: density(3);
+  min-width: 0;
+}
+
+/* Every token, live, on a lighter canvas so a soft shadow still shows. */
+.esh__gallery {
+  @ds-surface(contained light radius(3));
+
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(space(14), 1fr));
+  gap: density(3);
+}
+
+.esh__tile {
+  @ds-button(flat 2);
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: density(2);
+
+  &.is-selected {
+    color: palette(primary.main);
+  }
+}
+
+.esh__box {
+  width: space(13);
+  height: space(12);
+  border-radius: radius(2);
+  background: palette(surface.main);
+}
+
+.esh__tile.is-selected .esh__box {
+  outline: border(2);
+  outline-color: palette(primary.main);
+  outline-offset: space(2);
+}
+
+.esh__tile-name,
+.esh__written,
+.esh__part {
+  @ds-typo(code);
+}
+
+.esh__stage {
+  @ds-surface(contained light radius(3));
+
+  display: flex;
+  flex-direction: column;
+  gap: density(3);
+}
+
+.esh__stage-label {
+  @ds-typo(code);
+
+  color: palette(primary.main);
+}
+
+.esh__samples {
+  display: grid;
+  grid-template-columns: xs(minmax(0, 1fr)) md(minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr));
+  align-items: center;
+  gap: density(4);
+}
+
+.esh__card {
+  @ds-surface(contained);
+
+  display: flex;
+  flex-direction: column;
+  gap: density(1);
+}
+
+.esh__card-title {
+  @ds-typo(code);
+}
+
+.esh__card-text {
+  @ds-typo(body-sm);
+}
+
+.esh__button {
+  @ds-button(contained primary 2);
+}
+
+.esh__menu {
+  @ds-surface(contained);
+  @ds-typo(body-sm);
+
+  display: flex;
+  flex-direction: column;
+  gap: density(1);
+  margin: density(0);
+  list-style: none;
+}
+
+/* The breakpoint being edited. */
+.esh__bps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: density(1);
+}
+
+.esh__bp {
+  @ds-button(outlined 1);
+  @ds-typo(code);
+
+  &.is-written {
+    font-weight: 700;
+  }
+}
+
+.esh__kept,
+.esh__layers,
+.esh__definition,
+.esh__consumers {
+  display: flex;
+  flex-direction: column;
+  gap: density(2);
+}
+
+.esh__layer {
+  @ds-surface(outlined radius(2));
+
+  display: flex;
+  flex-direction: column;
+  gap: density(1);
+}
+
+.esh__layer-head {
+  display: flex;
+  align-items: center;
+  gap: density(3);
+}
+
+.esh__title {
+  @ds-typo(subtitle2);
+}
+
+.esh__check {
+  @ds-typo(body-sm);
+
+  display: inline-flex;
+  align-items: center;
+  gap: density(1);
+}
+
+.esh__remove {
+  @ds-button(flat error 1);
+
+  margin-inline-start: auto;
+}
+
+.esh__length {
+  display: grid;
+  grid-template-columns: space(11) minmax(0, 1fr) space(12);
+  align-items: center;
+  gap: density(2);
+}
+
+.esh__range {
+  width: 100%;
+  accent-color: palette(primary.main);
+}
+
+.esh__text,
+.esh__def {
+  @ds-input(outlined);
+  @ds-typo(code);
+
+  min-width: 0;
+}
+
+.esh__color {
+  grid-column: span 2;
+}
+
+.esh__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: density(2);
+}
+
+.esh__action {
+  @ds-button(outlined primary 1);
+
+  align-self: flex-start;
+}
+
+.esh__error {
+  @ds-typo(caption);
+
+  color: palette(error.main);
+}
+
+.esh__list {
+  @ds-typo(body-sm);
+
+  display: flex;
+  flex-direction: column;
+  gap: density(0);
+  margin: density(0);
+  padding-inline-start: density(4);
+}

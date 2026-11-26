@@ -3,9 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTheme } from './ThemeContext'
 import { InteractiveDemoContainer } from './InteractiveDemoContainer'
+import ColorCollection from './ColorCollection'
 import {
   classifyValue,
-  colorRows,
   paletteFor,
   isInherited,
   roleGroups,
@@ -13,7 +13,6 @@ import {
   wouldCycle,
   patchFor,
   pathFor,
-  colorVar,
   contrastRatio,
   toHex6,
   PICKER_FALLBACK,
@@ -125,7 +124,6 @@ export default function PaletteFamilyEditor({ defaultFamily = 'primary' }: { def
     if (next !== mode) toggleDarkMode()
   }
 
-  const rows = useMemo(() => colorRows(activeThemeData?.colors), [activeThemeData])
   const groups = useMemo(() => roleGroups(palette), [palette])
   const inherited = mode === 'dark' && isInherited(activeThemeData, family, variant)
 
@@ -220,32 +218,12 @@ export default function PaletteFamilyEditor({ defaultFamily = 'primary' }: { def
           <p className="pfe__hint">{SOURCES.find((s) => s.id === source)?.hint}</p>
 
           {source === 'collection' && (
-            <div className="pfe__collection">
-              {rows.map((row: { family: string; swatches: Array<{ key: string; label: string }> }) => (
-                <div key={row.family} className="pfe__row">
-                  <span className="pfe__row-name">{row.family}</span>
-                  <div className="pfe__row-swatches">
-                    {row.swatches.map((swatch) => {
-                      const selected = classified.source === 'collection' && classified.key === swatch.key
-                      return (
-                        <button
-                          key={swatch.key}
-                          type="button"
-                          className="pfe__chip"
-                          aria-pressed={selected}
-                          aria-label={`color(${swatch.key})`}
-                          title={`color(${swatch.key})`}
-                          // The collection is the active theme's, colors added in the JSON tab included,
-                          // so a chip cannot be a class written ahead of time.
-                          style={{ background: colorVar(swatch.key) }}
-                          onClick={() => write(`color(${swatch.key})`)}
-                        />
-                      )
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
+            <ColorCollection
+              colors={activeThemeData?.colors}
+              selectedKey={classified.source === 'collection' ? classified.key : null}
+              onPick={(key) => write(`color(${key})`)}
+              label="Color collection"
+            />
           )}
 
           {source === 'role' && (

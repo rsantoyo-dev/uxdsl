@@ -143,17 +143,23 @@ export default function DocsThemePage() {
         <h2 id="editor">Live theme handler</h2>
         <p>
           The theme this site is showing, to edit live. Every tab writes the same theme through <code>applyTheme</code>, so the page and
-          the other tabs follow at once; a change of structure is refused. Nothing is saved to a file: copy the JSON, or export it, into
-          your <code>uxdsl.theme.json</code>.
+          the other tabs follow at once; a change of structure is refused. Nothing is saved for you: above the tabs, download the result
+          as your <code>uxdsl.theme.json</code>, with only what differs from the base theme (the breakpoints you previewed included), or
+          the whole theme. Put it next to <code>uxdsl.config.cjs</code> and rebuild.
         </p>
         <p>
           On top, a showcase: a menu, a hero and news cards styled with UXDSL alone. Every edit below shows there first, and its
           layout changes at <code>md</code> like any component built with the theme.
         </p>
         <ul>
-          <li><strong>Palette</strong>: choose a role (primary, secondary, surface…), then pick each of its variants from the color collection (<code>color(purple.700)</code>), link it to another role (<code>palette(secondary.main)</code>) or give it a color of its own. The Light/Dark switch edits <code>palette</code> or <code>modes.dark.palette</code>.</li>
+          <li><strong>Colors / Palette</strong>: first the color collection (<code>colors</code>): pick a shade, change its value, and see every Palette role that follows it, in light and dark mode, including the roles linked to those with <code>palette(…)</code>. Below it, the Palette: choose a role (primary, secondary, surface…), then pick each of its variants from the color collection (<code>color(purple.700)</code>), link it to another role (<code>palette(secondary.main)</code>) or give it a color of its own. The Light/Dark switch edits <code>palette</code> or <code>modes.dark.palette</code>.</li>
           <li><strong>Breakpoints</strong>: slide sm, md, lg and xl and the page switches at the new widths. It is a preview: the theme cannot move a breakpoint at run time, so it moves this page’s compiled media rules and gives you the JSON for your theme file.</li>
           <li><strong>Spacing / Density</strong>: the spacing scale as squares of their size: change a step and see everything that names it, densities first, which move with it. Below, pick a Density token and see what it gives at each breakpoint, as squares around the same content; set its spacing step per breakpoint, or write its definition, and a live example uses it as padding and gap.</li>
+          <li><strong>Typography</strong>: pick a text role and see it live at your width, its font size at every breakpoint (a <code>space()</code> step per breakpoint), and every field it emits, its own or the ones it takes from <code>default</code>, to change in place. Choose the fonts of <code>fonts.families</code> from Google Fonts. The whole scale below follows each edit.</li>
+          <li><strong>Borders / Radii</strong>: every <code>border(n)</code> and <code>radius(n)</code> token drawn live, and the chosen one on a card, a button and a field. Set it per breakpoint: a Border's width, style and color, a Radius's size. The list of theme values that name it shows who follows.</li>
+          <li><strong>Shadows</strong>: every <code>shadow(n)</code> drawn live, and the chosen one on a card, a button and a menu. Edit its layers at any breakpoint: offsets, blur and spread with sliders, the color as a token or any CSS color, inset, a layer added or removed.</li>
+          <li><strong>Surfaces</strong>: the six fields of each container role (padding, corners, background, text, border, shadow), every role drawn live in the tone you choose, and the Button and Input roles built on it.</li>
+          <li><strong>Buttons / Inputs</strong>: the Surface a control role composes, the base fields it sets over it, and every state (hover, focus, selected, readonly, invalid, disabled), shown at once in the tone you choose. A value applies live; a field or a state the role does not emit yet is refused with the reason, since only a rebuild compiles it.</li>
           <li><strong>JSON</strong>: the whole active theme as a tree: expand a family, edit a value in place, and the editor checks it against the packaged schema as you type. Text and table views are in its menu.</li>
         </ul>
       </div>

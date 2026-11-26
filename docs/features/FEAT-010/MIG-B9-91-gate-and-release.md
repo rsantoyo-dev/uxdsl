@@ -365,7 +365,11 @@ may override any of them.
 
 1. **Tarball headroom (257 bytes).** (a): the 300 KB budget stays; no
    package README text in beta.9; the root `README.md` carries the status
-   line; if `--check-pack` fails, stop and ask.
+   line; if `--check-pack` fails, stop and ask. **2026-11-26, the owner:**
+   the check failed (#107 at 301.2 KB, #120 at 300.6 KB, `feat/beta9` at its
+   edge); the budget is raised to 320 KB (`PACK_BUDGETS_KB.uxdsl` in
+   `scripts/release.js`). The 300 KB figures recorded below are the evidence
+   of their own commits.
 2. **`UX-10`'s basis (decision 26 of 2026-11-15, decision 53 of
    2026-11-23).** (a): after the 200-block warm-up, 400 and 800 blocks are
    compiled interleaved for 5 rounds, the order alternating; the verdict is
