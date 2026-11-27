@@ -3,6 +3,8 @@
 
 /* One fill and one ink class per Palette family and variant of the base theme, so the
    editor shows any variant through palette() rather than an inline style. */
+@use 'sass:list';
+
 $pfe-palette: (
   primary: (main, light, dark, contrast),
   secondary: (main, light, dark, contrast),
@@ -28,6 +30,13 @@ $pfe-palette: (
 
     .pfe-ink--#{$family}-#{$variant} {
       color: palette(#{$family}.#{$variant});
+    }
+  }
+
+  /* The badge of "Use it in your project": the role's main at 15%. */
+  @if list.index($variants, main) {
+    .pfe-tint--#{$family} {
+      background: palette(#{$family}.main, 0.15);
     }
   }
 }

@@ -5,3 +5,16 @@
   flex-direction: column;
   gap: density(4);
 }
+
+/* The quick looks and the download, above the tabs. */
+.lth__bar {
+  display: flex;
+  flex-direction: column;
+  gap: density(3);
+  margin-bottom: density(4);
+}
+
+.lth__tab {
+  display: flex;
+  flex-direction: column;
+}

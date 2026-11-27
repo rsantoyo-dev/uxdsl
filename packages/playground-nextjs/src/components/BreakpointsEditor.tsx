@@ -5,6 +5,8 @@ import { Copy, RefreshCcw } from 'lucide-react'
 import { useBreakpoints, type Breakpoints } from './BreakpointsProvider'
 import { InteractiveDemoContainer } from './InteractiveDemoContainer'
 import { checkPreview, changedBreakpoints } from '../lib/breakpoint-preview'
+import UsageExample, { jsonBlock, Result } from './UsageExample'
+import { breakpointsUsage } from '../lib/usage-snippets'
 
 // Every slider shares one scale, so the thumbs line up like a ruler of the breakpoints.
 const SCALE_MAX = 1920
@@ -73,6 +75,9 @@ export default function BreakpointsEditor() {
 
   const active = viewport === null ? null : activeAt(breakpoints, viewport)
 
+  const usage = breakpointsUsage(breakpoints)
+  // The breakpoint the example's layout follows at this window: column below md, row from md.
+  const rowFrom = breakpoints.md
   return (
     <InteractiveDemoContainer
       title="Breakpoints"
@@ -160,6 +165,18 @@ export default function BreakpointsEditor() {
           the compiled widths.
         </p>
       </div>
+      <UsageExample
+        note={<>The component says what changes and where (<code>xs(column) md(row)</code>, <code>@media (--lg)</code>); the theme says the widths. Move md above and this layout switches at the new width{viewport !== null ? <>; your window is {viewport}px, so it is a {viewport >= rowFrom ? 'row' : 'column'} now</> : null}.</>}
+        blocks={[{ label: 'In a stylesheet (.uxdsl)', code: usage.stylesheet }, jsonBlock(usage.excerpt)]}
+      >
+        <Result label=".layout" wide>
+          <div className="bpe-demo">
+            <div className="bpe-demo__item">One</div>
+            <div className="bpe-demo__item">Two</div>
+            <div className="bpe-demo__item">Three</div>
+          </div>
+        </Result>
+      </UsageExample>
     </InteractiveDemoContainer>
   )
 }
