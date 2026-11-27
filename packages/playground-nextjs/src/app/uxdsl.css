@@ -6922,6 +6922,10 @@ input[type=range]::-moz-range-thumb:hover {
   vertical-align: top;
 }
 
+.doc-section__table-wrap td:first-child > a > code {
+  white-space: nowrap;
+}
+
 .demo-disclosure {
   margin-block: var(--uxdsl__density__4);
   border: var(--uxdsl__border__1);

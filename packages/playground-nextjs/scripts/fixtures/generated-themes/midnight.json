@@ -1,0 +1,245 @@
+{
+  "name": "Midnight Reverie",
+  "backgroundImage": "dark starry night sky with a soft nebula, serene and mysterious",
+  "fonts": {
+    "google": [
+      "Montserrat:wght@300;400;500;600;700",
+      "Playfair Display:wght@400;700",
+      "JetBrains Mono:wght@400"
+    ],
+    "families": {
+      "ui": "Montserrat, sans-serif",
+      "code": "JetBrains Mono, monospace"
+    }
+  },
+  "typography_details": {
+    "h1": {
+      "fontSize": "xs(2.8rem) sm(3.5rem) md(4.5rem) lg(5.5rem) xl(6rem)",
+      "lineHeight": "1.2",
+      "letterSpacing": "-0.03em",
+      "fontWeight": "700",
+      "fontFamily": "Playfair Display, serif"
+    },
+    "h2": {
+      "fontSize": "xs(2.2rem) sm(2.8rem) md(3.5rem) lg(4rem) xl(4.5rem)",
+      "lineHeight": "1.25",
+      "letterSpacing": "-0.02em",
+      "fontWeight": "700",
+      "fontFamily": "Playfair Display, serif"
+    },
+    "h3": {
+      "fontSize": "xs(1.8rem) sm(2.2rem) md(2.8rem) lg(3.2rem) xl(3.5rem)",
+      "lineHeight": "1.2",
+      "letterSpacing": "-0.01em",
+      "fontWeight": "600",
+      "fontFamily": "Montserrat, sans-serif"
+    },
+    "h4": {
+      "fontSize": "xs(1.5rem) sm(1.8rem) md(2.2rem) lg(2.5rem) xl(2.8rem)",
+      "lineHeight": "1.2",
+      "letterSpacing": "normal",
+      "fontWeight": "600",
+      "fontFamily": "Montserrat, sans-serif"
+    },
+    "h5": {
+      "fontSize": "xs(1.2rem) sm(1.4rem) md(1.6rem) lg(1.8rem) xl(2rem)",
+      "lineHeight": "1.3",
+      "letterSpacing": "normal",
+      "fontWeight": "500",
+      "fontFamily": "Montserrat, sans-serif"
+    },
+    "h6": {
+      "fontSize": "xs(1.1rem) sm(1.2rem) md(1.3rem) lg(1.4rem) xl(1.5rem)",
+      "lineHeight": "1.3",
+      "letterSpacing": "normal",
+      "fontWeight": "500",
+      "fontFamily": "Montserrat, sans-serif"
+    },
+    "p": {
+      "fontSize": "xs(1rem) sm(1.05rem) md(1.1rem) lg(1.15rem) xl(1.2rem)",
+      "lineHeight": "1.6",
+      "letterSpacing": "normal",
+      "fontWeight": "400",
+      "fontFamily": "Montserrat, sans-serif"
+    },
+    "body": {
+      "fontSize": "xs(1rem) sm(1rem) md(1.05rem) lg(1.1rem) xl(1.1rem)",
+      "lineHeight": "1.5",
+      "letterSpacing": "normal",
+      "fontWeight": "400",
+      "fontFamily": "Montserrat, sans-serif"
+    },
+    "caption": {
+      "fontSize": "xs(0.85rem) sm(0.9rem) md(0.95rem) lg(1rem) xl(1rem)",
+      "lineHeight": "1.4",
+      "letterSpacing": "0.05em",
+      "fontWeight": "300",
+      "fontFamily": "Montserrat, sans-serif"
+    }
+  },
+  "breakpoints": {
+    "xs": 0,
+    "sm": 480,
+    "md": 768,
+    "lg": 1024,
+    "xl": 1280
+  },
+  "palette": {
+    "primary": {
+      "main": "#1A237E",
+      "light": "#534BAE",
+      "dark": "#000051",
+      "contrast": "#FFFFFF"
+    },
+    "secondary": {
+      "main": "#B0BEC5",
+      "light": "#E2F1F8",
+      "dark": "#808E95",
+      "contrast": "#1A237E"
+    },
+    "surface": {
+      "main": "#121212",
+      "light": "#3A3A3A",
+      "dark": "#000000",
+      "contrast": "#E0E0E0"
+    },
+    "tertiary": {
+      "main": "#4A148C",
+      "light": "#7C43BD",
+      "dark": "#12005E",
+      "contrast": "#FFFFFF"
+    },
+    "success": {
+      "main": "#66BB6A",
+      "light": "#98EE99",
+      "dark": "#338A3E",
+      "contrast": "#000000"
+    },
+    "info": {
+      "main": "#29B6F6",
+      "light": "#73E8FF",
+      "dark": "#0086C3",
+      "contrast": "#000000"
+    },
+    "warning": {
+      "main": "#FFA726",
+      "light": "#FFD95B",
+      "dark": "#C77800",
+      "contrast": "#000000"
+    },
+    "error": {
+      "main": "#EF5350",
+      "light": "#FF867C",
+      "dark": "#B61A22",
+      "contrast": "#FFFFFF"
+    },
+    "dark": {
+      "main": "#000000",
+      "light": "#212121",
+      "dark": "#000000",
+      "contrast": "#FFFFFF"
+    },
+    "neutral": {
+      "main": "#9E9E9E",
+      "light": "#EEEEEE",
+      "dark": "#616161",
+      "contrast": "#FFFFFF"
+    },
+    "light": {
+      "main": "#E0E0E0",
+      "light": "#FFFFFF",
+      "dark": "#BDBDBD",
+      "contrast": "#000000"
+    }
+  },
+  "modes": {
+    "dark": {
+      "palette": {
+        "primary": {
+          "main": "#1A237E",
+          "light": "#534BAE",
+          "dark": "#000051",
+          "contrast": "#FFFFFF"
+        },
+        "secondary": {
+          "main": "#B0BEC5",
+          "light": "#E2F1F8",
+          "dark": "#808E95",
+          "contrast": "#1A237E"
+        },
+        "surface": {
+          "main": "#0A0A0A",
+          "light": "#212121",
+          "dark": "#000000",
+          "contrast": "#F0F0F0"
+        },
+        "neutral": {
+          "main": "#8C8C8C",
+          "light": "#CCCCCC",
+          "dark": "#505050",
+          "contrast": "#FFFFFF"
+        },
+        "tertiary": {
+          "main": "#4A148C",
+          "light": "#7C43BD",
+          "dark": "#12005E",
+          "contrast": "#FFFFFF"
+        },
+        "success": {
+          "main": "#66BB6A",
+          "light": "#98EE99",
+          "dark": "#338A3E",
+          "contrast": "#000000"
+        },
+        "info": {
+          "main": "#29B6F6",
+          "light": "#73E8FF",
+          "dark": "#0086C3",
+          "contrast": "#000000"
+        },
+        "warning": {
+          "main": "#FFA726",
+          "light": "#FFD95B",
+          "dark": "#C77800",
+          "contrast": "#000000"
+        },
+        "error": {
+          "main": "#EF5350",
+          "light": "#FF867C",
+          "dark": "#B61A22",
+          "contrast": "#FFFFFF"
+        },
+        "light": {
+          "main": "#E0E0E0",
+          "light": "#FFFFFF",
+          "dark": "#BDBDBD",
+          "contrast": "#000000"
+        },
+        "dark": {
+          "main": "#000000",
+          "light": "#212121",
+          "dark": "#000000",
+          "contrast": "#FFFFFF"
+        }
+      }
+    }
+  },
+  "spacing": {
+    "1": "0.25rem",
+    "2": "0.5rem",
+    "3": "0.75rem",
+    "4": "1rem",
+    "5": "1.25rem",
+    "6": "1.5rem",
+    "7": "1.75rem",
+    "8": "2rem",
+    "9": "2.25rem",
+    "10": "2.5rem",
+    "11": "2.75rem",
+    "12": "3rem",
+    "13": "3.25rem",
+    "14": "3.5rem",
+    "15": "3.75rem",
+    "16": "4rem"
+  }
+}

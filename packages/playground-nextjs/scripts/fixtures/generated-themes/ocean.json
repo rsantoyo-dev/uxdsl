@@ -1,0 +1,244 @@
+{
+  "name": "Ocean Breeze",
+  "backgroundImage": "Serene underwater view with coral reefs and sunlight filtering through the surface",
+  "fonts": {
+    "google": [
+      "Lato:wght@300;400;700",
+      "Roboto Mono:wght@400;700"
+    ],
+    "families": {
+      "ui": "Lato, sans-serif",
+      "code": "Roboto Mono, monospace"
+    }
+  },
+  "typography_details": {
+    "h1": {
+      "fontSize": "xs(space(10)) sm(space(12)) md(space(14)) lg(space(16))",
+      "lineHeight": "1.2",
+      "letterSpacing": "-0.02em",
+      "fontWeight": "700",
+      "fontFamily": "Lato, sans-serif"
+    },
+    "h2": {
+      "fontSize": "xs(space(8)) sm(space(10)) md(space(12)) lg(space(14))",
+      "lineHeight": "1.2",
+      "letterSpacing": "-0.02em",
+      "fontWeight": "700",
+      "fontFamily": "Lato, sans-serif"
+    },
+    "h3": {
+      "fontSize": "xs(space(6)) sm(space(8)) md(space(10)) lg(space(12))",
+      "lineHeight": "1.2",
+      "letterSpacing": "-0.01em",
+      "fontWeight": "700",
+      "fontFamily": "Lato, sans-serif"
+    },
+    "h4": {
+      "fontSize": "xs(space(5)) sm(space(6)) md(space(8)) lg(space(10))",
+      "lineHeight": "1.2",
+      "letterSpacing": "0em",
+      "fontWeight": "400",
+      "fontFamily": "Lato, sans-serif"
+    },
+    "h5": {
+      "fontSize": "xs(space(4)) sm(space(5)) md(space(6)) lg(space(8))",
+      "lineHeight": "1.2",
+      "letterSpacing": "0em",
+      "fontWeight": "400",
+      "fontFamily": "Lato, sans-serif"
+    },
+    "h6": {
+      "fontSize": "xs(space(3)) sm(space(4)) md(space(5)) lg(space(6))",
+      "lineHeight": "1.2",
+      "letterSpacing": "0em",
+      "fontWeight": "300",
+      "fontFamily": "Lato, sans-serif"
+    },
+    "p": {
+      "fontSize": "xs(space(3.5)) sm(space(4)) md(space(4.5)) lg(space(5))",
+      "lineHeight": "1.5",
+      "letterSpacing": "0em",
+      "fontWeight": "400",
+      "fontFamily": "Lato, sans-serif"
+    },
+    "body": {
+      "fontSize": "xs(space(3.5)) sm(space(4)) md(space(4.5)) lg(space(5))",
+      "lineHeight": "1.5",
+      "letterSpacing": "0em",
+      "fontWeight": "400",
+      "fontFamily": "Lato, sans-serif"
+    },
+    "caption": {
+      "fontSize": "xs(space(2.5)) sm(space(3)) md(space(3.5)) lg(space(4))",
+      "lineHeight": "1.5",
+      "letterSpacing": "0em",
+      "fontWeight": "400",
+      "fontFamily": "Lato, sans-serif"
+    }
+  },
+  "breakpoints": {
+    "xs": 0,
+    "sm": 480,
+    "md": 768,
+    "lg": 1024,
+    "xl": 1280
+  },
+  "palette": {
+    "primary": {
+      "main": "#1976D2",
+      "light": "#64B5F6",
+      "dark": "#0D47A1",
+      "contrast": "#FFFFFF"
+    },
+    "secondary": {
+      "main": "#FFD54F",
+      "light": "#FFECB3",
+      "dark": "#FFC107",
+      "contrast": "#212121"
+    },
+    "surface": {
+      "main": "#E3F2FD",
+      "light": "#F5F8FC",
+      "dark": "#BBDEFB",
+      "contrast": "#212121"
+    },
+    "tertiary": {
+      "main": "#00BCD4",
+      "light": "#80DEEA",
+      "dark": "#00838F",
+      "contrast": "#FFFFFF"
+    },
+    "success": {
+      "main": "#4CAF50",
+      "light": "#81C784",
+      "dark": "#388E3C",
+      "contrast": "#FFFFFF"
+    },
+    "info": {
+      "main": "#2196F3",
+      "light": "#90CAF9",
+      "dark": "#1976D2",
+      "contrast": "#FFFFFF"
+    },
+    "warning": {
+      "main": "#FFC107",
+      "light": "#FFEB3B",
+      "dark": "#FFA000",
+      "contrast": "#212121"
+    },
+    "error": {
+      "main": "#F44336",
+      "light": "#EF9A9A",
+      "dark": "#D32F2F",
+      "contrast": "#FFFFFF"
+    },
+    "dark": {
+      "main": "#212121",
+      "light": "#424242",
+      "dark": "#000000",
+      "contrast": "#FFFFFF"
+    },
+    "neutral": {
+      "main": "#9E9E9E",
+      "light": "#BDBDBD",
+      "dark": "#757575",
+      "contrast": "#FFFFFF"
+    },
+    "light": {
+      "main": "#EEEEEE",
+      "light": "#FFFFFF",
+      "dark": "#D6D6D6",
+      "contrast": "#212121"
+    }
+  },
+  "modes": {
+    "dark": {
+      "palette": {
+        "primary": {
+          "main": "#64B5F6",
+          "light": "#90CAF9",
+          "dark": "#42A5F5",
+          "contrast": "#000000"
+        },
+        "secondary": {
+          "main": "#FFEB8B",
+          "light": "#FFF9C4",
+          "dark": "#FFAB00",
+          "contrast": "#212121"
+        },
+        "surface": {
+          "main": "#0A1929",
+          "light": "#122A40",
+          "dark": "#040D17",
+          "contrast": "#E0E0E0"
+        },
+        "neutral": {
+          "main": "#BDBDBD",
+          "light": "#E0E0E0",
+          "dark": "#9E9E9E",
+          "contrast": "#212121"
+        },
+        "tertiary": {
+          "main": "#4DD0E1",
+          "light": "#84FFFF",
+          "dark": "#00ACC1",
+          "contrast": "#000000"
+        },
+        "success": {
+          "main": "#81C784",
+          "light": "#A5D6A7",
+          "dark": "#66BB6A",
+          "contrast": "#212121"
+        },
+        "info": {
+          "main": "#90CAF9",
+          "light": "#BBDEFB",
+          "dark": "#64B5F6",
+          "contrast": "#212121"
+        },
+        "warning": {
+          "main": "#FFEB3B",
+          "light": "#FFF59D",
+          "dark": "#FFEE58",
+          "contrast": "#212121"
+        },
+        "error": {
+          "main": "#EF9A9A",
+          "light": "#FFCDD2",
+          "dark": "#E57373",
+          "contrast": "#212121"
+        },
+        "light": {
+          "main": "#F5F5F5",
+          "light": "#FFFFFF",
+          "dark": "#E0E0E0",
+          "contrast": "#212121"
+        },
+        "dark": {
+          "main": "#424242",
+          "light": "#616161",
+          "dark": "#212121",
+          "contrast": "#FFFFFF"
+        }
+      }
+    }
+  },
+  "spacing": {
+    "1": "0.25rem",
+    "2": "0.5rem",
+    "3": "0.75rem",
+    "4": "1rem",
+    "5": "1.25rem",
+    "6": "1.5rem",
+    "7": "1.75rem",
+    "8": "2rem",
+    "9": "2.25rem",
+    "10": "2.5rem",
+    "11": "2.75rem",
+    "12": "3rem",
+    "13": "3.25rem",
+    "14": "3.5rem",
+    "15": "3.75rem",
+    "16": "4rem"
+  }
+}
