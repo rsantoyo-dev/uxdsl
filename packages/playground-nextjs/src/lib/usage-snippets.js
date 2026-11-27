@@ -9,6 +9,7 @@
 // Plain JS so the test can require it with node:test.
 
 const { themeFileText } = require('./theme-download.js');
+const { colorValue, colorPatch } = require('./color-editing.js');
 
 const css = (lines) => lines.join('\n');
 
@@ -68,13 +69,10 @@ function densityUsage(theme, key) {
   return {
     stylesheet: css([
       '.card {',
-      `  padding: density(${key});`,
-      '}',
-      '',
-      '.stack {',
       '  display: flex;',
-      '  flex-direction: column;',
+      '  flex-wrap: wrap;',
       `  gap: density(${key});`,
+      `  padding: density(${key});`,
       '}',
     ]),
     excerpt: { densities: { [key]: theme?.densities?.[key] ?? '' } },
@@ -88,9 +86,41 @@ function spacingUsage(theme, key) {
   };
 }
 
+// A class a project would give the text that wears each role, so the example for `caption`
+// is not a page title.
+const TYPOGRAPHY_SELECTORS = {
+  h1: 'page-title',
+  h2: 'section-title',
+  h3: 'card-title',
+  h4: 'card-title',
+  h5: 'card-title',
+  h6: 'card-title',
+  p: 'lead',
+  body: 'article',
+  'body-sm': 'note',
+  subtitle2: 'eyebrow',
+  small: 'fine-print',
+  caption: 'caption',
+  span: 'label',
+  tag: 'tag',
+  code: 'snippet',
+  pre: 'snippet',
+};
+
+/** The selector the Typography example writes for a role (a role added in the JSON tab gets `.text`). */
+const typographySelector = (role) => `.${TYPOGRAPHY_SELECTORS[role] || 'text'}`;
+
 function typographyUsage(theme, role) {
   const excerpt = { typography_details: { [role]: theme?.typography_details?.[role] ?? {} } };
-  return { stylesheet: css(['.page-title {', `  @ds-typo(${role});`, '}']), excerpt };
+  return { stylesheet: css([`${typographySelector(role)} {`, `  @ds-typo(${role});`, '}']), excerpt };
+}
+
+/** A shade used for itself, plain and translucent. `key` is `family.shade`, or a name such as `white`. */
+function colorsUsage(theme, key) {
+  return {
+    stylesheet: css(['.swatch {', `  background: color(${key});`, '}', '', '.scrim {', `  background: color(${key}, 0.5);`, '}']),
+    excerpt: colorPatch(key, colorValue(theme?.colors, key) ?? ''),
+  };
 }
 
 function edgeUsage(theme, kind, key) {
@@ -153,9 +183,11 @@ function projectUsage(theme) {
 module.exports = {
   paletteUsage,
   breakpointsUsage,
+  colorsUsage,
   densityUsage,
   spacingUsage,
   typographyUsage,
+  typographySelector,
   edgeUsage,
   shadowUsage,
   surfaceUsage,

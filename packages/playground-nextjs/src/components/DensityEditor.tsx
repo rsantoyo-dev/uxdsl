@@ -165,10 +165,11 @@ export default function DensityEditor() {
 
       </div>
       <UsageExample
-        note={<>One token, a different step at each breakpoint: the component never writes a media query.</>}
+        subject="Density"
+        note={<>One token, a different step at each breakpoint: the component never writes a media query. The box below is that rule, at your window&apos;s width.</>}
         blocks={[{ label: 'In a stylesheet (.uxdsl)', code: usage.stylesheet }, jsonBlock(usage.excerpt)]}
       >
-        <Result label={`.card · .stack: density(${key}) at your window`} wide>
+        <Result label=".card" wide>
           <div className={`dte__demo dte-use--${key}`}>
             <span className="dte__item">One</span>
             <span className="dte__item">Two</span>

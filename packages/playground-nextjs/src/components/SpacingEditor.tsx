@@ -7,6 +7,8 @@ import { useBreakpoints } from './BreakpointsProvider'
 import { InteractiveDemoContainer } from './InteractiveDemoContainer'
 import { densityKeys, lengthPx } from '../lib/density-editing'
 import { spacingConsumers, consumerCount } from '../lib/spacing-editing'
+import UsageExample, { jsonBlock, Result } from './UsageExample'
+import { spacingUsage } from '../lib/usage-snippets'
 
 const selected = (on: boolean) => (on ? ' is-selected' : '')
 
@@ -63,6 +65,7 @@ export default function SpacingEditor() {
   }
 
   const px = lengthPx(value, spacing)
+  const usage = useMemo(() => spacingUsage(activeThemeData, key), [activeThemeData, key])
 
   return (
     <InteractiveDemoContainer
@@ -130,6 +133,13 @@ export default function SpacingEditor() {
           </div>
         </div>
       </div>
+      <UsageExample
+        subject="Spacing"
+        note={<>Use <code>space(k)</code> where a size should be the same at every width: an icon, a thumbnail, a rule. For the padding and gap of a component, name a Density (below) so it follows the breakpoints.</>}
+        blocks={[{ label: 'In a stylesheet (.uxdsl)', code: usage.stylesheet }, jsonBlock(usage.excerpt)]}
+      >
+        <Result label=".icon"><span className={`spe__square spe-real--${key}`} aria-hidden="true" /></Result>
+      </UsageExample>
     </InteractiveDemoContainer>
   )
 }

@@ -1,9 +1,21 @@
 'use client'
 
-import { useMemo } from 'react'
-import { colorRows, colorVar } from '../lib/palette-editing'
+import { useMemo, type ButtonHTMLAttributes } from 'react'
+import { tokenValueToCss } from 'uxdsl/engine'
+import { colorRows } from '../lib/palette-editing'
 
 type Row = { family: string; swatches: Array<{ key: string; label: string }> }
+
+/**
+ * One color of the active theme as a background: what `background: color(key)` or
+ * `color(key, alpha)` compiles to, from the engine. The collection is the active theme's,
+ * colors added in the JSON tab included, so a swatch cannot be a class written ahead of time;
+ * this is the one place that turns a color key into a style.
+ */
+export function ColorFill({ as = 'span', colorKey, alpha, ...rest }: { as?: 'span' | 'button'; colorKey: string; alpha?: number } & ButtonHTMLAttributes<HTMLButtonElement>) {
+  const Tag = as as 'button'
+  return <Tag {...rest} style={{ background: tokenValueToCss(alpha === undefined ? `color(${colorKey})` : `color(${colorKey}, ${alpha})`) }} />
+}
 
 /**
  * The active theme's color collection as rows of swatches, one row per family (white and
@@ -32,16 +44,15 @@ export default function ColorCollection({
           <span className="ccl__name">{row.family}</span>
           <div className="ccl__swatches">
             {row.swatches.map((swatch) => (
-              <button
+              <ColorFill
+                as="button"
                 key={swatch.key}
+                colorKey={swatch.key}
                 type="button"
                 className="ccl__chip"
                 aria-pressed={swatch.key === selectedKey}
                 aria-label={`color(${swatch.key})`}
                 title={`color(${swatch.key})`}
-                // The collection is the active theme's, colors added in the JSON tab included,
-                // so a swatch cannot be a class written ahead of time.
-                style={{ background: colorVar(swatch.key) }}
                 onClick={() => onPick(swatch.key)}
               />
             ))}

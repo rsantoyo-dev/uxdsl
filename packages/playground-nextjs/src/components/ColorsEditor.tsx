@@ -3,9 +3,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTheme } from './ThemeContext'
 import { InteractiveDemoContainer } from './InteractiveDemoContainer'
-import ColorCollection from './ColorCollection'
+import ColorCollection, { ColorFill } from './ColorCollection'
 import { toHex6, PICKER_FALLBACK } from '../lib/palette-editing'
 import { colorValue, colorPatch, colorConsumers, followerCount } from '../lib/color-editing'
+import UsageExample, { jsonBlock, Result } from './UsageExample'
+import { colorsUsage } from '../lib/usage-snippets'
 
 /** Any CSS color as #rrggbb for the native picker, drawn through a canvas; null if it cannot be drawn. */
 function pickerHex(value: string): string | null {
@@ -58,6 +60,7 @@ export default function ColorsEditor({ defaultKey = 'purple.700' }: { defaultKey
 
   const found = useMemo(() => colorConsumers(activeThemeData, key), [activeThemeData, key])
   const hex = useMemo(() => pickerHex(value), [value])
+  const usage = useMemo(() => colorsUsage(activeThemeData, key), [activeThemeData, key])
 
   const write = (next: string) => {
     const color = next.trim()
@@ -154,6 +157,15 @@ export default function ColorsEditor({ defaultKey = 'purple.700' }: { defaultKey
           </div>
         </div>
       </div>
+      <UsageExample
+        subject="Colors"
+        note={<>Use <code>color()</code> where the color itself is the point: a swatch, a scrim, a chart series. For the parts of an interface (actions, text, surfaces) name a Palette role (below), so a theme can recolor them.</>}
+        blocks={[{ label: 'In a stylesheet (.uxdsl)', code: usage.stylesheet }, jsonBlock(usage.excerpt)]}
+      >
+        {/* The two declarations as the engine compiles them, so the boxes follow any shade, added ones included. */}
+        <Result label=".swatch"><ColorFill colorKey={key} className="usx-box" aria-hidden="true" /></Result>
+        <Result label=".scrim"><ColorFill colorKey={key} alpha={0.5} className="usx-box" aria-hidden="true" /></Result>
+      </UsageExample>
     </InteractiveDemoContainer>
   )
 }

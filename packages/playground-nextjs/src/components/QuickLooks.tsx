@@ -2,26 +2,44 @@
 
 import { useState } from 'react'
 import { RotateCcw, Sparkles } from 'lucide-react'
-import { useTheme } from './ThemeContext'
-import { LOOKS, lookById } from '../lib/quick-looks'
+import { useTheme, type ThemeName } from './ThemeContext'
+import { LOOKS, lookById, lookPatch, lookIsOn, lookOffPatch } from '../lib/quick-looks'
 import { checkPatch } from '../lib/theme-patch'
+import { themes } from '../../themes'
+
+type NamedTheme = Exclude<ThemeName, 'custom'>
 
 /**
  * The Live theme handler's first move: one click, one theme patch, and the whole page changes
- * (src/lib/quick-looks.js). Looks compose, each goes through applyTheme like any edit in the
- * tabs, and "Start over" goes back to this site's theme. The tabs below then show the tokens
- * each look moved, and the download bar takes the result to a project.
+ * (src/lib/quick-looks.js). Looks of different kinds compose, two of one kind replace each
+ * other, and a second click takes a look off. Which ones are pressed is read from the theme
+ * on the page, not remembered: an edit in a tab, another theme or "Start over" shows here at
+ * once. What a look is measured against, what taking it off gives back and where "Start over"
+ * goes is the named theme the page had before the first edit (Green stays green). Each goes
+ * through applyTheme like any edit in the tabs; the tabs below then show the tokens each look
+ * moved, and the download bar takes the result to a project.
  */
 export default function QuickLooks() {
-  const { activeThemeData, setCustomTheme, customThemeName, switchTheme } = useTheme()
-  const [applied, setApplied] = useState<string[]>([])
+  const { activeThemeData, currentTheme, setCustomTheme, customThemeName, switchTheme } = useTheme()
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // The last named theme shown: an edit makes the theme "custom", which keeps this one.
+  const [origin, setOrigin] = useState<NamedTheme>('default')
+  if (currentTheme !== 'custom' && currentTheme !== origin) {
+    setOrigin(currentTheme)
+    setError(null)
+  }
+  const startTheme = themes[origin]
+  const isOn = (id: string) => {
+    const look = lookById(id)
+    return Boolean(look && activeThemeData && lookIsOn(look, activeThemeData, startTheme))
+  }
 
-  const apply = (id: string) => {
+  const toggle = (id: string) => {
     const look = lookById(id)
     if (!look) return
-    const patch = look.patch(activeThemeData)
+    const on = isOn(id)
+    const patch = on ? lookOffPatch(look, startTheme) : lookPatch(look, startTheme)
     const checked = checkPatch(activeThemeData, patch)
     if (!checked.ok) {
       setError(checked.message ?? 'The theme refused this look.')
@@ -29,8 +47,7 @@ export default function QuickLooks() {
     }
     try {
       setCustomTheme(customThemeName || 'Custom Theme', patch)
-      setApplied((list) => [...list.filter((item) => item !== id), id])
-      setMessage(look.hint)
+      setMessage(on ? `${look.label} is off: the tokens it set are back to the values of the theme you started from.` : look.hint)
       setError(null)
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause))
@@ -38,8 +55,7 @@ export default function QuickLooks() {
   }
 
   const startOver = () => {
-    switchTheme('default')
-    setApplied([])
+    switchTheme(origin)
     setMessage(null)
     setError(null)
   }
@@ -52,24 +68,28 @@ export default function QuickLooks() {
         <span className="qlk__hint">Each look is a theme patch: the showcase, the docs and every tab below follow it at once.</span>
       </div>
       <div className="qlk__looks">
-        {LOOKS.map((look) => (
-          <button
-            key={look.id}
-            type="button"
-            className={`qlk__look${applied.includes(look.id) ? ' is-selected' : ''}`}
-            aria-pressed={applied.includes(look.id)}
-            title={look.hint}
-            onClick={() => apply(look.id)}
-          >
-            {look.label}
-          </button>
-        ))}
+        {LOOKS.map((look) => {
+          const on = isOn(look.id)
+          return (
+            <button
+              key={look.id}
+              type="button"
+              className={`qlk__look${on ? ' is-selected' : ''}`}
+              aria-pressed={on}
+              title={look.hint}
+              onClick={() => toggle(look.id)}
+            >
+              {look.label}
+            </button>
+          )
+        })}
         <button type="button" className="qlk__reset" onClick={startOver}>
           <RotateCcw size={14} aria-hidden="true" /> Start over
         </button>
       </div>
       <p className={`qlk__status${error ? ' is-invalid' : ''}`} role="status">
-        {error ?? message ?? 'Combine them: Rounder, then Ocean brand, then Compact. Then open a tab to see the tokens they moved.'}
+        {/* What a look said holds while its theme is on the page: a named theme chosen in the header starts again. */}
+        {error ?? (currentTheme === 'custom' ? message : null) ?? 'Combine them: Rounder, then Ocean brand, then Compact. Press a look again to take it off, then open a tab to see the tokens it moved.'}
       </p>
     </section>
   )
