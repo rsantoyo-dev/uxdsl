@@ -357,6 +357,8 @@ function fontsAndTypography(answer) {
   };
   // The site's own roles are written in these four weights.
   if (ui) use(ui, [400, 500, 600, 700]);
+  // The code font has its place before a heading font does: `fonts.families.code` names it.
+  if (code) use(code, [400]);
 
   const typography = {};
   const roles = answer.typography_details && typeof answer.typography_details === 'object' ? answer.typography_details : {};
@@ -383,7 +385,6 @@ function fontsAndTypography(answer) {
     if (spacing) next.letterSpacing = spacing;
     if (Object.keys(next).length) typography[role] = next;
   }
-  if (code) use(code, [400]);
 
   const out = {};
   if (imports.size) {

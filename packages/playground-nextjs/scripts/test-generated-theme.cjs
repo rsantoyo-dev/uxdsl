@@ -194,9 +194,13 @@ test('fonts: only families that exist, in weights they have, three at most', () 
     { families: { ui: 'Open Sans', code: 'Space Mono, monospace' } },
     { h1: { fontFamily: 'Playfair Display, serif' }, h2: { fontFamily: 'Lobster' }, h3: { fontFamily: 'Bangers' }, code: { fontFamily: 'Lobster', fontWeight: '700' } },
   )));
-  assert.equal(theme.fonts.google.length, 3);
+  // The text font and the code font have their place before a heading font does: a family
+  // the theme names is one it imports.
+  assert.deepEqual(theme.fonts.google, ['Open Sans:wght@400;500;600;700', 'Space Mono:wght@400;700', 'Playfair Display:wght@400']);
   assert.equal(theme.fonts.families.ui, "'Open Sans', sans-serif");
+  assert.equal(theme.fonts.families.code, "'Space Mono', monospace");
   assert.equal(theme.typography_details.h1.fontFamily, "'Playfair Display', serif");
+  assert.equal(theme.typography_details.h2, undefined);
   assert.equal(theme.typography_details.h3, undefined);
   // `code` keeps the code font.
   assert.equal(theme.typography_details.code.fontFamily, undefined);
