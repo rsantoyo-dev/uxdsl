@@ -1673,7 +1673,14 @@ function startWatch(initialConfig, argv, cwd, builder, initialResults, initialSe
   // The config's `watch` patterns and, for each generated entry, every .uxdsl
   // file under its --src.
   function watchTargets() {
-    const targets = [...config.watch];
+    // The theme file is left out: every name it can have is followed through
+    // its directory (followAll, themeCandidatePaths), whether it exists or not.
+    // Listed here, its appearing or disappearing changed the targets, so
+    // refreshWatcher recreated the watcher, and a theme file created while the
+    // new one armed its directories sent no event: the session kept the old
+    // theme until another change.
+    const candidates = new Set(themeCandidatePaths());
+    const targets = config.watch.filter((target) => !candidates.has(path.resolve(target)));
     for (const { options } of generatedEntries()) {
       if (!options) continue;
       const sources = path.join(options.srcDir, '**/*.uxdsl');

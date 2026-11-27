@@ -485,7 +485,10 @@ and adds `uxdsl.theme.json` afterwards.
   and no file has yet (`uxdsl.theme.cjs`, `uxdsl.theme.js`,
   `uxdsl.theme.json`) is now registered:
   - `uxdsl build --watch` follows them next to the config, and rebuilds every
-    entry when one is created, edited or deleted;
+    entry when one is created, edited or deleted. The theme file is followed
+    through its directory only, not also as a watch target: as a target, its
+    appearing or disappearing recreated the watcher, and a theme file
+    created while the new one armed its directories was missed;
   - `uxdsl/webpack` registers them with `this.addMissingDependency()`, on a
     compile that succeeds and on one that fails;
   - `uxdsl/vite` adds them with `addWatchFile` from a new `transform` hook

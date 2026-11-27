@@ -386,6 +386,28 @@ test('the Vite dev server loads a theme file created after it started, edited, d
   assert.equal(primaryMain((await offDev.fetchModule()).body), base);
 });
 
+/**
+ * The primary color the built CSS carries, once it is `expected`. Creating or deleting a file
+ * can report two events (Windows: add, then change), so a second rebuild may start, and empty
+ * dist/, right after the BUNDLE_END the test waited for: read until the value is there rather
+ * than once.
+ */
+async function builtPrimaryIs(dir, expected, step, timeout = 10000) {
+  const start = Date.now();
+  let last = null;
+  for (;;) {
+    try {
+      last = primaryMain(builtCss(dir));
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw error;
+      last = '(dist/ emptied by a rebuild in progress)';
+    }
+    if (last === expected) return;
+    if (Date.now() - start > timeout) throw new Error(`${step}: primary is ${last}, expected ${expected}`);
+    await delay(150);
+  }
+}
+
 test('vite build --watch rebuilds with a theme file created after it started, and after it is deleted; with discovery off it does not (negative control)', async (t) => {
   const dir = project(t, { 'styles/main.uxdsl': THEMED });
   const off = project(t, { 'styles/main.uxdsl': THEMED });
@@ -396,16 +418,16 @@ test('vite build --watch rebuilds with a theme file created after it started, an
 
   await edit(dir, 'uxdsl.theme.json', themeJson('#111111'));
   assert.equal((await builds.next('the build after uxdsl.theme.json is created')).code, 'BUNDLE_END');
-  assert.equal(primaryMain(builtCss(dir)), '#111111');
+  await builtPrimaryIs(dir, '#111111', 'after uxdsl.theme.json is created');
 
   await delay(300);
   fs.rmSync(path.join(dir, 'uxdsl.theme.json'));
   assert.equal((await builds.next('the build after uxdsl.theme.json is deleted')).code, 'BUNDLE_END');
-  assert.equal(primaryMain(builtCss(dir)), base);
+  await builtPrimaryIs(dir, base, 'after uxdsl.theme.json is deleted');
 
   await edit(dir, 'uxdsl.theme.json', themeJson('#222222'));
   assert.equal((await builds.next('the build after uxdsl.theme.json is created again')).code, 'BUNDLE_END');
-  assert.equal(primaryMain(builtCss(dir)), '#222222');
+  await builtPrimaryIs(dir, '#222222', 'after uxdsl.theme.json is created again');
 
   const offBuilds = await buildWatch(t, off, { discoverTheme: false });
   assert.equal((await offBuilds.next('the first build with discovery off')).code, 'BUNDLE_END');

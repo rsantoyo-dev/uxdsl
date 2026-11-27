@@ -169,29 +169,34 @@ test('watch mode picks up a theme file created after it started, under each of i
   const main = (value) => `--uxdsl__palette__primary-main: ${value}`;
   const themeJson = path.join(dir, 'uxdsl.theme.json');
   const themeCjs = path.join(dir, 'uxdsl.theme.cjs');
+  // Each wait says which step it is, with the session's output, so a timeout on a loaded CI
+  // machine names the event that did not arrive.
+  const step = (name, predicate) => waitFor(predicate).catch((error) => {
+    throw new Error(`${name}: ${error.message}\n--- css primary: ${(css().match(/--uxdsl__palette__primary-main: [^;]+/) || ['(none)'])[0]}\n--- session output:\n${logs}`);
+  });
 
-  await waitFor(() => css().includes('--uxdsl__palette__primary-main'));
+  await step('the first build', () => css().includes('--uxdsl__palette__primary-main'));
   const baseMain = css().match(/--uxdsl__palette__primary-main: [^;]+/)[0];
   await delay(WATCHER_SETTLE_MS);
 
   // Created after the session started: reported, and its value is built.
   fs.writeFileSync(themeJson, JSON.stringify({ palette: { primary: { main: '#111111' } } }));
-  await waitFor(() => css().includes(main('#111111')));
+  await step('uxdsl.theme.json created (#111111)', () => css().includes(main('#111111')));
   assert.match(logs, /\[uxdsl\] add uxdsl\.theme\.json/, logs);
 
   // Still followed once it exists: an edit, then its deletion.
   fs.writeFileSync(themeJson, JSON.stringify({ palette: { primary: { main: '#222222' } } }));
-  await waitFor(() => css().includes(main('#222222')));
+  await step('uxdsl.theme.json edited (#222222)', () => css().includes(main('#222222')));
   fs.unlinkSync(themeJson);
-  await waitFor(() => css().includes(baseMain));
+  await step('uxdsl.theme.json deleted (back to the base)', () => css().includes(baseMain));
 
   // Created again after the deletion, and under another of its names.
   fs.writeFileSync(themeJson, JSON.stringify({ palette: { primary: { main: '#333333' } } }));
-  await waitFor(() => css().includes(main('#333333')));
+  await step('uxdsl.theme.json created again (#333333)', () => css().includes(main('#333333')));
   fs.unlinkSync(themeJson);
-  await waitFor(() => css().includes(baseMain));
+  await step('uxdsl.theme.json deleted again (back to the base)', () => css().includes(baseMain));
   fs.writeFileSync(themeCjs, "module.exports = { palette: { primary: { main: '#444444' } } };\n");
-  await waitFor(() => css().includes(main('#444444')));
+  await step('uxdsl.theme.cjs created (#444444)', () => css().includes(main('#444444')));
 
   // Negative control: the directory is followed for those names only.
   await delay(300);
