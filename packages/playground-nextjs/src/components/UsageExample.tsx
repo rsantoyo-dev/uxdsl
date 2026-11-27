@@ -57,11 +57,12 @@ export function Result({ label, wide = false, children }: { label: string; wide?
  * The end of every tab of the Live theme handler: what is selected above, written the way a
  * project writes it. The stylesheet that uses it, the part of uxdsl.theme.json that defines it,
  * and, where the tab has none above, the same code rendered live. Every block follows the
- * selection and the theme, so it is always what the page is showing.
+ * selection and the theme, so it is always what the page is showing. `subject` names the
+ * example where a tab holds two of them (Colors and Palette, Spacing and Density).
  */
-export default function UsageExample({ blocks, note, children }: { blocks: UsageBlock[]; note?: ReactNode; children?: ReactNode }) {
+export default function UsageExample({ blocks, note, subject, children }: { blocks: UsageBlock[]; note?: ReactNode; subject?: string; children?: ReactNode }) {
   return (
-    <section className="use" aria-label="Use it in your project">
+    <section className="use" aria-label={subject ? `Use it in your project: ${subject}` : 'Use it in your project'}>
       <h3 className="use__title">Use it in your project</h3>
       {note && <p className="use__note">{note}</p>}
       {children ? (

@@ -170,7 +170,7 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | `subscribeTheme` | live | live | `src/components/RuntimeLab.tsx`, `src/runtime-sandbox/sandbox-entry.ts` |
 | `surfaceDeclarations` | live | live | `src/components/DemoSurfaces.tsx` |
 | `themeStructure` | live | live | `src/components/RuntimeEngines.tsx` |
-| `tokenValueToCss` | live | live | `src/components/RuntimeEngines.tsx` |
+| `tokenValueToCss` | live | live | `src/components/ColorCollection.tsx`, `src/components/RuntimeEngines.tsx` |
 | `validateResponsiveExpression` | live | live | `src/components/RuntimeEngines.tsx` |
 | `validateTheme` | live | live | `src/app/docs/theme/page.tsx`, `src/components/ThemeConfigJsonEditor.tsx`, `src/components/ThemeContext.tsx` |
 
@@ -209,7 +209,7 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | --- | --- | --- | --- |
 | `.` | live | live | `package.json` |
 | `./config` | live | live | `uxdsl.config.cjs` |
-| `./engine` | live | live | `src/components/BreakpointEditor.tsx`, `src/components/ButtonDocumentation.tsx`, `src/components/ControlsEditor.tsx` |
+| `./engine` | live | live | `src/components/BreakpointEditor.tsx`, `src/components/ButtonDocumentation.tsx`, `src/components/ColorCollection.tsx` |
 | `./language` | live | live | `src/app/docs/language/page.tsx`, `src/components/DemoBreakpoints.tsx`, `src/components/DemoDensity.tsx` |
 | `./postcss` | live | live | `package.json` |
 | `./runtime` | live | live | `src/components/RuntimeLab.tsx`, `src/components/ThemeContext.tsx`, `src/lib/usage-snippets.js` |

@@ -307,6 +307,7 @@ export default function PaletteFamilyEditor({ defaultFamily = 'primary' }: { def
         )}
       </div>
       <UsageExample
+        subject="Palette"
         note={<>Components name the role, never the color, so a theme with another <code>{family}</code> recolors them without a rebuild. The dark-mode values live under <code>modes.dark.palette</code>.</>}
         blocks={[{ label: 'In a stylesheet (.uxdsl)', code: usage.stylesheet }, jsonBlock(usage.excerpt)]}
       >

@@ -63,7 +63,7 @@ const TABS: Array<{ label: string; what: ReactNode; tryThis: ReactNode; content:
   {
     label: 'Borders / Radii',
     what: <>Edges and corners as tokens: <code>border(n)</code> is a width, a style and a color; <code>radius(n)</code> a corner, per breakpoint.</>,
-    tryThis: <>Pick radius 2 and set it to space(6): cards, buttons and fields round together.</>,
+    tryThis: <>Pick radius 2 and, in the row marked &quot;your window&quot;, choose space(6): cards, buttons and fields round together.</>,
     content: <EdgesEditor />,
   },
   {

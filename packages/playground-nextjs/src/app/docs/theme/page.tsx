@@ -146,7 +146,7 @@ export default function DocsThemePage() {
           with UXDSL, so every edit reaches all of it at once: the showcase below, the navigation, the documentation.
         </p>
         <ol>
-          <li><strong>Change it.</strong> Start with a one-click look (Rounder, Compact, Ocean brand…) or open a tab and change one token or role. Each tab says what it is for and gives you one thing to try.</li>
+          <li><strong>Change it.</strong> Start with a one-click look (Rounder, Compact, Ocean brand…; they combine, and a second click takes one off) or open a tab and change one token or role. Each tab says what it is for and gives you one thing to try.</li>
           <li><strong>Watch the page follow.</strong> Every edit goes through <code>applyTheme</code>, the runtime API your project gets too: values apply live, in light and dark mode, and a change the compiled CSS cannot follow (a new field, a moved breakpoint) is explained, not applied.</li>
           <li><strong>Take it home.</strong> Download <code>uxdsl.theme.json</code>: only what differs from the base theme, the breakpoints you previewed included. Put it next to <code>uxdsl.config.cjs</code> and rebuild. Every tab ends with &quot;Use it in your project&quot;: the stylesheet that uses what you selected, and the part of the file that defines it.</li>
         </ol>

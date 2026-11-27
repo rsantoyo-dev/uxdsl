@@ -15,7 +15,7 @@ const TONES = ['', 'primary', 'success'];
 async function compiles(theme, stylesheet, label) {
   const result = await postcss([uxdsl({ theme })]).process(stylesheet, { from: 'example.css' });
   assert.ok(!result.css.includes('@ds-'), `${label}: a directive was left uncompiled`);
-  assert.ok(!/\b(?:density|space|palette|radius|border|shadow)\(/.test(result.css.replace(/var\([^)]*\)/g, '')), `${label}: a token was left uncompiled`);
+  assert.ok(!/\b(?:density|space|palette|radius|border|shadow)\(|(?<![-\w])color\(/.test(result.css.replace(/var\([^)]*\)/g, '')), `${label}: a token was left uncompiled`);
   return result;
 }
 
@@ -28,6 +28,9 @@ test('every tab example compiles against every named theme', async () => {
   for (const [name, theme] of Object.entries(themes)) {
     const cases = [];
     for (const family of Object.keys(theme.palette)) cases.push([`palette ${family}`, u.paletteUsage(theme, family)]);
+    for (const [family, entry] of Object.entries(theme.colors)) {
+      for (const key of typeof entry === 'string' ? [family] : Object.keys(entry).map((shade) => `${family}.${shade}`)) cases.push([`color ${key}`, u.colorsUsage(theme, key)]);
+    }
     cases.push(['breakpoints', u.breakpointsUsage(theme.breakpoints)]);
     for (const key of Object.keys(theme.densities)) cases.push([`density ${key}`, u.densityUsage(theme, key)]);
     for (const key of Object.keys(theme.spacing)) cases.push([`space ${key}`, u.spacingUsage(theme, key)]);
@@ -51,12 +54,24 @@ test('the project example: the file, the marker and the components compile', asy
   const result = await compiles(theme, usage.stylesheet, 'project');
   assert.match(result.css, /--uxdsl__palette__primary-main:/, 'the marker emits the theme');
   assert.match(usage.runtime, /applyTheme\(theme, \{ replace: true \}\)/);
+  // The runtime example imports the downloaded file as it is, `$schema` included.
+  assert.ok($schema, 'the file names its schema');
+  const whole = validateTheme(deepMergeTheme(packagedBase, file));
+  assert.ok(whole.ok, JSON.stringify(whole.errors));
+  assert.deepEqual(whole.warnings, [], 'the schema key is not an unknown family');
 });
 
 test('the examples name the selection', () => {
   const theme = themes.default;
   assert.match(u.densityUsage(theme, '7').stylesheet, /padding: density\(7\);/);
-  assert.match(u.typographyUsage(theme, 'caption').stylesheet, /@ds-typo\(caption\);/);
+  assert.match(u.densityUsage(theme, '7').stylesheet, /gap: density\(7\);/);
+  assert.match(u.typographyUsage(theme, 'caption').stylesheet, /^\.caption \{\n  @ds-typo\(caption\);/);
+  assert.match(u.typographyUsage(theme, 'h1').stylesheet, /^\.page-title \{/);
+  assert.equal(u.typographySelector('a-role-added-later'), '.text');
+  assert.match(u.spacingUsage(theme, '6').stylesheet, /width: space\(6\);/);
+  assert.match(u.colorsUsage(theme, 'purple.700').stylesheet, /background: color\(purple\.700, 0\.5\);/);
+  assert.deepEqual(u.colorsUsage(theme, 'purple.700').excerpt, { colors: { purple: { 700: theme.colors.purple['700'] } } });
+  assert.deepEqual(u.colorsUsage(theme, 'white').excerpt, { colors: { white: theme.colors.white } });
   assert.match(u.controlUsage(theme, 'inputs', 'underline', 'error').stylesheet, /@ds-input\(underline error\);/);
   assert.match(u.surfaceUsage(theme, 'flat', '').stylesheet, /@ds-surface\(flat\);/);
   assert.deepEqual(Object.keys(u.paletteUsage(theme, 'primary').excerpt), ['palette', 'modes']);
