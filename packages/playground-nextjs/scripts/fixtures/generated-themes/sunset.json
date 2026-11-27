@@ -1,0 +1,245 @@
+{
+  "name": "Crimson Sunset",
+  "backgroundImage": "vibrant sunset sky with warm orange, red, and purple hues over a calm landscape",
+  "fonts": {
+    "google": [
+      "Poppins:wght@300;400;500;600;700",
+      "Lora:wght@400;500;600;700",
+      "JetBrains Mono:wght@400"
+    ],
+    "families": {
+      "ui": "Poppins, sans-serif",
+      "code": "JetBrains Mono, monospace"
+    }
+  },
+  "typography_details": {
+    "h1": {
+      "fontSize": "xs(3.2rem) sm(3.8rem) md(4.5rem) lg(5.2rem) xl(6rem)",
+      "lineHeight": "1.3",
+      "letterSpacing": "-0.03em",
+      "fontWeight": "700",
+      "fontFamily": "Lora, serif"
+    },
+    "h2": {
+      "fontSize": "xs(2.8rem) sm(3.2rem) md(3.6rem) lg(4rem) xl(4.5rem)",
+      "lineHeight": "1.35",
+      "letterSpacing": "-0.025em",
+      "fontWeight": "600",
+      "fontFamily": "Lora, serif"
+    },
+    "h3": {
+      "fontSize": "xs(2.2rem) sm(2.5rem) md(2.8rem) lg(3.1rem) xl(3.4rem)",
+      "lineHeight": "1.35",
+      "letterSpacing": "-0.02em",
+      "fontWeight": "600",
+      "fontFamily": "Lora, serif"
+    },
+    "h4": {
+      "fontSize": "xs(1.8rem) sm(2rem) md(2.2rem) lg(2.4rem) xl(2.6rem)",
+      "lineHeight": "1.3",
+      "letterSpacing": "-0.01em",
+      "fontWeight": "500",
+      "fontFamily": "Lora, serif"
+    },
+    "h5": {
+      "fontSize": "xs(1.5rem) sm(1.6rem) md(1.7rem) lg(1.8rem) xl(1.9rem)",
+      "lineHeight": "1.25",
+      "letterSpacing": "0em",
+      "fontWeight": "500",
+      "fontFamily": "Poppins, sans-serif"
+    },
+    "h6": {
+      "fontSize": "xs(1.2rem) sm(1.3rem) md(1.4rem) lg(1.5rem) xl(1.6rem)",
+      "lineHeight": "1.25",
+      "letterSpacing": "0em",
+      "fontWeight": "500",
+      "fontFamily": "Poppins, sans-serif"
+    },
+    "p": {
+      "fontSize": "xs(1rem) sm(1.1rem) md(1.15rem) lg(1.2rem) xl(1.25rem)",
+      "lineHeight": "1.6",
+      "letterSpacing": "0.005em",
+      "fontWeight": "400",
+      "fontFamily": "Poppins, sans-serif"
+    },
+    "body": {
+      "fontSize": "xs(1rem) sm(1.1rem) md(1.15rem) lg(1.2rem) xl(1.25rem)",
+      "lineHeight": "1.6",
+      "letterSpacing": "0.005em",
+      "fontWeight": "400",
+      "fontFamily": "Poppins, sans-serif"
+    },
+    "caption": {
+      "fontSize": "xs(0.85rem) sm(0.9rem) md(0.95rem) lg(1rem) xl(1.05rem)",
+      "lineHeight": "1.5",
+      "letterSpacing": "0.01em",
+      "fontWeight": "400",
+      "fontFamily": "Poppins, sans-serif"
+    }
+  },
+  "breakpoints": {
+    "xs": 0,
+    "sm": 480,
+    "md": 768,
+    "lg": 1024,
+    "xl": 1280
+  },
+  "palette": {
+    "primary": {
+      "main": "#FF7043",
+      "light": "#FFA07A",
+      "dark": "#E64A19",
+      "contrast": "#FFFFFF"
+    },
+    "secondary": {
+      "main": "#6A1B9A",
+      "light": "#BA68C8",
+      "dark": "#4A148C",
+      "contrast": "#FFFFFF"
+    },
+    "surface": {
+      "main": "#FFF3E0",
+      "light": "#FFFFFF",
+      "dark": "#F5E5D8",
+      "contrast": "#212121"
+    },
+    "tertiary": {
+      "main": "#FFD54F",
+      "light": "#FFE082",
+      "dark": "#FFC107",
+      "contrast": "#212121"
+    },
+    "success": {
+      "main": "#66BB6A",
+      "light": "#81C784",
+      "dark": "#388E3C",
+      "contrast": "#FFFFFF"
+    },
+    "info": {
+      "main": "#42A5F5",
+      "light": "#64B5F6",
+      "dark": "#1976D2",
+      "contrast": "#FFFFFF"
+    },
+    "warning": {
+      "main": "#FFB300",
+      "light": "#FFD54F",
+      "dark": "#FF8F00",
+      "contrast": "#212121"
+    },
+    "error": {
+      "main": "#EF5350",
+      "light": "#E57373",
+      "dark": "#C62828",
+      "contrast": "#FFFFFF"
+    },
+    "dark": {
+      "main": "#37474F",
+      "light": "#546E7A",
+      "dark": "#263238",
+      "contrast": "#FFFFFF"
+    },
+    "neutral": {
+      "main": "#9E9E9E",
+      "light": "#E0E0E0",
+      "dark": "#616161",
+      "contrast": "#212121"
+    },
+    "light": {
+      "main": "#F5F5F5",
+      "light": "#FFFFFF",
+      "dark": "#E0E0E0",
+      "contrast": "#212121"
+    }
+  },
+  "modes": {
+    "dark": {
+      "palette": {
+        "primary": {
+          "main": "#FFAB40",
+          "light": "#FFCC80",
+          "dark": "#FF9800",
+          "contrast": "#1A237E"
+        },
+        "secondary": {
+          "main": "#CE93D8",
+          "light": "#E1BEE7",
+          "dark": "#AB47BC",
+          "contrast": "#1A237E"
+        },
+        "surface": {
+          "main": "#1A237E",
+          "light": "#283593",
+          "dark": "#0D135A",
+          "contrast": "#ECEFF1"
+        },
+        "neutral": {
+          "main": "#B0BEC5",
+          "light": "#CFD8DC",
+          "dark": "#78909C",
+          "contrast": "#1A237E"
+        },
+        "tertiary": {
+          "main": "#FFEA00",
+          "light": "#FFFF00",
+          "dark": "#FFC400",
+          "contrast": "#1A237E"
+        },
+        "success": {
+          "main": "#A5D6A7",
+          "light": "#C8E6C9",
+          "dark": "#81C784",
+          "contrast": "#1A237E"
+        },
+        "info": {
+          "main": "#90CAF9",
+          "light": "#BBDEFB",
+          "dark": "#64B5F6",
+          "contrast": "#1A237E"
+        },
+        "warning": {
+          "main": "#FFD54F",
+          "light": "#FFE082",
+          "dark": "#FFC107",
+          "contrast": "#1A237E"
+        },
+        "error": {
+          "main": "#EF9A9A",
+          "light": "#FFCDD2",
+          "dark": "#E57373",
+          "contrast": "#1A237E"
+        },
+        "light": {
+          "main": "#F0F4C3",
+          "light": "#FFFFFF",
+          "dark": "#E6EE9C",
+          "contrast": "#1A237E"
+        },
+        "dark": {
+          "main": "#37474F",
+          "light": "#546E7A",
+          "dark": "#263238",
+          "contrast": "#FFFFFF"
+        }
+      }
+    }
+  },
+  "spacing": {
+    "1": "0.25rem",
+    "2": "0.5rem",
+    "3": "0.75rem",
+    "4": "1rem",
+    "5": "1.25rem",
+    "6": "1.5rem",
+    "7": "1.75rem",
+    "8": "2rem",
+    "9": "2.25rem",
+    "10": "2.5rem",
+    "11": "2.75rem",
+    "12": "3rem",
+    "13": "3.25rem",
+    "14": "3.5rem",
+    "15": "3.75rem",
+    "16": "4rem"
+  }
+}

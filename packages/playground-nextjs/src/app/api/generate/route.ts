@@ -1,261 +1,74 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import type { GenerationConfig } from "@google/generative-ai";
 import { NextResponse } from "next/server";
+import { baseTheme } from "../../../../themes";
+import { FONT_CATALOG, FONT_NAMES, sanitizeGeneratedTheme } from "../../../lib/generated-theme";
 
-export async function POST(req: Request) {
-  try {
-    const apiKey = process.env.UXDSL_API_KEY;
-    
-    if (!apiKey) {
-      console.error("API Key is missing in process.env");
-      return NextResponse.json(
-        { error: "API key not configured on server" },
-        { status: 500 }
-      );
-    }
+// Two callers: "Name a theme" on the home page (no `mode`), which gets `{ name, theme }`, an
+// override already checked for this site (src/lib/generated-theme.js); and the Typography
+// page's optimizer (`mode: 'typography_patch'`), which gets the model's text as `{ text }`.
 
-    console.log("Initializing Gemini with API Key starting with:", apiKey.substring(0, 4) + "...");
-    
-    const genAI = new GoogleGenerativeAI(apiKey);
+const MODEL = "gemini-2.5-flash";
+const MAX_PROMPT = 200;
+const MAX_PATCH_PROMPT = 20_000;
+// One answer, and one more when the first is unusable, inside the time a function may run.
+export const maxDuration = 60;
+const DEADLINE_MS = 52_000;
+const RETRY_NEEDS_MS = 12_000;
 
-    // Using gemini-2.5-flash as confirmed available for this API key
-    const modelName = "gemini-2.5-flash"; 
-    const model = genAI.getGenerativeModel({ 
-      model: modelName,
-      generationConfig: {
-        responseMimeType: "application/json"
-      }
-    });
+const THEME_INSTRUCTION = `
+You choose the fonts and colors of a website theme from a short description by the user (for example "Ocean", "cyberpunk", "elegant bakery").
+Answer with one JSON object and nothing else, in exactly this shape:
 
-    const { prompt, mode } = await req.json();
-
-    if (!prompt) {
-      return NextResponse.json(
-        { error: "Prompt is required" },
-        { status: 400 }
-      );
-    }
-
-    // Pre-selected list of 20 high-quality Google Fonts covering various styles
-    const AVAILABLE_FONTS = [
-      // Sans Serif
-      "Inter", "Roboto", "Poppins", "Open Sans", "Montserrat", "Lato", "Raleway", "Noto Sans", "Oswald", "Quicksand",
-      // Serif
-      "Merriweather", "Playfair Display", "Lora", "PT Serif", "Roboto Slab", "Cinzel", "Cormorant Garamond",
-      // Monospace
-      "Roboto Mono", "Source Code Pro", "JetBrains Mono", "Fira Code", "Space Mono",
-      // Display / Handwriting / Creative
-      "Dancing Script", "Pacifico", "Lobster", "Abril Fatface", "Righteous", "Fredoka One", "Press Start 2P", "Creepster", "Rye", "Spirax", "Bangers", "Permanent Marker"
-    ];
-
-    const THEME_SYSTEM_PROMPT = `
-    You are a UX Design System expert. Your goal is to generate a UXDSL theme based on the user's description (e.g., "funky", "elegant", "dark", "nature", "cyberpunk").
-    Return ONLY a raw JSON object (no markdown formatting) with the following structure. All fields must be present.
-    
-    IMPORTANT: For fonts, you MUST choose from the following available Google Fonts list. Select the best match for the requested style.
-    Available Fonts: ${AVAILABLE_FONTS.join(", ")}
-
-	    CRITICAL TYPOGRAPHY RULES:
-	    1. "fontSize" MUST use the responsive syntax 'xs(val) sm(val) md(val) lg(val) xl(val)'.
-		    2. "lineHeight" can also be responsive (e.g., 'xs(1.4) md(1.2)') or static. 
-		       IMPORTANT: Ensure line height accommodates the font's ascenders/descenders. Script/Display fonts need more space (1.3-1.5) to avoid clipping. Sans-serifs can be tighter (1.1-1.2).
-		    3. Adjust 'fontWeight' (100-900), 'letterSpacing' (e.g., -0.05em for tight display), 'textTransform', 'fontStyle', and 'textDecoration' to match the theme.
-		    4. "fontSize" values can be any valid CSS length (rem/px/%/em/...) OR design tokens like space(N). Prefer using space() so typography is driven by the spacing system. Avoid calc(); if you need scaling, jump between breakpoints using different space(N) values.
-
-    JSON Structure:
-    {
-      "name": "string", // A creative name for this theme
-      "backgroundImage": "string", // A short, descriptive English prompt for a background image matching the theme (e.g. "neon cyberpunk city", "calm misty forest")
-      "fonts": {
-        "google": [
-          "string" // The Google Font import string, e.g., "Inter:wght@400;500;600;700" or "Playfair Display:wght@400;700"
-        ],
-        "families": {
-          "ui": "string", // The font family name from the list above, e.g., "Inter, sans-serif"
-          "code": "string" // A monospace font from the list or generic, e.g., "JetBrains Mono, monospace"
-        }
-      },
-      "typography_details": {
-        // Define detailed typography settings for key elements.
-        "h1": { "fontSize": "string", "lineHeight": "string", "letterSpacing": "string", "fontWeight": "string", "fontFamily": "string" },
-        "h2": { "fontSize": "string", "lineHeight": "string", "letterSpacing": "string", "fontWeight": "string", "fontFamily": "string" },
-        "h3": { "fontSize": "string", "lineHeight": "string", "letterSpacing": "string", "fontWeight": "string", "fontFamily": "string" },
-        "h4": { "fontSize": "string", "lineHeight": "string", "letterSpacing": "string", "fontWeight": "string", "fontFamily": "string" },
-        "h5": { "fontSize": "string", "lineHeight": "string", "letterSpacing": "string", "fontWeight": "string", "fontFamily": "string" },
-        "h6": { "fontSize": "string", "lineHeight": "string", "letterSpacing": "string", "fontWeight": "string", "fontFamily": "string" },
-        "p": { "fontSize": "string", "lineHeight": "string", "letterSpacing": "string", "fontWeight": "string", "fontFamily": "string" },
-        "body": { "fontSize": "string", "lineHeight": "string", "letterSpacing": "string", "fontWeight": "string", "fontFamily": "string" },
-        "caption": { "fontSize": "string", "lineHeight": "string", "letterSpacing": "string", "fontWeight": "string", "fontFamily": "string" }
-      },
-      "breakpoints": { // Standard breakpoint values (px)
-        "xs": 0,
-        "sm": 480,
-        "md": 768,
-        "lg": 1024,
-        "xl": 1280
-      },
-      "palette": { // Base (light) mode palette
-        "primary": {
-          "main": "hex",
-          "light": "hex",
-          "dark": "hex",
-          "contrast": "hex"
-        },
-        "secondary": {
-          "main": "hex",
-          "light": "hex",
-          "dark": "hex",
-          "contrast": "hex"
-        },
-        "surface": {
-          "main": "hex", // Background
-          "light": "hex",
-          "dark": "hex",
-          "contrast": "hex" // Text on surface
-        },
-        "tertiary": {
-          "main": "hex",
-          "light": "hex",
-          "dark": "hex",
-          "contrast": "hex"
-        },
-        "success": {
-          "main": "hex",
-          "light": "hex",
-          "dark": "hex",
-          "contrast": "hex"
-        },
-        "info": {
-          "main": "hex",
-          "light": "hex",
-          "dark": "hex",
-          "contrast": "hex"
-        },
-        "warning": {
-          "main": "hex",
-          "light": "hex",
-          "dark": "hex",
-          "contrast": "hex"
-        },
-        "error": {
-          "main": "hex",
-          "light": "hex",
-          "dark": "hex",
-          "contrast": "hex"
-        },
-        "dark": {
-          "main": "hex", // General dark shades
-          "light": "hex",
-          "dark": "hex",
-          "contrast": "hex"
-        },
-        "neutral": {
-          "main": "hex",
-          "light": "hex",
-          "dark": "hex",
-          "contrast": "hex"
-        },
-        "light": {
-          "main": "hex", // General light shades
-          "light": "hex",
-          "dark": "hex",
-          "contrast": "hex"
-        }
-      },
-      "modes": { // Dark mode overrides (only for palette for now)
-        "dark": {
-          "palette": {
-            "primary": {
-              "main": "hex",
-              "light": "hex",
-              "dark": "hex",
-              "contrast": "hex"
-            },
-            "secondary": {
-              "main": "hex",
-              "light": "hex",
-              "dark": "hex",
-              "contrast": "hex"
-            },
-            "surface": {
-              "main": "hex",
-              "light": "hex",
-              "dark": "hex",
-              "contrast": "hex"
-            },
-            "neutral": {
-              "main": "hex",
-              "light": "hex",
-              "dark": "hex",
-              "contrast": "hex"
-            },
-            "tertiary": {
-              "main": "hex",
-              "light": "hex",
-              "dark": "hex",
-              "contrast": "hex"
-            },
-            "success": {
-              "main": "hex",
-              "light": "hex",
-              "dark": "hex",
-              "contrast": "hex"
-            },
-            "info": {
-              "main": "hex",
-              "light": "hex",
-              "dark": "hex",
-              "contrast": "hex"
-            },
-            "warning": {
-              "main": "hex",
-              "light": "hex",
-              "dark": "hex",
-              "contrast": "hex"
-            },
-            "error": {
-              "main": "hex",
-              "light": "hex",
-              "dark": "hex",
-              "contrast": "hex"
-            },
-            "light": {
-              "main": "hex",
-              "light": "hex",
-              "dark": "hex",
-              "contrast": "hex"
-            },
-            "dark": {
-              "main": "hex",
-              "light": "hex",
-              "dark": "hex",
-              "contrast": "hex"
-            }
-          }
-        }
-      },
-      "spacing": { // rem or px values for 1-16
-        "1": "string",
-        "2": "string",
-        "3": "string",
-        "4": "string",
-        "5": "string",
-        "6": "string",
-        "7": "string",
-        "8": "string",
-        "9": "string",
-        "10": "string",
-        "11": "string",
-        "12": "string",
-        "13": "string",
-        "14": "string",
-        "15": "string",
-        "16": "string"
+{
+  "name": "a short creative name for the theme, at most 4 words",
+  "fonts": {
+    "google": ["Lato:wght@400;700", "Lora:wght@600;700", "JetBrains Mono:wght@400"],
+    "families": { "ui": "Lato, sans-serif", "code": "JetBrains Mono, monospace" }
+  },
+  "typography_details": {
+    "h1": { "fontFamily": "Lora, serif", "fontWeight": "700", "letterSpacing": "-0.02em" },
+    "h2": { "fontFamily": "Lora, serif", "fontWeight": "600", "letterSpacing": "-0.01em" },
+    "h3": { "fontFamily": "Lora, serif", "fontWeight": "600", "letterSpacing": "normal" }
+  },
+  "palette": {
+    "primary": { "main": "#hex", "light": "#hex", "dark": "#hex", "contrast": "#hex" },
+    "secondary": { "main": "#hex", "light": "#hex", "dark": "#hex", "contrast": "#hex" },
+    "tertiary": { "main": "#hex", "light": "#hex", "dark": "#hex", "contrast": "#hex" },
+    "neutral": { "main": "#hex", "light": "#hex", "dark": "#hex", "contrast": "#hex" },
+    "surface": { "main": "#hex", "light": "#hex", "dark": "#hex", "contrast": "#hex" }
+  },
+  "modes": {
+    "dark": {
+      "palette": {
+        "primary": { "main": "#hex", "light": "#hex", "dark": "#hex", "contrast": "#hex" },
+        "secondary": { "main": "#hex", "light": "#hex", "dark": "#hex", "contrast": "#hex" },
+        "tertiary": { "main": "#hex", "light": "#hex", "dark": "#hex", "contrast": "#hex" },
+        "neutral": { "main": "#hex", "light": "#hex", "dark": "#hex", "contrast": "#hex" },
+        "surface": { "main": "#hex", "light": "#hex", "dark": "#hex", "contrast": "#hex" }
       }
     }
-    User Request:
-    `;
+  }
+}
 
-    const TYPOGRAPHY_PATCH_SYSTEM_PROMPT = `
+Fonts
+- Use only families of this list, written exactly, and only the weights each one has:
+${FONT_CATALOG.join("\n")}
+- "families.ui" is the font of all running text: choose one that reads well in paragraphs. "families.code" is a monospace family.
+- A display or handwriting family belongs in headings (h1 to h3) only. At most three families in all: text, headings, code.
+- "fontWeight" is a string such as "700". "letterSpacing" is "normal" or an em value between -0.05em and 0.1em.
+- No font sizes, line heights, margins, spacing or breakpoints: the site keeps its own.
+
+Colors
+- Six-digit hex values. "palette" is light mode and "modes.dark.palette" is dark mode, with the same five families, each with main, light, dark and contrast.
+- Light mode is always light, also for a theme that sounds dark ("Midnight"): "surface.main" is the page background, near white and tinted toward the theme; "surface.contrast" is the text on it, near black. Carry the theme in the accents and in the tint.
+- Dark mode is always dark: "surface.main" is very dark, tinted toward the theme; "surface.contrast" is near white.
+- "surface.light" is the background of cards, close to "surface.main". "surface.dark" is the color of borders and dividers: visible on the page, not a second background.
+- "primary", "secondary" and "tertiary" are three accents that differ. "main" is drawn as text and as a button background on the page, so it needs a contrast of at least 4.5:1 against "surface.main" of its mode: deep and saturated in light mode, light and vivid in dark mode. "dark" is the same hue, used on hover. "light" is a soft variant. "contrast" is the text on "main": white or near black, whichever reads.
+- "neutral" is a gray tinted toward the theme, for secondary text and quiet borders.
+`;
+
+const typographyPatchInstruction = () => `
     You are a UX Design System typography expert.
     Return ONLY a raw JSON object (no markdown formatting).
 
@@ -267,46 +80,83 @@ export async function POST(req: Request) {
       }
     }
 
-		    Rules:
-		    - fontSize MUST be responsive and include at least xs(...) and md(...). Prefer including sm/lg/xl.
-		    - fontSize values can be any valid CSS length OR design tokens like space(N). Prefer using space() so typography is driven by the spacing system. Avoid calc(); if you need scaling, jump between breakpoints using different space(N) values.
-		    - lineHeight MUST be responsive and include at least xs(...) and md(...).
-		    - fontWeight must be a string number 100-900.
-		    - fontFamily must respect the theme's current fonts unless the user explicitly requests a change.
-		    - Keep hierarchy sane for headings when returning multiple tags.
+    Rules:
+    - fontSize MUST be responsive and include at least xs(...) and md(...). Prefer including sm/lg/xl.
+    - fontSize values can be any valid CSS length OR a spacing token space(N). N is one of these keys, written exactly (no decimals, nothing above 16): ${Object.entries(baseTheme.spacing as Record<string, string>).map(([key, value]) => `${key} = ${value}`).join(", ")}. Prefer space() so typography is driven by the spacing system. Avoid calc(); if you need scaling, jump between breakpoints using different space(N) values.
+    - lineHeight MUST be responsive and include at least xs(...) and md(...).
+    - fontWeight must be a string number 100-900.
+    - fontFamily must respect the theme's current fonts unless the user explicitly requests a change.
+    - Keep hierarchy sane for headings when returning multiple tags.
 
-    Available Fonts: ${AVAILABLE_FONTS.join(", ")}
+    Available Fonts: ${FONT_NAMES.join(", ")}
 
     User Request:
     `;
 
-  const systemPrompt = mode === 'typography_patch' ? TYPOGRAPHY_PATCH_SYSTEM_PROMPT : THEME_SYSTEM_PROMPT;
-  const fullPrompt = systemPrompt + prompt;
-    const result = await model.generateContent(fullPrompt);
-    const response = await result.response;
-    const text = response.text();
+type Ask = { instruction: string; request: string; timeout: number };
 
-    return NextResponse.json({ text });
-  } catch (error: unknown) {
-    console.error("Error generating content:", error);
-    
-    // Attempt to list models to help debug
-    try {
-        const apiKey = process.env.UXDSL_API_KEY;
-        if (apiKey) {
-            // Note: listModels is not directly available on genAI instance in all versions, 
-            // but let's try to log a helpful message.
-            console.log("If you are seeing a 404 for the model, please check if the Generative AI API is enabled in your Google Cloud Console.");
-        }
-    } catch {
-        // ignore
+/** The model's text for one request. Thinking is switched off: this is a fill-in-the-shape task. */
+async function ask(genAI: GoogleGenerativeAI, { instruction, request, timeout }: Ask): Promise<string> {
+  const generate = async (generationConfig: GenerationConfig) => {
+    const model = genAI.getGenerativeModel({ model: MODEL, systemInstruction: instruction, generationConfig }, { timeout });
+    const result = await model.generateContent(request);
+    return result.response.text();
+  };
+  const json = { responseMimeType: "application/json" };
+  try {
+    // `thinkingConfig` is not in this SDK's types; it sends the object to the API as it is.
+    return await generate({ ...json, thinkingConfig: { thinkingBudget: 0 } } as GenerationConfig);
+  } catch (error) {
+    // An API that does not take the field answers 400; anything else is not about it.
+    if ((error as { status?: number } | null)?.status !== 400) throw error;
+    return generate(json);
+  }
+}
+
+export async function POST(req: Request) {
+  const apiKey = process.env.UXDSL_API_KEY;
+  if (!apiKey) {
+    console.error("UXDSL_API_KEY is not set");
+    return NextResponse.json({ error: "Theme generation is not configured on this server." }, { status: 500 });
+  }
+
+  let body: { prompt?: unknown; mode?: unknown };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "The request is not JSON." }, { status: 400 });
+  }
+  const typographyPatch = body?.mode === "typography_patch";
+  // The Typography optimizer sends its own instructions as the prompt; a theme is named in a line.
+  const prompt = typeof body?.prompt === "string" ? body.prompt.trim().slice(0, typographyPatch ? MAX_PATCH_PROMPT : MAX_PROMPT) : "";
+  if (!prompt) return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
+
+  const started = Date.now();
+  const remaining = () => DEADLINE_MS - (Date.now() - started);
+  const genAI = new GoogleGenerativeAI(apiKey);
+
+  try {
+    if (typographyPatch) {
+      const text = await ask(genAI, { instruction: typographyPatchInstruction(), request: prompt, timeout: remaining() });
+      return NextResponse.json({ text });
     }
 
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-
-    return NextResponse.json(
-      { error: `Failed to generate content: ${errorMessage}` },
-      { status: 500 }
-    );
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      if (attempt > 0 && remaining() < RETRY_NEEDS_MS) break;
+      const text = await ask(genAI, { instruction: THEME_INSTRUCTION, request: `Theme: ${prompt}`, timeout: remaining() });
+      const result = sanitizeGeneratedTheme(text, { fallbackName: prompt });
+      if (result.ok) return NextResponse.json({ name: result.name, theme: result.theme });
+      console.error(`Unusable theme answer (attempt ${attempt + 1}): ${result.reason}`);
+    }
+    return NextResponse.json({ error: "The model did not return a usable theme. Try again, or try another name." }, { status: 502 });
+  } catch (error: unknown) {
+    console.error("Error generating content:", error);
+    const status = (error as { status?: number } | null)?.status;
+    const message = status === 429
+      ? "Too many themes are being made right now. Try again in a minute."
+      : remaining() <= 0 || (error instanceof Error && /timed? ?out|abort/i.test(error.message))
+        ? "The model took too long to answer. Try again."
+        : typographyPatch ? "The model could not answer. Try again." : "The theme could not be made. Try again.";
+    return NextResponse.json({ error: message }, { status: status === 429 ? 429 : 500 });
   }
 }

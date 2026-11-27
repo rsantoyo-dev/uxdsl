@@ -82,6 +82,11 @@
   vertical-align: top;
 }
 
+// A linked name in the first column stays in one piece.
+.doc-section__table-wrap td:first-child > a > code {
+  white-space: nowrap;
+}
+
 .demo-disclosure {
   margin-block: density(4);
   border: border(1);

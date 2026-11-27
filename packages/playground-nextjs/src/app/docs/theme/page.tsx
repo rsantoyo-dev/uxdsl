@@ -57,6 +57,9 @@ export default function DocsThemePage() {
     <>
       <PageTitle title="Theme" subtitle="One JSON holds every design decision; the build, the runtime and the audits read the same file." />
       <div className="doc-section">
+        <p>
+          To change this site’s theme while you look at it, go to the <a href="#editor">Live theme handler</a> further down this page.
+        </p>
         <h2 id="families">The families</h2>
         <p>
           A theme is a partial override of the base theme that ships in the package (<code>uxdsl/theme/base.json</code>): write only what
