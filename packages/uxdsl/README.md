@@ -55,7 +55,8 @@ built in); `build` compiles the entry once
 to a plain `.css` file you import from your app like any other stylesheet.
 `npx uxdsl build --watch` recompiles as you edit (it follows every entry and
 every file Dart Sass loaded, and the config's `watch` globs add paths —
-"Watch mode" in the CLI guide). See
+"Watch mode" in the CLI guide). A theme file created, edited or deleted while
+it runs is picked up too, under any of its names. See
 [the CLI guide](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/uxdsl/docs/integrations/cli.md) for the full setup
 (Next.js/Vite detection, `uxdsl:build`/`uxdsl:watch` scripts, multi-entry
 projects).

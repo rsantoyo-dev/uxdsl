@@ -333,3 +333,104 @@ test("MIG-B9-39: a failed Vite load carries loc and frame, in the dev server's e
   assert.equal(themeEvent.error.loc, undefined, 'build --watch: a theme error has no loc');
   assert.ok(!themeEvent.error.frame, 'build --watch: a theme error has no frame');
 });
+
+// A module that reaches `@uxdsl theme;`, and the value its CSS declares for
+// the primary color: the base theme's reference, or the theme file's literal.
+const THEMED = '@uxdsl theme;\n.main { color: palette(primary.main); }\n';
+const themeJson = (color) => `{ "palette": { "primary": { "main": "${color}" } } }\n`;
+const primaryMain = (css) => (css.match(/--uxdsl__palette__primary-main:\s*([^;\\]+);/) || [])[1];
+
+test('the Vite dev server loads a theme file created after it started, edited, deleted and created again under another name; a file of another name, or discovery turned off, sends nothing (negative controls)', async (t) => {
+  const dir = project(t, { 'styles/main.uxdsl': THEMED });
+  const off = project(t, { 'styles/main.uxdsl': THEMED });
+  const dev = await devServer(t, dir, {});
+  const base = primaryMain((await dev.fetchModule()).body);
+  assert.ok(base && base.startsWith('var(--uxdsl__color__'), `with no theme file, the base theme's reference: ${base}`);
+
+  const expectValue = async (step, value) => {
+    await dev.waitFor(step, updatesTheModule);
+    assert.equal(primaryMain((await dev.fetchModule()).body), value, step);
+  };
+
+  dev.clear();
+  await edit(dir, 'uxdsl.theme.json', themeJson('#111111'));
+  await expectValue('the update after uxdsl.theme.json is created', '#111111');
+
+  dev.clear();
+  await edit(dir, 'uxdsl.theme.json', themeJson('#222222'));
+  await expectValue('the update after uxdsl.theme.json is edited', '#222222');
+
+  dev.clear();
+  await delay(300);
+  fs.rmSync(path.join(dir, 'uxdsl.theme.json'));
+  await expectValue('the update after uxdsl.theme.json is deleted', base);
+
+  dev.clear();
+  await edit(dir, 'uxdsl.theme.cjs', "module.exports = { palette: { primary: { main: '#333333' } } };\n");
+  await expectValue('the update after uxdsl.theme.cjs is created', '#333333');
+
+  // Negative control: a new file beside it whose name is not a theme file's.
+  dev.clear();
+  await edit(dir, 'uxdsl.theme.txt', themeJson('#444444'));
+  await edit(dir, 'notes.json', '{}\n');
+  await delay(2000);
+  assert.deepEqual(dev.messages, [], 'a new file that is not a theme file sends nothing');
+
+  // Negative control: with discovery off, a theme file created on disk is not followed.
+  const offDev = await devServer(t, off, { discoverTheme: false });
+  assert.equal(primaryMain((await offDev.fetchModule()).body), base);
+  offDev.clear();
+  await edit(off, 'uxdsl.theme.json', themeJson('#111111'));
+  await delay(2000);
+  assert.deepEqual(offDev.messages, [], 'with discoverTheme: false, a theme file created on disk sends nothing');
+  assert.equal(primaryMain((await offDev.fetchModule()).body), base);
+});
+
+/**
+ * The primary color the built CSS carries, once it is `expected`. Creating or deleting a file
+ * can report two events (Windows: add, then change), so a second rebuild may start, and empty
+ * dist/, right after the BUNDLE_END the test waited for: read until the value is there rather
+ * than once.
+ */
+async function builtPrimaryIs(dir, expected, step, timeout = 10000) {
+  const start = Date.now();
+  let last = null;
+  for (;;) {
+    try {
+      last = primaryMain(builtCss(dir));
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw error;
+      last = '(dist/ emptied by a rebuild in progress)';
+    }
+    if (last === expected) return;
+    if (Date.now() - start > timeout) throw new Error(`${step}: primary is ${last}, expected ${expected}`);
+    await delay(150);
+  }
+}
+
+test('vite build --watch rebuilds with a theme file created after it started, and after it is deleted; with discovery off it does not (negative control)', async (t) => {
+  const dir = project(t, { 'styles/main.uxdsl': THEMED });
+  const off = project(t, { 'styles/main.uxdsl': THEMED });
+  const builds = await buildWatch(t, dir, {});
+  assert.equal((await builds.next('the first build')).code, 'BUNDLE_END');
+  const base = primaryMain(builtCss(dir));
+  assert.ok(base && base.startsWith('var(--uxdsl__color__'), `with no theme file, the base theme's reference: ${base}`);
+
+  await edit(dir, 'uxdsl.theme.json', themeJson('#111111'));
+  assert.equal((await builds.next('the build after uxdsl.theme.json is created')).code, 'BUNDLE_END');
+  await builtPrimaryIs(dir, '#111111', 'after uxdsl.theme.json is created');
+
+  await delay(300);
+  fs.rmSync(path.join(dir, 'uxdsl.theme.json'));
+  assert.equal((await builds.next('the build after uxdsl.theme.json is deleted')).code, 'BUNDLE_END');
+  await builtPrimaryIs(dir, base, 'after uxdsl.theme.json is deleted');
+
+  await edit(dir, 'uxdsl.theme.json', themeJson('#222222'));
+  assert.equal((await builds.next('the build after uxdsl.theme.json is created again')).code, 'BUNDLE_END');
+  await builtPrimaryIs(dir, '#222222', 'after uxdsl.theme.json is created again');
+
+  const offBuilds = await buildWatch(t, off, { discoverTheme: false });
+  assert.equal((await offBuilds.next('the first build with discovery off')).code, 'BUNDLE_END');
+  await edit(off, 'uxdsl.theme.json', themeJson('#111111'));
+  await offBuilds.quiet('a theme file created with discoverTheme: false', 3000);
+});

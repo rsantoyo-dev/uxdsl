@@ -473,6 +473,49 @@ None: no compiled output changes.
   it got `.a { v: 1; } .b { v: 1; }`). Every other compiled output, the
   Bootstrap corpus and the theme CSS are byte-identical.
 
+### A theme file created while a watch runs is loaded, `init` detects Next.js and Vite by their package, and its next steps fit a terminal
+
+Found by following the quick start as written, which starts the watch first
+and adds `uxdsl.theme.json` afterwards.
+
+- **A theme file created during a session is loaded, on every host.** Each
+  host registered only the theme file that existed when it started, so one
+  created afterwards changed nothing until a restart. With discovery on (no
+  `theme` option, `discoverTheme` not `false`), every name the file can have
+  and no file has yet (`uxdsl.theme.cjs`, `uxdsl.theme.js`,
+  `uxdsl.theme.json`) is now registered:
+  - `uxdsl build --watch` follows them next to the config, and rebuilds every
+    entry when one is created, edited or deleted. The theme file is followed
+    through its directory only, not also as a watch target: as a target, its
+    appearing or disappearing recreated the watcher, and a theme file
+    created while the new one armed its directories was missed;
+  - `uxdsl/webpack` registers them with `this.addMissingDependency()`, on a
+    compile that succeeds and on one that fails;
+  - `uxdsl/vite` adds them with `addWatchFile` from a new `transform` hook
+    (dev server and `vite build --watch`), and from a load that fails;
+  - `uxdsl/postcss` reports each as a `missing-dependency` message, which
+    postcss-loader (Next.js's included) hands to webpack.
+  An explicit `theme` or `discoverTheme: false` registers none.
+- **`uxdsl init` detects a framework by its package too.** Next.js is
+  detected by `next` in the project's `dependencies` or `devDependencies`, or
+  by `next.config.{js,mjs,ts,mts}`; Vite by `vite` there, or by
+  `vite.config.{js,mjs,cjs,ts,mts,cts}`. It used to look only for
+  `next.config.{js,mjs,ts}` and `vite.config.{js,ts}`, so a Next.js project
+  with no config file got no `postcss.config.js` and no notice. A package
+  whose name merely starts the same (`next-themes`, `vitest`) detects nothing.
+- **`init`'s next steps are wrapped.** Steps 1 and 3 were single lines of 186
+  and 98 columns; no line it prints is now wider than 100.
+
+Known limits: after a build that failed under `vite build --watch`, a theme
+file created under polling, on Linux or on Windows is seen only under the
+first of its names (`uxdsl.theme.cjs`); `vite build --watch` on Vite 8 was not
+tried; and the `missing-dependency` message was verified as a message, not in
+a running `next dev`.
+
+#### Visual changes
+
+None: compiled output and the theme CSS are byte-identical.
+
 ### Every host's watch recovers after a failed compile, and the adapters' errors are located (MIG-B9-39)
 
 A compile that fails, and is then fixed, rebuilds on the save that fixes it,

@@ -24,8 +24,11 @@ loader.
   `@forward`ed or `@import`ed partial, a `.scss` file — and the discovered
   theme file are registered via `this.addDependency()` after each compile
   that succeeds, so webpack's cache and watch mode see an edit to any of
-  them. A file under the `node_modules` directory webpack itself is
-  installed in is the exception: webpack's default `snapshot.managedPaths`
+  them. When discovery is on and no theme file exists yet, each name it could
+  have (`uxdsl.theme.cjs`, `uxdsl.theme.js`, `uxdsl.theme.json` under
+  `configRoot`) is registered with `this.addMissingDependency()`, so creating
+  the file rebuilds the module. A file under the `node_modules` directory
+  webpack itself is installed in is the exception: webpack's default `snapshot.managedPaths`
   treats it as changed only when its package's version changes.
 - **Recovery after a failed compile**: a compile that fails still registers,
   before it reports the error, every file the module's last successful

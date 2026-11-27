@@ -34,7 +34,7 @@ export function CliRun({ id, collapsed = false, files = true }: { id: string; co
   const out = (run.stdout || '').trimEnd()
   const err = (run.stderr || '').trimEnd()
   const body = (<>
-    <pre className="cap-terminal"><code><span className="cap-terminal__prompt">$ uxdsl {run.argv.join(' ')}</span>{out ? `\n${out}` : ''}{err ? <span className="cap-terminal__err">{`\n${err}`}</span> : null}</code></pre>
+    <pre className="cap-terminal"><code><span className="cap-terminal__prompt">$ npx uxdsl {run.argv.join(' ')}</span>{out ? `\n${out}` : ''}{err ? <span className="cap-terminal__err">{`\n${err}`}</span> : null}</code></pre>
     {run.excerpt && (<>
       <p className="cap-note">stdout is a JSON document{run.facts?.bytes ? ` of ${String(run.facts.bytes)} bytes` : ''}; an excerpt:</p>
       <pre className="cap-terminal"><code>{run.excerpt}</code></pre>
@@ -73,6 +73,13 @@ export function CapturedFile({ run: id, file }: { run: string; file: string }) {
       <pre className="cap-terminal"><code>{text.trimEnd()}</code></pre>
     </figure>
   )
+}
+
+/** The size of the CSS a captured build wrote, in whole kilobytes. */
+export function CssSize({ run: id }: { run: string }) {
+  const bytes = byId(id)?.facts?.bytes
+  if (typeof bytes !== 'number') throw new Error(`the captured run "${id}" records no size — re-run scripts/capture-capabilities.js`)
+  return <>{Math.round(bytes / 1024)} KB</>
 }
 
 export function CliFacts({ id }: { id: string }) {

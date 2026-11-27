@@ -217,7 +217,11 @@ Every `compile()` warning reaches Vite through `this.warn()` as one line,
 `N repetitive deprecation warnings omitted.`) is its text alone. Every file
 Dart Sass loaded for the module (a `@use`d, `@forward`ed or `@import`ed
 partial, a `.scss` file, a package's file) and the discovered theme file are
-added with `addWatchFile`, so an edit to any of them recompiles it. The dev
+added with `addWatchFile`, so an edit to any of them recompiles it. When
+discovery is on and no theme file exists yet, each name it could have
+(`uxdsl.theme.cjs`, `uxdsl.theme.js`, `uxdsl.theme.json` under `configRoot`)
+is added too, so creating the file recompiles the module, in the dev server
+and under `vite build --watch`. The dev
 server does not watch `node_modules` (Vite's default
 `server.watch.ignored`), so an edit to a package's file is not seen.
 

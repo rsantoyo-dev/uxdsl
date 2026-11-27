@@ -249,6 +249,8 @@ test('phase 2 (3): init scaffolds src/styles.uxdsl — the file to edit — impo
     const importLines = r.stdout.split('\n').map((l) => l.trim()).filter((l) => /^import '/.test(l));
     assert.deepEqual(importLines, ["import './src/uxdsl.css';"], `[${branch}] exactly one import path:\n${r.stdout}`);
     assert.match(r.stdout, /Edit src\/styles\.uxdsl/, `[${branch}] the next steps point at the file to edit`);
+    const wide = r.stdout.split('\n').filter((line) => line.length > 100);
+    assert.deepEqual(wide, [], `[${branch}] no line of the output is wider than 100 columns`);
     assert.doesNotMatch(r.stdout, /\.\.\/uxdsl\.css/, `[${branch}] no second, framework-relative spelling of the path`);
     // The scaffolded rule compiles: a first build is not blank.
     const built = run(['build'], dir);
@@ -269,6 +271,41 @@ test('phase 2 (3): init for Next.js writes a postcss.config.js that keeps Next\'
   assert.deepEqual(loaded.plugins['next/dist/compiled/postcss-preset-env'], { autoprefixer: { flexbox: 'no-2009' }, stage: 3, features: { 'custom-properties': false } });
   assert.deepEqual(loaded.plugins['uxdsl/postcss'], {});
   assert.match(config, /replaces Next's defaults/);
+});
+
+test('init detects Next.js and Vite by their package in package.json or by any config file they read; neither is detected without both (negative control)', () => {
+  const project = (name, pkg, files = []) => {
+    const dir = fs.realpathSync(temporaryDirectory(`uxdsl-init-detect-${name}-`));
+    fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({ name, version: '0.0.0', private: true, ...pkg }, null, 2));
+    for (const file of files) fs.writeFileSync(path.join(dir, file), '');
+    const r = run(['init'], dir);
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    return { dir, out: r.stdout };
+  };
+  // Next.js with no next.config: the dependency alone decides, and the
+  // PostCSS config Next needs is written.
+  for (const pkg of [{ dependencies: { next: '^15.0.0' } }, { devDependencies: { next: '^15.0.0' } }]) {
+    const { dir, out } = project('next-dep', pkg);
+    assert.match(out, /Detected Next\.js/);
+    assert.ok(fs.existsSync(path.join(dir, 'postcss.config.js')), out);
+    assert.match(out, /alongside next dev/);
+  }
+  for (const file of ['next.config.js', 'next.config.mjs', 'next.config.ts', 'next.config.mts']) {
+    const { dir, out } = project('next-file', {}, [file]);
+    assert.match(out, /Detected Next\.js/, file);
+    assert.ok(fs.existsSync(path.join(dir, 'postcss.config.js')), file);
+  }
+  for (const file of ['vite.config.js', 'vite.config.mjs', 'vite.config.cjs', 'vite.config.ts', 'vite.config.mts', 'vite.config.cts']) {
+    const { dir, out } = project('vite-file', {}, [file]);
+    assert.match(out, /Detected Vite/, file);
+    assert.ok(!fs.existsSync(path.join(dir, 'postcss.config.js')), file);
+  }
+  assert.match(project('vite-dep', { devDependencies: { vite: '^7.0.0' } }).out, /Detected Vite/);
+  // Controls: a package whose name only contains the framework's, a script
+  // that names it, and a config file of another tool detect nothing.
+  const none = project('none', { dependencies: { 'next-themes': '^0.4.0', vitest: '^3.0.0' }, scripts: { dev: 'next dev' } }, ['next.config.json', 'vitest.config.ts']);
+  assert.doesNotMatch(none.out, /Detected/);
+  assert.ok(!fs.existsSync(path.join(none.dir, 'postcss.config.js')));
 });
 
 // --- Stability phase 4: one package, one install line ------------------------

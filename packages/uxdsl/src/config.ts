@@ -67,6 +67,20 @@ export function findThemeConfigPath(dir: string): string | null {
   return null;
 }
 
+/** Every path `findThemeConfigPath(dir)` reads a theme from, whether the file
+ * exists or not, in its order of precedence. A watcher follows the ones that
+ * do not exist, so a theme file created while it runs is loaded by the next
+ * build instead of waiting for a restart. */
+export function themeCandidatePaths(dir: string): string[] {
+  return THEME_CANDIDATES.map((candidate) => path.resolve(dir, candidate));
+}
+
+/** The paths of `themeCandidatePaths(dir)` no file is at: what the PostCSS
+ * plugin and both bundler adapters register as missing. */
+export function absentThemeCandidatePaths(dir: string): string[] {
+  return themeCandidatePaths(dir).filter((file) => !fs.existsSync(file));
+}
+
 const WRAPPER_KEYS = ['theme', 'references'];
 
 /** A theme file exports the theme itself. A `{ theme, references }` wrapper

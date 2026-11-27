@@ -4,7 +4,10 @@
 // `this.getOptions()`; every file `compile()` reports (the entry, each file
 // Dart Sass loaded through `@use`, `@forward` or `@import`, the discovered
 // theme file's own require() tree) is added with `this.addDependency()`, so
-// webpack's cache and watch mode see an edit to any of them. Each compile()
+// webpack's cache and watch mode see an edit to any of them. While the theme
+// is discovered, each name the theme file can have and no file has yet is
+// added with `this.addMissingDependency()`, so a theme file created during a
+// watch session rebuilds the modules. Each compile()
 // warning is emitted with `this.emitWarning()` at its file (relative to
 // `rootContext`), line and column. The map goes to the next loader with
 // absolute paths as its sources. Use it as
@@ -42,7 +45,7 @@ import fs from 'fs';
 import path from 'path';
 import { compile, referencesThemeTokens, themeEmissionWarning } from './compile';
 import type { CompileConfig, CompileWarning, ThemeEmission } from './compile';
-import { collectLocalRequireTree, findThemeConfigPath, removedOptionWarnings } from './config';
+import { absentThemeCandidatePaths, collectLocalRequireTree, findThemeConfigPath, removedOptionWarnings } from './config';
 
 /** Loader options: the same theme options as the PostCSS plugin and the Vite
  * plugin, plus `sourceMap` (defaults to webpack's own `this.sourceMap`) and
@@ -66,6 +69,8 @@ interface LoaderContext {
   async(): (error: unknown, content?: string, map?: unknown) => void;
   getOptions(): UxdslLoaderOptions | undefined;
   addDependency(file: string): void;
+  /** Absent under a loader runner older than webpack 5's. */
+  addMissingDependency?(file: string): void;
   emitWarning(warning: Error): void;
   rootContext: string;
   resourcePath: string;
@@ -182,6 +187,15 @@ function themeFiles(options: UxdslLoaderOptions, root: string): string[] {
   }
 }
 
+// The names a discovered theme file can have under `root` that no file has
+// yet. The loader registers each as a missing dependency, so the build after
+// one is created (or one of a name that takes precedence) loads it. Empty
+// when a `theme` option or `discoverTheme: false` turns discovery off.
+function absentThemeFiles(options: UxdslLoaderOptions, root: string): string[] {
+  if (options.theme !== undefined || options.discoverTheme === false) return [];
+  return absentThemeCandidatePaths(root);
+}
+
 const ANSI_RE = /\x1b\[[0-9;]*m/g;
 
 // The frame under a failed compile's message: Dart Sass's own for UXD_SASS,
@@ -265,6 +279,7 @@ async function uxdslLoader(this: LoaderContext, source: string): Promise<void> {
     }
 
     for (const dep of dependencies) this.addDependency(dep);
+    for (const file of absentThemeFiles(options, options.configRoot || this.rootContext)) this.addMissingDependency?.(file);
     lastGood?.set(this.resourcePath, dependencies);
     for (const warning of warnings) this.emitWarning(new Error(formatWarning(warning, this.rootContext)));
 
@@ -285,6 +300,7 @@ async function uxdslLoader(this: LoaderContext, source: string): Promise<void> {
       ...themeFiles(options, options.configRoot || this.rootContext),
     ]);
     for (const file of files) this.addDependency(file);
+    for (const file of absentThemeFiles(options, options.configRoot || this.rootContext)) this.addMissingDependency?.(file);
     callback(reportedError(err, this.rootContext));
   }
 }
