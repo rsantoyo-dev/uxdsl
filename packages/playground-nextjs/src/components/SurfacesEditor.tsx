@@ -7,6 +7,8 @@ import { InteractiveDemoContainer } from './InteractiveDemoContainer'
 import RoleField from './RoleField'
 import { suggestions, rolePatch, surfaceUsers } from '../lib/role-editing'
 import { checkPatch } from '../lib/theme-patch'
+import UsageExample, { jsonBlock, Result } from './UsageExample'
+import { surfaceUsage } from '../lib/usage-snippets'
 
 // SurfacesEditor.uxdsl generates a class per role of the base theme and per tone, each one
 // @ds-surface(role tone) itself. A role added in the JSON tab has no compiled rule yet: it
@@ -46,6 +48,7 @@ export default function SurfacesEditor() {
     }
   }
 
+  const usage = useMemo(() => surfaceUsage(activeThemeData, role, tone), [activeThemeData, role, tone])
   return (
     <InteractiveDemoContainer
       title="Surfaces"
@@ -112,6 +115,16 @@ export default function SurfacesEditor() {
           </div>
         </div>
       </div>
+      <UsageExample
+        note={<>One line gives a container its padding, corners, colors, border and shadow; a tone swaps its colors for a Palette family&apos;s.</>}
+        blocks={[{ label: 'In a stylesheet (.uxdsl)', code: usage.stylesheet }, jsonBlock(usage.excerpt)]}
+      >
+        {surfaceClass(role, tone) && (
+          <Result label=".card">
+            <div className={surfaceClass(role, tone)}>@ds-surface({role}{tone ? ` ${tone}` : ''})</div>
+          </Result>
+        )}
+      </UsageExample>
     </InteractiveDemoContainer>
   )
 }

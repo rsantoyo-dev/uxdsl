@@ -77,7 +77,7 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 
 | Capability | Requires | Level | Evidence |
 | --- | --- | --- | --- |
-| `--lg` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/components/SideNav.uxdsl` |
+| `--lg` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/components/BreakpointsEditor.uxdsl`, `src/components/SideNav.uxdsl` |
 | `--md` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/components/BreakpointsEditor.uxdsl` |
 | `--sm` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl` |
 | `--xl` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl` |
@@ -111,7 +111,7 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | `input.contained` | live | live | `src/components/InputDemo.tsx`, `src/components/RuntimeEngines.tsx` |
 | `input.outlined` | live | live | `src/components/BreakpointsEditor.uxdsl`, `src/components/CapabilityDocs.uxdsl`, `src/components/ColorsEditor.uxdsl` |
 | `input.underline` | live | live | `src/components/InputDemo.tsx`, `src/components/RuntimeEngines.tsx`, `src/components/TypographyEditor.uxdsl` |
-| `surface.contained` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/not-found.uxdsl`, `src/components/CapabilityDocs.uxdsl` |
+| `surface.contained` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/not-found.uxdsl`, `src/components/BreakpointsEditor.uxdsl` |
 | `surface.flat` | live | live | `src/components/ControlsEditor.tsx`, `src/components/DemoSurfaces.tsx`, `src/components/SideNav.uxdsl` |
 | `surface.outlined` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/page.uxdsl`, `src/components/AIPrompt.uxdsl` |
 
@@ -137,7 +137,7 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | Capability | Requires | Level | Evidence |
 | --- | --- | --- | --- |
 | `analyzeResponsiveValue` | live | live | `src/components/RuntimeEngines.tsx` |
-| `applyTheme` | live | live | `src/components/ThemeContext.tsx`, `src/runtime-sandbox/sandbox-entry.ts` |
+| `applyTheme` | live | live | `src/components/ThemeContext.tsx`, `src/lib/usage-snippets.js`, `src/runtime-sandbox/sandbox-entry.ts` |
 | `buttonComponentCss` | live | live | `src/components/DemoButtons.tsx` |
 | `buttonDeclarations` | live | live | `src/components/RuntimeEngines.tsx` |
 | `checkThemeContrast` | live | live | `src/components/ContrastReport.tsx` |
@@ -212,7 +212,7 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | `./engine` | live | live | `src/components/BreakpointEditor.tsx`, `src/components/ButtonDocumentation.tsx`, `src/components/ControlsEditor.tsx` |
 | `./language` | live | live | `src/app/docs/language/page.tsx`, `src/components/DemoBreakpoints.tsx`, `src/components/DemoDensity.tsx` |
 | `./postcss` | live | live | `package.json` |
-| `./runtime` | live | live | `src/components/RuntimeLab.tsx`, `src/components/ThemeContext.tsx`, `src/runtime-sandbox/sandbox-entry.ts` |
+| `./runtime` | live | live | `src/components/RuntimeLab.tsx`, `src/components/ThemeContext.tsx`, `src/lib/usage-snippets.js` |
 | `./schema/theme.schema.json` | live | live | `uxdsl.theme.green.json` |
 | `./theme` | live | live | `src/app/docs/language/page.tsx`, `src/app/docs/theme/page.tsx`, `src/components/agent-guides/BreakpointGuide.tsx` |
 | `./theme/base.contrast-exceptions.json` | live | live | `src/components/ContrastReport.tsx` |

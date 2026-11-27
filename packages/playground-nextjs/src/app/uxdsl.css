@@ -1288,6 +1288,39 @@ input[type=range]::-moz-range-thumb:hover {
   color: var(--uxdsl__palette__text-secondary);
 }
 
+/* "Use it in your project": the layout of its stylesheet, live. Compiled like any component,
+   so the breakpoint preview above moves its md rule too. */
+.bpe-demo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__density__3);
+}
+@media (min-width: 768px){
+.bpe-demo {
+  flex-direction: row;
+} }
+
+.bpe-demo__item {
+  padding: var(--uxdsl__surface__contained-padding);
+  border-radius: var(--uxdsl__surface__contained-radius);
+  background: var(--uxdsl__palette__primary-main);
+  color: var(--uxdsl__palette__primary-contrast);
+  border: var(--uxdsl__surface__contained-border);
+  box-shadow: var(--uxdsl__surface__contained-shadow);
+  font-family: var(--uxdsl__typography__body-sm-font-family);
+  font-size: var(--uxdsl__typography__body-sm-font-size);
+  line-height: var(--uxdsl__typography__body-sm-line-height);
+  font-weight: var(--uxdsl__typography__body-sm-font-weight);
+  letter-spacing: var(--uxdsl__typography__body-sm-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__body-sm-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__body-sm-margin-block-end);
+}
+
+@media (min-width: 1024px) {
+  .bpe-demo__item {
+    flex: 1;
+  }
+}
 /* MIG-B7-17 phase C: the pages that call UXDSL's own tools for real — Runtime, Contrast, CLI,
    Diagnostics. One stylesheet for the four, written in UXDSL: Density for component spacing,
    Palette roles for interface color, Surfaces/Buttons/Inputs as roles, configured breakpoints.
@@ -1752,6 +1785,10 @@ input[type=range]::-moz-range-thumb:hover {
   gap: var(--uxdsl__density__2);
   max-height: var(--uxdsl__space__16);
   overflow-y: auto;
+}
+
+.ccl--full {
+  max-height: none;
 }
 
 .ccl__row {
@@ -6617,29 +6654,7 @@ input[type=range]::-moz-range-thumb:hover {
   color: var(--uxdsl__palette__error-main);
 }
 
-/* The live example: the token used as padding and gap, at the window's breakpoint. */
-.dte__example {
-  display: flex;
-  flex-direction: column;
-  gap: var(--uxdsl__density__2);
-  grid-column: 1;
-}
-@media (min-width: 1024px){
-.dte__example {
-  grid-column: 1/-1;
-} }
-
-.dte__example-title {
-  font-family: var(--uxdsl__typography__body-sm-font-family);
-  font-size: var(--uxdsl__typography__body-sm-font-size);
-  line-height: var(--uxdsl__typography__body-sm-line-height);
-  font-weight: var(--uxdsl__typography__body-sm-font-weight);
-  letter-spacing: var(--uxdsl__typography__body-sm-letter-spacing);
-  margin-block-start: var(--uxdsl__typography__body-sm-margin-block-start);
-  margin-block-end: var(--uxdsl__typography__body-sm-margin-block-end);
-  color: var(--uxdsl__palette__text-secondary);
-}
-
+/* The live example of "Use it in your project": the token used as padding and gap. */
 .dte__demo {
   padding: var(--uxdsl__surface__outlined-padding);
   border-radius: var(--uxdsl__radius__2);
@@ -8386,6 +8401,19 @@ input[type=range]::-moz-range-thumb:hover {
   gap: var(--uxdsl__density__4);
 }
 
+/* The quick looks and the download, above the tabs. */
+.lth__bar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__density__3);
+  margin-bottom: var(--uxdsl__density__4);
+}
+
+.lth__tab {
+  display: flex;
+  flex-direction: column;
+}
+
 /* PageTitle styles - Scoped */
 #PageTitle .page-title {
   text-align: center;
@@ -8719,6 +8747,11 @@ input[type=range]::-moz-range-thumb:hover {
   color: var(--uxdsl__palette__primary-contrast);
 }
 
+/* The badge of "Use it in your project": the role's main at 15%. */
+.pfe-tint--primary {
+  background: color-mix(in srgb, var(--uxdsl__palette__primary-main) 15%, transparent);
+}
+
 .pfe-fill--secondary-main {
   background: var(--uxdsl__palette__secondary-main);
 }
@@ -8749,6 +8782,11 @@ input[type=range]::-moz-range-thumb:hover {
 
 .pfe-ink--secondary-contrast {
   color: var(--uxdsl__palette__secondary-contrast);
+}
+
+/* The badge of "Use it in your project": the role's main at 15%. */
+.pfe-tint--secondary {
+  background: color-mix(in srgb, var(--uxdsl__palette__secondary-main) 15%, transparent);
 }
 
 .pfe-fill--tertiary-main {
@@ -8783,6 +8821,11 @@ input[type=range]::-moz-range-thumb:hover {
   color: var(--uxdsl__palette__tertiary-contrast);
 }
 
+/* The badge of "Use it in your project": the role's main at 15%. */
+.pfe-tint--tertiary {
+  background: color-mix(in srgb, var(--uxdsl__palette__tertiary-main) 15%, transparent);
+}
+
 .pfe-fill--success-main {
   background: var(--uxdsl__palette__success-main);
 }
@@ -8813,6 +8856,11 @@ input[type=range]::-moz-range-thumb:hover {
 
 .pfe-ink--success-contrast {
   color: var(--uxdsl__palette__success-contrast);
+}
+
+/* The badge of "Use it in your project": the role's main at 15%. */
+.pfe-tint--success {
+  background: color-mix(in srgb, var(--uxdsl__palette__success-main) 15%, transparent);
 }
 
 .pfe-fill--info-main {
@@ -8847,6 +8895,11 @@ input[type=range]::-moz-range-thumb:hover {
   color: var(--uxdsl__palette__info-contrast);
 }
 
+/* The badge of "Use it in your project": the role's main at 15%. */
+.pfe-tint--info {
+  background: color-mix(in srgb, var(--uxdsl__palette__info-main) 15%, transparent);
+}
+
 .pfe-fill--warning-main {
   background: var(--uxdsl__palette__warning-main);
 }
@@ -8877,6 +8930,11 @@ input[type=range]::-moz-range-thumb:hover {
 
 .pfe-ink--warning-contrast {
   color: var(--uxdsl__palette__warning-contrast);
+}
+
+/* The badge of "Use it in your project": the role's main at 15%. */
+.pfe-tint--warning {
+  background: color-mix(in srgb, var(--uxdsl__palette__warning-main) 15%, transparent);
 }
 
 .pfe-fill--error-main {
@@ -8911,6 +8969,11 @@ input[type=range]::-moz-range-thumb:hover {
   color: var(--uxdsl__palette__error-contrast);
 }
 
+/* The badge of "Use it in your project": the role's main at 15%. */
+.pfe-tint--error {
+  background: color-mix(in srgb, var(--uxdsl__palette__error-main) 15%, transparent);
+}
+
 .pfe-fill--dark-main {
   background: var(--uxdsl__palette__dark-main);
 }
@@ -8941,6 +9004,11 @@ input[type=range]::-moz-range-thumb:hover {
 
 .pfe-ink--dark-contrast {
   color: var(--uxdsl__palette__dark-contrast);
+}
+
+/* The badge of "Use it in your project": the role's main at 15%. */
+.pfe-tint--dark {
+  background: color-mix(in srgb, var(--uxdsl__palette__dark-main) 15%, transparent);
 }
 
 .pfe-fill--neutral-main {
@@ -8975,6 +9043,11 @@ input[type=range]::-moz-range-thumb:hover {
   color: var(--uxdsl__palette__neutral-contrast);
 }
 
+/* The badge of "Use it in your project": the role's main at 15%. */
+.pfe-tint--neutral {
+  background: color-mix(in srgb, var(--uxdsl__palette__neutral-main) 15%, transparent);
+}
+
 .pfe-fill--light-main {
   background: var(--uxdsl__palette__light-main);
 }
@@ -9005,6 +9078,11 @@ input[type=range]::-moz-range-thumb:hover {
 
 .pfe-ink--light-contrast {
   color: var(--uxdsl__palette__light-contrast);
+}
+
+/* The badge of "Use it in your project": the role's main at 15%. */
+.pfe-tint--light {
+  background: color-mix(in srgb, var(--uxdsl__palette__light-main) 15%, transparent);
 }
 
 .pfe-fill--surface-main {
@@ -9055,6 +9133,11 @@ input[type=range]::-moz-range-thumb:hover {
   color: var(--uxdsl__palette__surface-subtle);
 }
 
+/* The badge of "Use it in your project": the role's main at 15%. */
+.pfe-tint--surface {
+  background: color-mix(in srgb, var(--uxdsl__palette__surface-main) 15%, transparent);
+}
+
 .pfe-fill--text-main {
   background: var(--uxdsl__palette__text-main);
 }
@@ -9087,12 +9170,22 @@ input[type=range]::-moz-range-thumb:hover {
   color: var(--uxdsl__palette__text-disabled);
 }
 
+/* The badge of "Use it in your project": the role's main at 15%. */
+.pfe-tint--text {
+  background: color-mix(in srgb, var(--uxdsl__palette__text-main) 15%, transparent);
+}
+
 .pfe-fill--divider-main {
   background: var(--uxdsl__palette__divider-main);
 }
 
 .pfe-ink--divider-main {
   color: var(--uxdsl__palette__divider-main);
+}
+
+/* The badge of "Use it in your project": the role's main at 15%. */
+.pfe-tint--divider {
+  background: color-mix(in srgb, var(--uxdsl__palette__divider-main) 15%, transparent);
 }
 
 .pfe-fill--action-disabled {
@@ -9103,6 +9196,7 @@ input[type=range]::-moz-range-thumb:hover {
   color: var(--uxdsl__palette__action-disabled);
 }
 
+/* The badge of "Use it in your project": the role's main at 15%. */
 /* Toolbar: the Light/Dark switch and its hint. */
 .pfe__toolbar {
   display: flex;
@@ -9860,6 +9954,110 @@ input[type=range]::-moz-range-thumb:hover {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--uxdsl__palette__surface-contrast);
+}
+
+/* The Live theme handler's quick looks (QuickLooks.tsx). Every value is a UXDSL token, role or
+   directive; the literals left are layout (flex). */
+.qlk {
+  padding: var(--uxdsl__surface__contained-padding);
+  border-radius: var(--uxdsl__radius__3);
+  background: var(--uxdsl__surface__contained-bg);
+  color: var(--uxdsl__surface__contained-color);
+  border: var(--uxdsl__surface__contained-border);
+  box-shadow: var(--uxdsl__surface__contained-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__density__2);
+}
+
+.qlk__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--uxdsl__density__2);
+  color: var(--uxdsl__palette__primary-main);
+}
+
+.qlk__title {
+  font-family: var(--uxdsl__typography__subtitle2-font-family);
+  font-size: var(--uxdsl__typography__subtitle2-font-size);
+  line-height: var(--uxdsl__typography__subtitle2-line-height);
+  font-weight: var(--uxdsl__typography__subtitle2-font-weight);
+  letter-spacing: var(--uxdsl__typography__subtitle2-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__subtitle2-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__subtitle2-margin-block-end);
+  color: var(--uxdsl__palette__text-primary);
+}
+
+.qlk__hint {
+  font-family: var(--uxdsl__typography__caption-font-family);
+  font-size: var(--uxdsl__typography__caption-font-size);
+  line-height: var(--uxdsl__typography__caption-line-height);
+  font-weight: var(--uxdsl__typography__caption-font-weight);
+  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+  color: var(--uxdsl__palette__text-secondary);
+}
+
+.qlk__looks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--uxdsl__density__2);
+}
+
+.qlk__look { padding: var(--uxdsl__surface__outlined-padding); border-radius: 9999px; background: transparent; color: var(--uxdsl__palette__primary-main); border: 1px solid var(--uxdsl__palette__primary-main); box-shadow: var(--uxdsl__surface__outlined-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast);
+  font-family: var(--uxdsl__typography__body-sm-font-family);
+  font-size: var(--uxdsl__typography__body-sm-font-size);
+  line-height: var(--uxdsl__typography__body-sm-line-height);
+  font-weight: var(--uxdsl__typography__body-sm-font-weight);
+  letter-spacing: var(--uxdsl__typography__body-sm-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__body-sm-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__body-sm-margin-block-end);
+}
+
+.qlk__look:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__outlined-tone-primary-hover-color, var(--uxdsl__button__outlined-hover-color)); border: var(--uxdsl__button__outlined-tone-primary-hover-border, var(--uxdsl__button__outlined-hover-border)); }
+
+.qlk__look:focus-visible { outline: var(--uxdsl__button__outlined-tone-primary-focusvisible-outline, var(--uxdsl__button__outlined-focusvisible-outline)); outline-offset: var(--uxdsl__button__outlined-tone-primary-focusvisible-outline-offset, var(--uxdsl__button__outlined-focusvisible-outline-offset)); }
+
+.qlk__look.is-selected, .qlk__look[aria-pressed="true"], .qlk__look[aria-selected="true"] { background: var(--uxdsl__button__outlined-tone-primary-selected-bg, var(--uxdsl__button__outlined-selected-bg)); color: var(--uxdsl__button__outlined-tone-primary-selected-color, var(--uxdsl__button__outlined-selected-color)); border: var(--uxdsl__button__outlined-tone-primary-selected-border, var(--uxdsl__button__outlined-selected-border)); }
+
+.qlk__look:disabled, .qlk__look[aria-disabled="true"] { opacity: var(--uxdsl__button__outlined-tone-primary-disabled-opacity, var(--uxdsl__button__outlined-disabled-opacity)); cursor: var(--uxdsl__button__outlined-tone-primary-disabled-cursor, var(--uxdsl__button__outlined-disabled-cursor)); }
+
+.qlk__reset { padding: var(--uxdsl__surface__flat-padding); border-radius: 9999px; background: var(--uxdsl__surface__flat-bg); color: var(--uxdsl__surface__flat-color); border: var(--uxdsl__surface__flat-border); box-shadow: var(--uxdsl__surface__flat-shadow);
+  font-family: var(--uxdsl__typography__body-sm-font-family);
+  font-size: var(--uxdsl__typography__body-sm-font-size);
+  line-height: var(--uxdsl__typography__body-sm-line-height);
+  font-weight: var(--uxdsl__typography__body-sm-font-weight);
+  letter-spacing: var(--uxdsl__typography__body-sm-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__body-sm-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__body-sm-margin-block-end);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--uxdsl__density__1);
+}
+
+.qlk__reset:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__flat-hover-color); }
+
+.qlk__reset:focus-visible { outline: var(--uxdsl__button__flat-focusvisible-outline); outline-offset: var(--uxdsl__button__flat-focusvisible-outline-offset); }
+
+.qlk__reset.is-selected, .qlk__reset[aria-pressed="true"], .qlk__reset[aria-selected="true"] { color: var(--uxdsl__button__flat-selected-color); }
+
+.qlk__reset:disabled, .qlk__reset[aria-disabled="true"] { opacity: var(--uxdsl__button__flat-disabled-opacity); cursor: var(--uxdsl__button__flat-disabled-cursor); }
+
+.qlk__status {
+  font-family: var(--uxdsl__typography__caption-font-family);
+  font-size: var(--uxdsl__typography__caption-font-size);
+  line-height: var(--uxdsl__typography__caption-line-height);
+  font-weight: var(--uxdsl__typography__caption-font-weight);
+  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+  margin: var(--uxdsl__density__0);
+  color: var(--uxdsl__palette__text-secondary);
+}
+.qlk__status.is-invalid {
+  color: var(--uxdsl__palette__error-main);
 }
 
 .live-preview-box {
@@ -12800,6 +12998,60 @@ input[type=range]::-moz-range-thumb:hover {
   padding-inline-start: var(--uxdsl__density__4);
 }
 
+/* The head of every tab of the Live theme handler (TabGuide.tsx). Every value is a UXDSL
+   token, role or directive; the literals left are layout (flex). */
+.tgd {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__density__2);
+  margin-bottom: var(--uxdsl__density__3);
+}
+
+.tgd__what {
+  font-family: var(--uxdsl__typography__body-font-family);
+  font-size: var(--uxdsl__typography__body-font-size);
+  line-height: var(--uxdsl__typography__body-line-height);
+  font-weight: var(--uxdsl__typography__body-font-weight);
+  letter-spacing: var(--uxdsl__typography__body-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__body-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__body-margin-block-end);
+  margin: var(--uxdsl__density__0);
+  color: var(--uxdsl__palette__text-primary);
+}
+
+.tgd__try {
+  padding: var(--uxdsl__surface__contained-padding);
+  border-radius: var(--uxdsl__radius__2);
+  background: var(--uxdsl__palette__primary-main);
+  color: var(--uxdsl__palette__primary-contrast);
+  border: var(--uxdsl__surface__contained-border);
+  box-shadow: var(--uxdsl__surface__contained-shadow);
+  font-family: var(--uxdsl__typography__body-sm-font-family);
+  font-size: var(--uxdsl__typography__body-sm-font-size);
+  line-height: var(--uxdsl__typography__body-sm-line-height);
+  font-weight: var(--uxdsl__typography__body-sm-font-weight);
+  letter-spacing: var(--uxdsl__typography__body-sm-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__body-sm-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__body-sm-margin-block-end);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--uxdsl__density__2);
+  margin: var(--uxdsl__density__0);
+}
+
+.tgd__badge {
+  font-family: var(--uxdsl__typography__caption-font-family);
+  font-size: var(--uxdsl__typography__caption-font-size);
+  line-height: var(--uxdsl__typography__caption-line-height);
+  font-weight: var(--uxdsl__typography__caption-font-weight);
+  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
 /* Tabs: a row of buttons over one visible panel. */
 .tabs {
   margin-block: var(--uxdsl__density__4);
@@ -13870,6 +14122,225 @@ input[type=range]::-moz-range-thumb:hover {
   color: var(--uxdsl__palette__text-primary);
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+
+/* The "Use it in your project" block that ends every tab of the Live theme handler
+   (UsageExample.tsx). Every value is a UXDSL token, role or directive; the literals left are
+   layout (grid, flex) and the code block's whitespace. */
+.use {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__density__3);
+  margin-top: var(--uxdsl__density__4);
+  padding-top: var(--uxdsl__density__4);
+  border-top: var(--uxdsl__border__1);
+}
+
+.use__title {
+  font-family: var(--uxdsl__typography__subtitle2-font-family);
+  font-size: var(--uxdsl__typography__subtitle2-font-size);
+  line-height: var(--uxdsl__typography__subtitle2-line-height);
+  font-weight: var(--uxdsl__typography__subtitle2-font-weight);
+  letter-spacing: var(--uxdsl__typography__subtitle2-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__subtitle2-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__subtitle2-margin-block-end);
+  margin: var(--uxdsl__density__0);
+  color: var(--uxdsl__palette__text-primary);
+}
+
+.use__note {
+  font-family: var(--uxdsl__typography__body-sm-font-family);
+  font-size: var(--uxdsl__typography__body-sm-font-size);
+  line-height: var(--uxdsl__typography__body-sm-line-height);
+  font-weight: var(--uxdsl__typography__body-sm-font-weight);
+  letter-spacing: var(--uxdsl__typography__body-sm-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__body-sm-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__body-sm-margin-block-end);
+  margin: var(--uxdsl__density__0);
+  color: var(--uxdsl__palette__text-secondary);
+}
+
+.use__pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: var(--uxdsl__density__3);
+}
+
+@media (min-width: 1024px){
+
+.use__pair {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+} }
+
+.use__live {
+  padding: var(--uxdsl__surface__outlined-padding);
+  border-radius: var(--uxdsl__radius__3);
+  background: var(--uxdsl__surface__outlined-bg);
+  color: var(--uxdsl__surface__outlined-color);
+  border: var(--uxdsl__surface__outlined-border);
+  box-shadow: var(--uxdsl__surface__outlined-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__density__3);
+}
+
+.use__live-title {
+  font-family: var(--uxdsl__typography__caption-font-family);
+  font-size: var(--uxdsl__typography__caption-font-size);
+  line-height: var(--uxdsl__typography__caption-line-height);
+  font-weight: var(--uxdsl__typography__caption-font-weight);
+  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+  color: var(--uxdsl__palette__text-secondary);
+}
+
+.use__results {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--uxdsl__density__4);
+}
+
+.use__result {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--uxdsl__density__2);
+  margin: var(--uxdsl__density__0);
+  min-width: 0;
+}
+
+.use__result-box {
+  display: flex;
+  align-items: center;
+}
+
+/* A layout example takes the whole row, so its own width is what changes. */
+.use__result--wide {
+  flex: 1 1 100%;
+  align-items: stretch;
+}
+.use__result--wide .use__result-box > * {
+  flex: 1;
+}
+
+.use__result-label {
+  font-family: var(--uxdsl__typography__code-font-family);
+  font-size: var(--uxdsl__typography__code-font-size);
+  line-height: var(--uxdsl__typography__code-line-height);
+  font-weight: var(--uxdsl__typography__code-font-weight);
+  letter-spacing: var(--uxdsl__typography__code-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__code-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__code-margin-block-end);
+  color: var(--uxdsl__palette__primary-main);
+}
+
+/* The boxes the examples style: a plain element for a token to act on. */
+.usx-box {
+  font-family: var(--uxdsl__typography__body-sm-font-family);
+  font-size: var(--uxdsl__typography__body-sm-font-size);
+  line-height: var(--uxdsl__typography__body-sm-line-height);
+  font-weight: var(--uxdsl__typography__body-sm-font-weight);
+  letter-spacing: var(--uxdsl__typography__body-sm-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__body-sm-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__body-sm-margin-block-end);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--uxdsl__space__14);
+  min-height: var(--uxdsl__space__10);
+  padding: var(--uxdsl__density__2);
+}
+
+.usx-box--card {
+  background: var(--uxdsl__palette__surface-main);
+  color: var(--uxdsl__palette__text-primary);
+}
+
+.usx-box--fill {
+  background: var(--uxdsl__palette__primary-main);
+  color: var(--uxdsl__palette__primary-contrast);
+}
+
+.usx-box--line {
+  min-height: var(--uxdsl__space__2);
+  padding: var(--uxdsl__density__0);
+}
+
+/* The example's local exception: a longhand after the shared border. */
+.use .usx-dashed {
+  border-style: dashed;
+}
+
+.use__blocks {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--uxdsl__space__16) * 1.5), 1fr));
+  gap: var(--uxdsl__density__3);
+}
+
+.use__block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__density__1);
+  min-width: 0;
+  margin: var(--uxdsl__density__0);
+}
+
+.use__label {
+  font-family: var(--uxdsl__typography__caption-font-family);
+  font-size: var(--uxdsl__typography__caption-font-size);
+  line-height: var(--uxdsl__typography__caption-line-height);
+  font-weight: var(--uxdsl__typography__caption-font-weight);
+  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--uxdsl__density__2);
+  color: var(--uxdsl__palette__text-secondary);
+}
+
+.use__copy { padding: var(--uxdsl__density__1); border-radius: var(--uxdsl__radius__1); background: var(--uxdsl__surface__flat-bg); color: var(--uxdsl__surface__flat-color); border: var(--uxdsl__surface__flat-border); box-shadow: var(--uxdsl__surface__flat-shadow);
+  font-family: var(--uxdsl__typography__caption-font-family);
+  font-size: var(--uxdsl__typography__caption-font-size);
+  line-height: var(--uxdsl__typography__caption-line-height);
+  font-weight: var(--uxdsl__typography__caption-font-weight);
+  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--uxdsl__density__1);
+}
+
+.use__copy:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__flat-hover-color); }
+
+.use__copy:focus-visible { outline: var(--uxdsl__button__flat-focusvisible-outline); outline-offset: var(--uxdsl__button__flat-focusvisible-outline-offset); }
+
+.use__copy.is-selected, .use__copy[aria-pressed="true"], .use__copy[aria-selected="true"] { color: var(--uxdsl__button__flat-selected-color); }
+
+.use__copy:disabled, .use__copy[aria-disabled="true"] { opacity: var(--uxdsl__button__flat-disabled-opacity); cursor: var(--uxdsl__button__flat-disabled-cursor); }
+
+.use__code {
+  font-family: var(--uxdsl__typography__code-font-family);
+  font-size: var(--uxdsl__typography__code-font-size);
+  line-height: var(--uxdsl__typography__code-line-height);
+  font-weight: var(--uxdsl__typography__code-font-weight);
+  letter-spacing: var(--uxdsl__typography__code-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__code-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__code-margin-block-end);
+  margin: var(--uxdsl__density__0);
+  padding: var(--uxdsl__density__3);
+  max-height: calc(var(--uxdsl__space__16) * 1.5);
+  overflow: auto;
+  white-space: pre;
+  border-radius: var(--uxdsl__radius__2);
+  background: var(--uxdsl__palette__surface-light);
+  color: var(--uxdsl__palette__text-primary);
+  border: var(--uxdsl__border__1);
 }
 
 /* The version line on the quick start: which release these pages describe. */

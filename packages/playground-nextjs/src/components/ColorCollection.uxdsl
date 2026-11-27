@@ -9,6 +9,10 @@
   overflow-y: auto;
 }
 
+.ccl--full {
+  max-height: none;
+}
+
 .ccl__row {
   display: grid;
   grid-template-columns: space(11) minmax(0, 1fr);

@@ -9,6 +9,8 @@ import { useTheme } from './ThemeContext'
 import { useBreakpoints } from './BreakpointsProvider'
 import { InteractiveDemoContainer } from './InteractiveDemoContainer'
 import { splitThemeEdit, withBreakpoints } from '../lib/breakpoint-preview'
+import UsageExample from './UsageExample'
+import { projectUsage } from '../lib/usage-snippets'
 
 type JSONEditor = ReturnType<typeof CreateJSONEditor>
 
@@ -147,6 +149,7 @@ export default function ThemeConfigJsonEditor() {
     setStatus('synced')
   }
 
+  const usage = useMemo(() => projectUsage(activeThemeData), [activeThemeData])
   return (
     <InteractiveDemoContainer
       title="Runtime Config JSON"
@@ -175,6 +178,15 @@ export default function ThemeConfigJsonEditor() {
                 : 'Synced with runtime theme.'}
         </div>
       </div>
+      <UsageExample
+        note={<>From this page to your project in three steps: save the theme (the download bar above writes this file), write the marker once in your global stylesheet, build. Components never change when the theme does.</>}
+        blocks={[
+          { label: '1 · uxdsl.theme.json, next to uxdsl.config.cjs', code: usage.file },
+          { label: '2 · Your global stylesheet', code: usage.stylesheet },
+          { label: '3 · Build', code: usage.build },
+          { label: 'Or apply it in the browser', code: usage.runtime },
+        ]}
+      />
     </InteractiveDemoContainer>
   )
 }

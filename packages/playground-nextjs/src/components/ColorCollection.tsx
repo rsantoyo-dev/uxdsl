@@ -15,15 +15,18 @@ export default function ColorCollection({
   selectedKey,
   onPick,
   label,
+  full = false,
 }: {
   colors: Record<string, unknown> | undefined
   selectedKey: string | null
   onPick: (key: string) => void
   label: string
+  /** Every family in view, no scrolling: the Colors editor, where the collection is the subject. */
+  full?: boolean
 }) {
   const rows: Row[] = useMemo(() => colorRows(colors), [colors])
   return (
-    <div className="ccl" role="group" aria-label={label}>
+    <div className={`ccl${full ? ' ccl--full' : ''}`} role="group" aria-label={label}>
       {rows.map((row) => (
         <div key={row.family} className="ccl__row">
           <span className="ccl__name">{row.family}</span>

@@ -142,13 +142,16 @@ export default function DocsThemePage() {
       <div className="doc-section">
         <h2 id="editor">Live theme handler</h2>
         <p>
-          The theme this site is showing, to edit live. Every tab writes the same theme through <code>applyTheme</code>, so the page and
-          the other tabs follow at once; a change of structure is refused. Nothing is saved for you: above the tabs, download the result
-          as your <code>uxdsl.theme.json</code>, with only what differs from the base theme (the breakpoints you previewed included), or
-          the whole theme. Put it next to <code>uxdsl.config.cjs</code> and rebuild.
+          The whole theme of this site, editable while you look at it, and saved as one JSON file. Everything on these pages is built
+          with UXDSL, so every edit reaches all of it at once: the showcase below, the navigation, the documentation.
         </p>
+        <ol>
+          <li><strong>Change it.</strong> Start with a one-click look (Rounder, Compact, Ocean brand…) or open a tab and change one token or role. Each tab says what it is for and gives you one thing to try.</li>
+          <li><strong>Watch the page follow.</strong> Every edit goes through <code>applyTheme</code>, the runtime API your project gets too: values apply live, in light and dark mode, and a change the compiled CSS cannot follow (a new field, a moved breakpoint) is explained, not applied.</li>
+          <li><strong>Take it home.</strong> Download <code>uxdsl.theme.json</code>: only what differs from the base theme, the breakpoints you previewed included. Put it next to <code>uxdsl.config.cjs</code> and rebuild. Every tab ends with &quot;Use it in your project&quot;: the stylesheet that uses what you selected, and the part of the file that defines it.</li>
+        </ol>
         <p>
-          On top, a showcase: a menu, a hero and news cards styled with UXDSL alone. Every edit below shows there first, and its
+          On top, a showcase: a menu, a hero and news cards styled with UXDSL alone. Every edit shows there first, and its
           layout changes at <code>md</code> like any component built with the theme.
         </p>
         <ul>

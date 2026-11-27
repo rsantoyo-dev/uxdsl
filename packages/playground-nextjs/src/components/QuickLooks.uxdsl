@@ -1,0 +1,61 @@
+/* The Live theme handler's quick looks (QuickLooks.tsx). Every value is a UXDSL token, role or
+   directive; the literals left are layout (flex). */
+
+.qlk {
+  @ds-surface(contained radius(3));
+
+  display: flex;
+  flex-direction: column;
+  gap: density(2);
+}
+
+.qlk__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: density(2);
+  color: palette(primary.main);
+}
+
+.qlk__title {
+  @ds-typo(subtitle2);
+
+  color: palette(text.primary);
+}
+
+.qlk__hint {
+  @ds-typo(caption);
+
+  color: palette(text.secondary);
+}
+
+.qlk__looks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: density(2);
+}
+
+.qlk__look {
+  @ds-button(outlined primary radius(pill));
+  @ds-typo(body-sm);
+}
+
+.qlk__reset {
+  @ds-button(flat radius(pill));
+  @ds-typo(body-sm);
+
+  display: inline-flex;
+  align-items: center;
+  gap: density(1);
+}
+
+.qlk__status {
+  @ds-typo(caption);
+
+  margin: density(0);
+  color: palette(text.secondary);
+
+  &.is-invalid {
+    color: palette(error.main);
+  }
+}

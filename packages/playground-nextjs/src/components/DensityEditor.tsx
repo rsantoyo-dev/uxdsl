@@ -7,6 +7,8 @@ import { useTheme } from './ThemeContext'
 import { useBreakpoints } from './BreakpointsProvider'
 import { InteractiveDemoContainer } from './InteractiveDemoContainer'
 import { lengthPx, buildDefinition, densityKeys, spaceKeyOf } from '../lib/density-editing'
+import UsageExample, { jsonBlock, Result } from './UsageExample'
+import { densityUsage } from '../lib/usage-snippets'
 
 const CONTENT_PX = 40
 const selected = (on: boolean) => (on ? ' is-selected' : '')
@@ -67,6 +69,7 @@ export default function DensityEditor() {
   const size = CONTENT_PX + 2 * widest + 8
   const square = (px: number) => ({ at: (size - CONTENT_PX - 2 * px) / 2, side: CONTENT_PX + 2 * px })
 
+  const usage = useMemo(() => densityUsage(activeThemeData, key), [activeThemeData, key])
   return (
     <InteractiveDemoContainer
       title="Density"
@@ -160,17 +163,19 @@ export default function DensityEditor() {
           {error && <p className="dte__error" role="alert">{error}</p>}
         </div>
 
-        <div className="dte__example">
-          <span className="dte__example-title">
-            Live: <code>padding: density({key}); gap: density({key});</code> at your window
-          </span>
+      </div>
+      <UsageExample
+        note={<>One token, a different step at each breakpoint: the component never writes a media query.</>}
+        blocks={[{ label: 'In a stylesheet (.uxdsl)', code: usage.stylesheet }, jsonBlock(usage.excerpt)]}
+      >
+        <Result label={`.card · .stack: density(${key}) at your window`} wide>
           <div className={`dte__demo dte-use--${key}`}>
             <span className="dte__item">One</span>
             <span className="dte__item">Two</span>
             <span className="dte__item">Three</span>
           </div>
-        </div>
-      </div>
+        </Result>
+      </UsageExample>
     </InteractiveDemoContainer>
   )
 }
