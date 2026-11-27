@@ -41,6 +41,19 @@ function CodeBlock({ block }: { block: UsageBlock }) {
 }
 
 /**
+ * One live box of the example: an element styled by the very token or role the code names,
+ * captioned with the selector that styles it, so code and result read side by side.
+ */
+export function Result({ label, wide = false, children }: { label: string; wide?: boolean; children: ReactNode }) {
+  return (
+    <figure className={`use__result${wide ? ' use__result--wide' : ''}`}>
+      <div className="use__result-box">{children}</div>
+      <figcaption className="use__result-label">{label}</figcaption>
+    </figure>
+  )
+}
+
+/**
  * The end of every tab of the Live theme handler: what is selected above, written the way a
  * project writes it. The stylesheet that uses it, the part of uxdsl.theme.json that defines it,
  * and, where the tab has none above, the same code rendered live. Every block follows the
@@ -51,10 +64,25 @@ export default function UsageExample({ blocks, note, children }: { blocks: Usage
     <section className="use" aria-label="Use it in your project">
       <h3 className="use__title">Use it in your project</h3>
       {note && <p className="use__note">{note}</p>}
-      {children && <div className="use__live">{children}</div>}
-      <div className="use__blocks">
-        {blocks.map((block) => <CodeBlock key={block.label} block={block} />)}
-      </div>
+      {children ? (
+        <>
+          {/* The code and what it gives, side by side; the theme excerpt below. */}
+          <div className="use__pair">
+            <CodeBlock block={blocks[0]} />
+            <div className="use__live">
+              <span className="use__live-title">What it gives, live with this page&apos;s theme</span>
+              <div className="use__results">{children}</div>
+            </div>
+          </div>
+          <div className="use__blocks">
+            {blocks.slice(1).map((block) => <CodeBlock key={block.label} block={block} />)}
+          </div>
+        </>
+      ) : (
+        <div className="use__blocks">
+          {blocks.map((block) => <CodeBlock key={block.label} block={block} />)}
+        </div>
+      )}
     </section>
   )
 }

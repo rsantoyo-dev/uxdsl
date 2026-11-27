@@ -198,20 +198,7 @@
   color: palette(error.main);
 }
 
-/* The live example: the token used as padding and gap, at the window's breakpoint. */
-.dte__example {
-  display: flex;
-  flex-direction: column;
-  gap: density(2);
-  grid-column: xs(1) lg(1 / -1);
-}
-
-.dte__example-title {
-  @ds-typo(body-sm);
-
-  color: palette(text.secondary);
-}
-
+/* The live example of "Use it in your project": the token used as padding and gap. */
 .dte__demo {
   @ds-surface(outlined radius(2));
 

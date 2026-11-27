@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { responsiveEntries, resolveResponsiveValue, inspectResponsiveValue } from 'uxdsl/language'
 import { compileTypographyRules } from 'uxdsl/engine'
 import { useTheme } from './ThemeContext'
-import UsageExample, { jsonBlock } from './UsageExample'
+import UsageExample, { jsonBlock, Result } from './UsageExample'
 import { typographyUsage } from '../lib/usage-snippets'
 import { useBreakpoints } from './BreakpointsProvider'
 import { InteractiveDemoContainer } from './InteractiveDemoContainer'
@@ -235,7 +235,11 @@ export default function TypographyEditor({ defaultRole = 'h1' }: { defaultRole?:
       <UsageExample
         note={<>The directive emits every field the role has, its own over <code>default</code>&apos;s. Keep the HTML element for the document&apos;s structure: an <code>h2</code> can wear <code>@ds-typo(h1)</code>.</>}
         blocks={[{ label: 'In a stylesheet (.uxdsl)', code: usage.stylesheet }, jsonBlock(usage.excerpt)]}
-      />
+      >
+        <Result label=".page-title">
+          <p className={`tye__use ${typo(role)}`}>The quick brown fox</p>
+        </Result>
+      </UsageExample>
     </InteractiveDemoContainer>
   )
 }

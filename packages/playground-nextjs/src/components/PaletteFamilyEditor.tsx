@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTheme } from './ThemeContext'
-import UsageExample, { jsonBlock } from './UsageExample'
+import UsageExample, { jsonBlock, Result } from './UsageExample'
 import { paletteUsage } from '../lib/usage-snippets'
 import { InteractiveDemoContainer } from './InteractiveDemoContainer'
 import ColorCollection from './ColorCollection'
@@ -309,7 +309,19 @@ export default function PaletteFamilyEditor({ defaultFamily = 'primary' }: { def
       <UsageExample
         note={<>Components name the role, never the color, so a theme with another <code>{family}</code> recolors them without a rebuild. The dark-mode values live under <code>modes.dark.palette</code>.</>}
         blocks={[{ label: 'In a stylesheet (.uxdsl)', code: usage.stylesheet }, jsonBlock(usage.excerpt)]}
-      />
+      >
+        {hasPair ? (
+          <>
+            <Result label=".cta"><span className={`usx-box ${fill(`${family}.main`)} ${ink(`${family}.contrast`)}`}>Call to action</span></Result>
+            {variants.includes('dark') && <Result label=".cta:hover"><span className={`usx-box ${fill(`${family}.dark`)} ${ink(`${family}.contrast`)}`}>Call to action</span></Result>}
+            <Result label=".badge"><span className={`usx-box pfe-tint--${family} ${ink(`${family}.main`)}`}>New</span></Result>
+          </>
+        ) : family === 'text' ? (
+          <Result label=".muted"><span className={`usx-box usx-box--card ${ink(`text.${variants.includes('secondary') ? 'secondary' : variants[0]}`)}`}>Secondary text</span></Result>
+        ) : (
+          <Result label=".rule"><span className={`usx-box usx-box--line ${fill(`${family}.${variants[0]}`)}`} aria-hidden="true" /></Result>
+        )}
+      </UsageExample>
     </InteractiveDemoContainer>
   )
 }

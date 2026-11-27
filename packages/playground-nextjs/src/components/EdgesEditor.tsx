@@ -8,7 +8,7 @@ import { useBreakpoints } from './BreakpointsProvider'
 import { InteractiveDemoContainer } from './InteractiveDemoContainer'
 import { lengthPx, buildDefinition, densityKeys, spaceKeyOf } from '../lib/density-editing'
 import { STYLES, KINDS, parseBorder, buildBorder, edgeKeys, edgePatch, edgeConsumers, borderColorOptions } from '../lib/edge-editing'
-import UsageExample, { jsonBlock } from './UsageExample'
+import UsageExample, { jsonBlock, Result } from './UsageExample'
 import { edgeUsage } from '../lib/usage-snippets'
 
 type Kind = 'borders' | 'radii'
@@ -233,7 +233,20 @@ export default function EdgesEditor() {
       <UsageExample
         note={<>A component names the token; for one exception, write a longhand after it and keep the shared token.</>}
         blocks={[{ label: 'In a stylesheet (.uxdsl)', code: usage.stylesheet }, jsonBlock(usage.excerpt)]}
-      />
+      >
+        {tokenClass(kind, key) ? (
+          kind === 'borders' ? (
+            <>
+              <Result label=".card"><div className={`usx-box usx-box--card ${tokenClass(kind, key)}`}>border({key})</div></Result>
+              <Result label=".card.is-draft"><div className={`usx-box usx-box--card usx-dashed ${tokenClass(kind, key)}`}>border-style: dashed</div></Result>
+            </>
+          ) : (
+            <Result label=".card"><div className={`usx-box usx-box--fill ${tokenClass(kind, key)}`}>radius({key})</div></Result>
+          )
+        ) : (
+          <p className="ede__note">This token was added on this page: a rebuild compiles a class for its live box.</p>
+        )}
+      </UsageExample>
     </InteractiveDemoContainer>
   )
 }

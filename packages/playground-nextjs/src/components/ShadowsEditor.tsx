@@ -8,7 +8,7 @@ import { useBreakpoints } from './BreakpointsProvider'
 import { InteractiveDemoContainer } from './InteractiveDemoContainer'
 import { edgeKeys, edgeConsumers, borderColorOptions } from '../lib/edge-editing'
 import { NEW_LAYER, parseLayer, buildShadow, layersOf, pxOf, shadowDefinition } from '../lib/shadow-editing'
-import UsageExample, { jsonBlock } from './UsageExample'
+import UsageExample, { jsonBlock, Result } from './UsageExample'
 import { shadowUsage } from '../lib/usage-snippets'
 
 type Layer = { inset: boolean; x: string; y: string; blur: string; spread: string; color: string }
@@ -221,7 +221,13 @@ export default function ShadowsEditor() {
       <UsageExample
         note={<>Layers, colors and breakpoints stay in the theme; the component only says which depth.</>}
         blocks={[{ label: 'In a stylesheet (.uxdsl)', code: usage.stylesheet }, jsonBlock(usage.excerpt)]}
-      />
+      >
+        {tokenClass(key) ? (
+          <Result label=".card"><div className={`usx-box usx-box--card ${tokenClass(key)}`}>shadow({key})</div></Result>
+        ) : (
+          <p className="esh__hint">This token was added on this page: a rebuild compiles a class for its live box.</p>
+        )}
+      </UsageExample>
     </InteractiveDemoContainer>
   )
 }
