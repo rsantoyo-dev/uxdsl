@@ -1,17 +1,43 @@
-/* The Live theme handler (/docs/theme): editors that share a tab are stacked. */
+/* The Live theme handler (/docs/theme). Every value is a UXDSL token or role; the literals
+   left are layout (flex). */
 
+/* The quick looks, the showcase they change and the download, one under the other. */
+.lth__top {
+  display: flex;
+  flex-direction: column;
+  gap: density(3);
+}
+
+/* The showcase keeps its place in the column: the gap spaces it. */
+.lth__top > .shw {
+  margin-block: density(0);
+}
+
+/* The heading of the tabs. */
+.lth__byhand {
+  display: flex;
+  flex-direction: column;
+  gap: density(1);
+  margin-top: density(6);
+}
+
+.lth__title {
+  @ds-typo(h3);
+
+  color: palette(surface.contrast);
+}
+
+.lth__lede {
+  @ds-typo(body);
+
+  color: palette(text.secondary);
+}
+
+/* Editors that share a tab are stacked. */
 .lth__stack {
   display: flex;
   flex-direction: column;
   gap: density(4);
-}
-
-/* The quick looks and the download, above the tabs. */
-.lth__bar {
-  display: flex;
-  flex-direction: column;
-  gap: density(3);
-  margin-bottom: density(4);
 }
 
 .lth__tab {

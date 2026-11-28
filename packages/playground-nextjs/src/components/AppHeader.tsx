@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Sun, Moon, Github, Package } from 'lucide-react'
+import { Sun, Moon, Github, Package, SlidersHorizontal } from 'lucide-react'
 import { UXDSLLogo } from '@/components/UXDSLLogo'
 import { useTheme } from '@/components/ThemeContext'
 import { GITHUB_URL, NPM_URL } from '@/lib/docs'
@@ -35,13 +35,17 @@ export default function AppHeader() {
 
         <nav className="app-header__links" aria-label="Site">
           <Link href="/docs/introduction" className="app-header__link">Docs</Link>
+          <Link href="/docs/theme" className="app-header__link" aria-label="Live theme handler">
+            <SlidersHorizontal size={18} aria-hidden="true" />
+            <span className="app-header__link-label">Theme handler</span>
+          </Link>
           <a href={GITHUB_URL} className="app-header__link" target="_blank" rel="noopener noreferrer" aria-label="UXDSL on GitHub">
             <Github size={18} aria-hidden="true" />
-            <span className="app-header__link-label">GitHub</span>
+            <span className="app-header__link-label app-header__link-label--wide">GitHub</span>
           </a>
           <a href={NPM_URL} className="app-header__link" target="_blank" rel="noopener noreferrer" aria-label="uxdsl on npm">
             <Package size={18} aria-hidden="true" />
-            <span className="app-header__link-label">npm</span>
+            <span className="app-header__link-label app-header__link-label--wide">npm</span>
           </a>
         </nav>
 

@@ -1,0 +1,89 @@
+/* /docs/theme, the Live theme handler's page: the three steps under the title, the handler,
+   and the theme file's reference below it. Every value is a UXDSL token, role or directive;
+   the literals left are layout (grid). */
+
+.thp__steps {
+  display: grid;
+  grid-template-columns: xs(minmax(0, 1fr)) md(repeat(3, minmax(0, 1fr)));
+  gap: density(3);
+  margin: density(0);
+  padding: density(0);
+  list-style: none;
+}
+
+.thp__step {
+  @ds-surface(contained 4 radius(3));
+
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  align-content: start;
+  gap: density(2);
+}
+
+.thp__num {
+  @ds-typo(subtitle2);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: space(7);
+  height: space(7);
+  border-radius: radius(circle);
+  background: palette(primary.main);
+  color: palette(primary.contrast);
+  font-weight: 700;
+}
+
+.thp__step-title {
+  @ds-typo(h5);
+
+  color: palette(surface.contrast);
+}
+
+.thp__step-text {
+  @ds-typo(body-sm);
+
+  grid-column: 1 / -1;
+  color: palette(text.secondary);
+}
+
+.thp__step-text code {
+  @ds-typo(code);
+
+  color: palette(text.primary);
+}
+
+.thp__more {
+  @ds-typo(body-sm);
+
+  margin-block: density(3) density(5);
+  color: palette(text.secondary);
+}
+
+.thp__step-text a,
+.thp__more a {
+  color: palette(primary.main);
+  font-weight: 600;
+  text-underline-offset: space(1);
+
+  &:focus-visible {
+    outline: space(1) solid palette(primary.main);
+    outline-offset: space(1);
+    border-radius: radius(1);
+  }
+}
+
+/* The page's anchors stop under the fixed header. */
+.thp__editor,
+.thp__reference h2,
+.thp__reference h3 {
+  scroll-margin-top: space(11);
+}
+
+/* The reference starts a new part of the page. */
+.thp__reference {
+  margin-top: density(8);
+  padding-top: density(4);
+  border-top: border(1);
+}

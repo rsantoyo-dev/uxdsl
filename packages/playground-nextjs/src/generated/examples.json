@@ -21,6 +21,25 @@
       },
       "bytes": 885
     },
+    "take-home": {
+      "id": "take-home",
+      "themePath": "uxdsl.theme.json",
+      "theme": "{}",
+      "sourcePath": "src/components/plan-card.uxdsl",
+      "source": "/* No color, no size and no breakpoint of its own:\n   the component names roles and tokens, the theme decides them. */\n.plan-card {\n  @ds-surface(contained);\n  display: flex;\n  flex-direction: column;\n  gap: density(3);\n}\n\n.plan-card__title {\n  @ds-typo(h4);\n  color: palette(primary.main);\n}\n\n.plan-card__text {\n  @ds-typo(body);\n  color: palette(text.secondary);\n}\n\n.plan-card__action {\n  @ds-button(contained primary);\n  align-self: flex-start;\n}",
+      "output": ":root {\n  --uxdsl__surface__contained-radius: var(--uxdsl__radius__2);\n}\n.plan-card {\n  padding: var(--uxdsl__surface__contained-padding);\n  border-radius: var(--uxdsl__surface__contained-radius);\n  background: var(--uxdsl__surface__contained-bg);\n  color: var(--uxdsl__surface__contained-color);\n  border: var(--uxdsl__surface__contained-border);\n  box-shadow: var(--uxdsl__surface__contained-shadow);\n  display: flex;\n  flex-direction: column;\n  gap: var(--uxdsl__density__3);\n}\n.plan-card__title {\n  font-family: var(--uxdsl__typography__h4-font-family);\n  font-size: var(--uxdsl__typography__h4-font-size);\n  line-height: var(--uxdsl__typography__h4-line-height);\n  font-weight: var(--uxdsl__typography__h4-font-weight);\n  letter-spacing: var(--uxdsl__typography__h4-letter-spacing);\n  margin-block-start: var(--uxdsl__typography__h4-margin-block-start);\n  margin-block-end: var(--uxdsl__typography__h4-margin-block-end);\n  color: var(--uxdsl__palette__primary-main);\n}\n.plan-card__text {\n  font-family: var(--uxdsl__typography__body-font-family);\n  font-size: var(--uxdsl__typography__body-font-size);\n  line-height: var(--uxdsl__typography__body-line-height);\n  font-weight: var(--uxdsl__typography__body-font-weight);\n  letter-spacing: var(--uxdsl__typography__body-letter-spacing);\n  margin-block-start: var(--uxdsl__typography__body-margin-block-start);\n  margin-block-end: var(--uxdsl__typography__body-margin-block-end);\n  color: var(--uxdsl__palette__text-secondary);\n}\n.plan-card__action {\n  padding: var(--uxdsl__surface__contained-padding);\n  border-radius: var(--uxdsl__surface__contained-radius);\n  background: var(--uxdsl__palette__primary-main);\n  color: var(--uxdsl__palette__primary-contrast);\n  border: var(--uxdsl__surface__contained-border);\n  box-shadow: var(--uxdsl__surface__contained-shadow);\n  --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main);\n  --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark);\n  --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast);\n  align-self: flex-start;\n}\n.plan-card__action:hover:not(:where(:disabled, [aria-disabled=\"true\"])) {\n  background: var(--uxdsl__button__contained-tone-primary-hover-bg, var(--uxdsl__button__contained-hover-bg));\n  color: var(--uxdsl__button__contained-tone-primary-hover-color, var(--uxdsl__button__contained-hover-color));\n}\n.plan-card__action:focus-visible {\n  outline: var(--uxdsl__button__contained-tone-primary-focusvisible-outline, var(--uxdsl__button__contained-focusvisible-outline));\n  outline-offset: var(--uxdsl__button__contained-tone-primary-focusvisible-outline-offset, var(--uxdsl__button__contained-focusvisible-outline-offset));\n}\n.plan-card__action.is-selected, .plan-card__action[aria-pressed=\"true\"], .plan-card__action[aria-selected=\"true\"] {\n  background: var(--uxdsl__button__contained-tone-primary-selected-bg, var(--uxdsl__button__contained-selected-bg));\n  color: var(--uxdsl__button__contained-tone-primary-selected-color, var(--uxdsl__button__contained-selected-color));\n}\n.plan-card__action:disabled, .plan-card__action[aria-disabled=\"true\"] {\n  opacity: var(--uxdsl__button__contained-tone-primary-disabled-opacity, var(--uxdsl__button__contained-disabled-opacity));\n  cursor: var(--uxdsl__button__contained-tone-primary-disabled-cursor, var(--uxdsl__button__contained-disabled-cursor));\n}",
+      "tokens": [
+        "--uxdsl__surface__contained-radius"
+      ],
+      "breakpoints": {
+        "xs": 0,
+        "sm": 480,
+        "md": 768,
+        "lg": 1024,
+        "xl": 1280
+      },
+      "bytes": 3369
+    },
     "quick-start": {
       "id": "quick-start",
       "themePath": "uxdsl.theme.json",

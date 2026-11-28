@@ -6,7 +6,7 @@
 //
 // Each example below is a theme excerpt and a .uxdsl source (inline, or a file of the site
 // — paradigm/card.uxdsl is the home page's example and also the card inside its resizable
-// frame). This script compiles each one with `compile()` from `uxdsl`, the pipeline
+// frame; src/components/plan-card.uxdsl styles the card of /docs/theme's take-home example). This script compiles each one with `compile()` from `uxdsl`, the pipeline
 // `uxdsl build` runs, against the excerpt merged over the base theme, exactly as written:
 // an example writes no `@uxdsl theme;`, so its own output carries only its rules. The
 // `:root` ladder a token compiles to comes from the stylesheet that writes the marker,
@@ -49,6 +49,14 @@ const EXAMPLES = [
     theme: file('paradigm/theme.json'),
     source: file('paradigm/card.uxdsl'),
     tokens: ['--uxdsl__density__4', '--uxdsl__typography__h2-font-size'],
+  },
+  {
+    // "From this page to your project" on /docs/theme: a component of this site, shown as it
+    // is written. The card next to it is styled by this very file, with the page's theme.
+    id: 'take-home',
+    theme: json({}),
+    source: file('src/components/plan-card.uxdsl'),
+    tokens: ['--uxdsl__surface__contained-radius'],
   },
   {
     // What `uxdsl init` writes into src/styles.uxdsl, compiled with no theme file at all.

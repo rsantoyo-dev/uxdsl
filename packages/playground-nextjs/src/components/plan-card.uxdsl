@@ -1,0 +1,23 @@
+/* No color, no size and no breakpoint of its own:
+   the component names roles and tokens, the theme decides them. */
+.plan-card {
+  @ds-surface(contained);
+  display: flex;
+  flex-direction: column;
+  gap: density(3);
+}
+
+.plan-card__title {
+  @ds-typo(h4);
+  color: palette(primary.main);
+}
+
+.plan-card__text {
+  @ds-typo(body);
+  color: palette(text.secondary);
+}
+
+.plan-card__action {
+  @ds-button(contained primary);
+  align-self: flex-start;
+}

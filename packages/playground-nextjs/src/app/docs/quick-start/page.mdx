@@ -62,7 +62,7 @@ Import the generated `src/uxdsl.css` once, from your root layout or app entry. A
 
 That is the rule and the tokens it uses. The file on disk also carries the whole base theme: <CssSize run="init-build" />, about 5 KB gzipped, whatever the number of rules. Its first statement is an `@import` of Inter from Google Fonts, because the base theme's `fonts.google` lists it. A project that serves its own fonts, or whose Content Security Policy refuses that host, sets `"fonts": { "google": [] }` in its theme and no `@import` is emitted.
 
-To change a token, add `uxdsl.theme.json` next to the config with only what you change — `{ "densities": { "3": "xs(space(2)) md(space(4))" } }` — and every `density(3)` follows. A running watch picks the file up when it is created, with no restart. The [Theme](/docs/theme) page lists every family.
+To change a token, add `uxdsl.theme.json` next to the config with only what you change — `{ "densities": { "3": "xs(space(2)) md(space(4))" } }` — and every `density(3)` follows. A running watch picks the file up when it is created, with no restart. The [Theme handler](/docs/theme#families) page lists every family, and lets you try a theme live before you write one.
 
 ## Your framework
 
@@ -180,6 +180,6 @@ Webpack 5. Use `MiniCssExtractPlugin.loader` instead of `style-loader` to extrac
 
 ## Next
 
-[Language](/docs/language) has every function and directive, [Theme](/docs/theme) every family, and [Tooling](/docs/tooling) the CLI's flags, multiple entries, source maps and the VS Code extension.
+[Language](/docs/language) has every function and directive, [Theme handler](/docs/theme#families) every family, and [Tooling](/docs/tooling) the CLI's flags, multiple entries, source maps and the VS Code extension.
 
 </div>
