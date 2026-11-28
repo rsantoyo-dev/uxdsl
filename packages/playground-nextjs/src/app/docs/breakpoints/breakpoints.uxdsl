@@ -37,7 +37,8 @@
     font-weight: 600;
     color: palette(neutral.dark);
     margin-bottom: density(2);
-    border-bottom: 1px solid palette(neutral.light);
+    border-bottom: border(1);
+    border-bottom-color: palette(neutral.light);
     padding-bottom: density(2);
   }
 
@@ -55,7 +56,8 @@
     font-size: 0.9rem;
     color: palette(neutral.dark);
     overflow-x: auto;
-    border: 1px solid palette(neutral.main);
+    border: border(1);
+    border-color: palette(neutral.main);
   }
 
   .demo-table {
@@ -67,14 +69,16 @@
   .demo-table th {
     text-align: left;
     padding: density(2);
-    border-bottom: 2px solid palette(neutral.light);
+    border-bottom: border(2);
+    border-bottom-color: palette(neutral.light);
     color: palette(neutral.dark);
     font-weight: 600;
   }
 
   .demo-table td {
     padding: density(2);
-    border-bottom: 1px solid palette(neutral.light);
+    border-bottom: border(1);
+    border-bottom-color: palette(neutral.light);
     color: palette(neutral.main);
   }
 

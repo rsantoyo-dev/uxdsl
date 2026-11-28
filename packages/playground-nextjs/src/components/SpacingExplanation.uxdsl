@@ -68,7 +68,8 @@
 
 .spacing-explanation__padding, .spacing-explanation__gap {
   background: color(blue.100);
-  border: 1px solid color(blue.500);
+  border: border(1);
+  border-color: color(blue.500);
   border-radius: 0.5rem;
 }
 
@@ -87,7 +88,9 @@
   background: color(white);
   color: color(slate.900);
   padding: space(3);
-  border: 1px dashed color(gray.500);
+  border: border(1);
+  border-style: dashed;
+  border-color: color(gray.500);
   text-align: center;
 }
 
@@ -95,7 +98,7 @@
   padding: 0.65rem space(5);
   background: color(blue.500);
   color: color(white);
-  border: 0;
+  border: border(0);
   border-radius: 0.5rem;
   font: inherit;
   cursor: pointer;

@@ -1,6 +1,6 @@
 /* The home page's invitation to the Live theme handler (ThemeHandlerInvite.tsx). Every color,
    size, corner, shadow and text style is a UXDSL token, role or directive, so the card
-   changes with the theme (the nine drawings are ThemeSpecimen's). The literals left are layout (grid, flex), the
+   changes with the theme (the drawings are ThemeSpecimen's). The literals left are layout (grid, flex), the
    page's width and the motion on hover. */
 
 /* The home sections' container: same width and gutter, so the edges line up. */
@@ -106,7 +106,7 @@
   text-decoration: none;
 }
 
-/* The nine parts of the theme, each a way into its row of the handler. */
+/* The parts of the theme, each a way into its row of the handler. */
 .thi__parts {
   display: flex;
   flex-direction: column;
@@ -183,4 +183,9 @@
 
   display: xs(none) sm(block);
   color: palette(text.secondary);
+}
+
+/* The last part is the whole theme as one JSON: it closes the grid on a row of its own. */
+.thi__item:last-child {
+  grid-column: 1 / -1;
 }

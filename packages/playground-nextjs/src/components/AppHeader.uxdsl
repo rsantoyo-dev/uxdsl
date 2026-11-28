@@ -62,7 +62,8 @@
   display: xs(none) sm(inline-block);
   margin: 0;
   padding: space(1) space(3);
-  border: 1px solid palette(divider.main);
+  border: border(1);
+  border-color: palette(divider.main);
   border-radius: radius(pill);
   color: palette(text.secondary);
   text-decoration: none;
@@ -138,7 +139,8 @@
   width: 24px;
   height: 24px;
   border-radius: radius(circle);
-  border: 2px solid palette(surface.main);
+  border: border(2);
+  border-color: palette(surface.main);
   box-shadow: 0 0 0 1px palette(divider.main);
   background: var(--theme-color);
   cursor: pointer;

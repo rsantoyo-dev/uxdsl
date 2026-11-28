@@ -48,6 +48,7 @@
 @use '../components/ResponsiveSyntaxExplainer.uxdsl' as components-responsivesyntaxexplainer;
 @use '../components/RoleField.uxdsl' as components-rolefield;
 @use '../components/RussianDoll.uxdsl' as components-russiandoll;
+@use '../components/SavedThemes.uxdsl' as components-savedthemes;
 @use '../components/ShadowsEditor.uxdsl' as components-shadowseditor;
 @use '../components/SideNav.uxdsl' as components-sidenav;
 @use '../components/SpacingEditor.uxdsl' as components-spacingeditor;

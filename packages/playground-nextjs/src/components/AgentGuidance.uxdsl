@@ -77,7 +77,8 @@
 }
 
 .agent-guidance blockquote {
-  border-inline-start: 3px solid palette(divider.main);
+  border-inline-start: border(3);
+  border-inline-start-color: palette(divider.main);
   padding-inline-start: space(5);
   margin-block: space(4);
 }

@@ -39,7 +39,8 @@ input[type="range"]::-webkit-slider-thumb {
   background: palette(primary.main);
   cursor: pointer;
   transition: background .15s ease-in-out, transform .1s;
-  border: 2px solid palette(surface.main);
+  border: border(2);
+  border-color: palette(surface.main);
   box-shadow: shadow(1);
 }
 
@@ -55,7 +56,8 @@ input[type="range"]::-moz-range-thumb {
   background: palette(primary.main);
   cursor: pointer;
   transition: background .15s ease-in-out, transform .1s;
-  border: 2px solid palette(surface.main);
+  border: border(2);
+  border-color: palette(surface.main);
   box-shadow: shadow(1);
 }
 

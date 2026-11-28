@@ -5,7 +5,8 @@
   gap: xs(space(2)) md(space(4));
   padding: xs(space(3)) md(space(6));
   @ds-surface(contained light);
-  border: 1px solid palette(surface.contrast);
+  border: border(1);
+  border-color: palette(surface.contrast);
   border-radius: radius(3);
 
   .demo-breakpoints-card-item {
@@ -17,7 +18,8 @@
     align-items: center;
     text-align: center;
     gap: space(3);
-    border: 1px solid palette(surface.dark);
+    border: border(1);
+    border-color: palette(surface.dark);
     border-radius: radius(2);
     box-shadow: shadow(1);
   }

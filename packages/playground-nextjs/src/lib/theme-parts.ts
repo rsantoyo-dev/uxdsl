@@ -4,7 +4,8 @@
  * opens Surfaces, and the home page's invitation links to each.
  */
 export const THEME_PARTS = [
-  { id: 'colors', label: 'Colors & palette', hint: 'Recolor a role, light and dark' },
+  { id: 'palette', label: 'Palette', hint: 'Recolor a role, light and dark' },
+  { id: 'colors', label: 'Colors', hint: 'The shades the palette draws from' },
   { id: 'breakpoints', label: 'Breakpoints', hint: 'Move where layouts switch' },
   { id: 'spacing', label: 'Spacing & density', hint: 'Let the whole site breathe' },
   { id: 'typography', label: 'Typography', hint: 'Change fonts and the type scale' },

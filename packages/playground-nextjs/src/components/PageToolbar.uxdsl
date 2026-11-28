@@ -176,7 +176,8 @@
   width: 16px;
   height: 16px;
   border-radius: radius(circle);
-  border: 1px solid palette(divider.main);
+  border: border(1);
+  border-color: palette(divider.main);
   padding: 0;
   cursor: pointer;
 
@@ -201,7 +202,7 @@
   align-items: center;
   justify-content: center;
   background: transparent;
-  border: none;
+  border: border(0);
   padding: 0;
   cursor: pointer;
   color: palette(text.secondary);

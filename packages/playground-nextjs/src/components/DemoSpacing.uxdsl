@@ -14,7 +14,8 @@
     padding: density(4);
     background: palette(surface.light);
     border-radius: radius(2);
-    border: 1px solid palette(neutral.light);
+    border: border(1);
+    border-color: palette(neutral.light);
     position: relative;
     transition: all 0.3s ease; /* Smooth transition when resizing */
   }
@@ -41,13 +42,15 @@
     @ds-typo(caption);
     font-weight: bold;
     color: palette(primary.dark);
-    border: 1px solid palette(neutral.light);
+    border: border(1);
+    border-color: palette(neutral.light);
   }
 
   .concentric-ring {
     position: absolute;
     border-radius: radius(2);
-    border: 1px solid palette(primary.main, 0.2);
+    border: border(1);
+    border-color: palette(primary.main, 0.2);
     background: palette(primary.main, 0.03); /* Very subtle fill */
     pointer-events: auto; /* Allow hovering */
     transition: all 0.2s ease;
@@ -134,7 +137,8 @@
     max-width: xs(120px) md(200px);
     padding: space(1) density(1);
     background: transparent;
-    border: 1px solid palette(neutral.main);
+    border: border(1);
+    border-color: palette(neutral.main);
     border-radius: radius(1);
     font-family: monospace;
     font-size: 0.85rem;

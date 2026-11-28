@@ -26,6 +26,7 @@ const { themes } = require('../themes.js');
 afterEach(() => cleanup());
 
 const STYLE_ID = 'uxdsl-ssr-theme';
+const { STORAGE_KEY } = require('../src/lib/saved-themes.js');
 const frame = () => new Promise((resolve) => window.requestAnimationFrame(() => resolve()));
 const settle = () => act(async () => { await frame(); await frame(); });
 const themeCss = () => (document.getElementById(STYLE_ID) || { textContent: '' }).textContent;
@@ -182,6 +183,143 @@ const scenarios = {
     assert.equal(seen.ctx.currentTheme, 'default');
   },
 
+  async anEditIsSavedAndReturnedTo(component) {
+    harness.installDom();
+    const seen = await mount(component);
+    // The editors pass this name when they have none: the theme gets one of its own.
+    act(() => seen.ctx.setCustomTheme('Custom Theme', { palette: { primary: { main: '#123456' } } }));
+    await settle();
+    assert.equal(seen.ctx.savedThemes.length, 1, 'the edit was saved as a theme');
+    const [saved] = seen.ctx.savedThemes;
+    assert.equal(saved.name, 'My theme 1');
+    assert.equal(saved.origin, 'default');
+    assert.equal(seen.ctx.savedThemeId, saved.id);
+    assert.equal(seen.ctx.customThemeName, 'My theme 1');
+    // A second edit belongs to the same theme.
+    act(() => seen.ctx.setCustomTheme('Custom Theme', { palette: { secondary: { main: '#654321' } } }));
+    await settle();
+    assert.equal(seen.ctx.savedThemes.length, 1, 'an edit on a saved theme updates it');
+    // Leaving keeps it…
+    act(() => seen.ctx.switchTheme('green'));
+    await settle();
+    assert.ok(!has('#123456'));
+    assert.equal(seen.ctx.savedThemeId, null);
+    assert.equal(seen.ctx.customThemeName, null);
+    assert.equal(seen.ctx.savedThemes.length, 1, 'switching theme keeps the saved theme');
+    // …and it comes back whole, by its id or as "the custom theme".
+    let opened;
+    act(() => { opened = seen.ctx.openSavedTheme(saved.id); });
+    await settle();
+    assert.equal(opened, true);
+    assert.ok(has('#123456') && has('#654321'), 'both edits are back on the page');
+    assert.equal(seen.ctx.currentTheme, 'custom');
+    assert.equal(seen.ctx.customThemeName, 'My theme 1');
+    assert.equal(seen.ctx.customThemeOrigin, 'default');
+    act(() => seen.ctx.switchTheme('default'));
+    await settle();
+    act(() => seen.ctx.switchTheme('custom'));
+    await settle();
+    assert.ok(has('#123456'), 'switchTheme("custom") returns to the saved theme last on the page');
+    assert.equal(seen.ctx.savedThemeId, saved.id);
+  },
+
+  async anEditOnANamedThemeStartsANewSavedTheme(component) {
+    harness.installDom();
+    const seen = await mount(component);
+    act(() => seen.ctx.setCustomTheme('Custom Theme', { palette: { primary: { main: '#111111' } } }));
+    await settle();
+    act(() => seen.ctx.switchTheme('green'));
+    await settle();
+    act(() => seen.ctx.setCustomTheme('Custom Theme', { palette: { secondary: { main: '#222222' } } }));
+    await settle();
+    assert.deepEqual(seen.ctx.savedThemes.map((theme) => [theme.name, theme.origin]), [['My theme 1', 'default'], ['My theme 2', 'green']]);
+    assert.equal(seen.ctx.customThemeOrigin, 'green');
+    assert.ok(has('#222222') && !has('#111111'), 'the second theme was built on Green, not on the first saved theme');
+    assert.equal(appliedPrimary(), primaryOf('green').toLowerCase());
+    act(() => { seen.ctx.openSavedTheme(seen.ctx.savedThemes[0].id); });
+    await settle();
+    assert.ok(has('#111111') && !has('#222222'), 'the first saved theme is untouched');
+    // Removing the one on the page goes back to the theme it started from, and keeps the other.
+    act(() => seen.ctx.removeSavedTheme(seen.ctx.savedThemes[0].id));
+    await settle();
+    assert.equal(seen.ctx.currentTheme, 'default');
+    assert.ok(!has('#111111'));
+    assert.deepEqual(seen.ctx.savedThemes.map((theme) => theme.name), ['My theme 2']);
+  },
+
+  async savedThemesSurviveAReload(component) {
+    harness.installDom();
+    let seen = await mount(component);
+    act(() => seen.ctx.setCustomTheme('Custom Theme', { palette: { primary: { main: '#123456' } } }));
+    await settle();
+    // A reload: the provider mounts again over the same browser storage.
+    cleanup();
+    seen = await mount(component);
+    assert.equal(seen.ctx.savedThemes.length, 1, 'the saved theme is listed again');
+    assert.equal(seen.ctx.currentTheme, 'custom', 'and it is on the page, as it was');
+    assert.ok(has('#123456'));
+    assert.equal(seen.ctx.customThemeName, 'My theme 1');
+    // Left on a named theme, the page reloads on the site's theme, with the saved one a click away.
+    act(() => seen.ctx.switchTheme('default'));
+    await settle();
+    cleanup();
+    seen = await mount(component);
+    assert.equal(seen.ctx.currentTheme, 'default');
+    assert.ok(!has('#123456'));
+    assert.equal(seen.ctx.savedThemes.length, 1);
+  },
+
+  async aSavedThemeThatNoLongerAppliesIsDropped(component) {
+    harness.installDom();
+    const spy = captureConsole();
+    try {
+      // What an earlier build of the site may have left: one theme that is no longer valid,
+      // one the page can no longer take (a moved breakpoint), one that is fine.
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        version: 1,
+        active: 'theme-1',
+        themes: [
+          { id: 'theme-1', name: 'Broken', origin: 'default', override: { densities: { 99: 'bogus(' } }, updatedAt: 3 },
+          { id: 'theme-2', name: 'Moved', origin: 'default', override: { breakpoints: { md: 900 } }, updatedAt: 2 },
+          { id: 'theme-3', name: 'Fine', origin: 'green', override: { palette: { primary: { main: '#123456' } } }, updatedAt: 1 },
+        ],
+      }));
+      const seen = await mount(component);
+      const initial = themeCss();
+      assert.equal(seen.ctx.currentTheme, 'default', 'the page keeps the site\'s theme');
+      assert.equal(appliedPrimary(), primaryOf('default').toLowerCase());
+      assert.deepEqual(seen.ctx.savedThemes.map((theme) => theme.name), ['Moved', 'Fine'], 'the invalid theme is gone');
+      let opened;
+      act(() => { opened = seen.ctx.openSavedTheme('theme-2'); });
+      await settle();
+      assert.equal(opened, false);
+      assert.equal(themeCss(), initial, 'a refused saved theme leaves the page as it was');
+      assert.equal(seen.ctx.currentTheme, 'default');
+      assert.deepEqual(seen.ctx.savedThemes.map((theme) => theme.name), ['Fine']);
+      act(() => { opened = seen.ctx.openSavedTheme('theme-3'); });
+      await settle();
+      assert.equal(opened, true);
+      assert.ok(has('#123456'));
+      assert.equal(seen.ctx.customThemeOrigin, 'green');
+      assert.deepEqual(JSON.parse(window.localStorage.getItem(STORAGE_KEY)).themes.map((theme) => theme.id), ['theme-3'], 'and storage holds what is listed');
+    } finally { spy.restore(); }
+  },
+
+  async aBrowserWithoutStorageStillEdits(component) {
+    harness.installDom();
+    Object.defineProperty(window, 'localStorage', { configurable: true, get() { throw new Error('SecurityError'); } });
+    const seen = await mount(component);
+    act(() => seen.ctx.setCustomTheme('Custom Theme', { palette: { primary: { main: '#123456' } } }));
+    await settle();
+    assert.ok(has('#123456'));
+    assert.equal(seen.ctx.savedThemes.length, 1, 'the theme is kept for the visit');
+    act(() => seen.ctx.switchTheme('green'));
+    await settle();
+    act(() => seen.ctx.switchTheme('custom'));
+    await settle();
+    assert.ok(has('#123456'));
+  },
+
   async darkModeToggle(component) {
     harness.installDom();
     const seen = await mount(component);
@@ -233,6 +371,26 @@ const mutations = [
     label: 'switching theme no longer cancels the queued edit',
     scenario: 'abandonedEditNeverLands',
     edit: (src) => src.replace("scheduler?.cancel()\n    pendingCustomRef.current = null\n\n    let themeToApply", "pendingCustomRef.current = null\n\n    let themeToApply"),
+  },
+  {
+    label: 'an edit on a named theme is filed under the saved theme last on the page',
+    scenario: 'anEditOnANamedThemeStartsANewSavedTheme',
+    edit: (src) => src.replace("?? (currentTheme === 'custom' && savedThemeId ? {", '?? (lastSavedRef.current ? {').replace('{ id: savedThemeId, name: customThemeName, origin: customThemeOrigin }', "{ id: lastSavedRef.current, name: customThemeName, origin: customThemeOrigin }"),
+  },
+  {
+    label: 'a saved theme is kept in memory only, never written to the browser',
+    scenario: 'savedThemesSurviveAReload',
+    edit: (src) => src.replace('    if (storage) persistStore(storage, next)\n', ''),
+  },
+  {
+    label: 'a saved theme is applied without being checked first, and kept when refused',
+    scenario: 'aSavedThemeThatNoLongerAppliesIsDropped',
+    edit: (src) => src.replace("    if (!validateTheme(themeFamilies(theme)).ok || !applyThemeNow(theme).ok) {\n      commitStore(removeTheme(storeRef.current, id))\n      return false\n    }\n", '    applyThemeNow(theme)\n'),
+  },
+  {
+    label: 'leaving a saved theme forgets where to return',
+    scenario: 'anEditIsSavedAndReturnedTo',
+    edit: (src) => src.replace("      if (back && currentTheme !== 'custom') openSavedTheme(back.id)\n", ''),
   },
   {
     label: 'the retired managed elements are no longer removed',

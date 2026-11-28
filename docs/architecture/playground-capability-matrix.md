@@ -55,7 +55,7 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 
 | Capability | Requires | Level | Evidence |
 | --- | --- | --- | --- |
-| `border` | live | live | `src/app/docs/theme/theme-page.uxdsl`, `src/app/page.uxdsl`, `src/components/AgentGuidance.uxdsl` |
+| `border` | live | live | `src/app/app.uxdsl`, `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/docs/theme/theme-page.uxdsl` |
 | `color` | live | live | `src/components/AgentGuidance.uxdsl`, `src/components/AppHeader.uxdsl`, `src/components/BreakpointEditor.uxdsl` |
 | `density` | live | live | `src/app/app.uxdsl`, `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/docs/theme/theme-page.uxdsl` |
 | `palette` | live | live | `src/app/app.uxdsl`, `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/docs/theme/theme-page.uxdsl` |
@@ -86,7 +86,7 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 
 | Capability | Requires | Level | Evidence |
 | --- | --- | --- | --- |
-| `borders` | live | live | `src/app/docs/theme/theme-page.uxdsl`, `src/app/page.uxdsl`, `src/components/AgentGuidance.uxdsl` |
+| `borders` | live | live | `src/app/app.uxdsl`, `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/docs/theme/theme-page.uxdsl` |
 | `breakpoints` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/docs/theme/theme-page.uxdsl`, `src/app/layout.uxdsl` |
 | `buttons` | live | live | `src/app/docs/theme/theme-page.uxdsl`, `src/components/AIPrompt.uxdsl`, `src/components/BreakpointsEditor.uxdsl` |
 | `colors` | live | live | `src/components/AgentGuidance.uxdsl`, `src/components/AppHeader.uxdsl`, `src/components/BreakpointEditor.uxdsl` |

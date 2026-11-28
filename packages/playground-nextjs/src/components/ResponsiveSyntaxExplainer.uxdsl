@@ -8,8 +8,12 @@
   justify-content: flex-start;
 
   /* Subtle top/bottom dashed lines to define line-height visually */
-  border-top: 1px dashed palette(neutral.light, 0.5);
-  border-bottom: 1px dashed palette(neutral.light, 0.5);
+  border-top: border(1);
+  border-top-style: dashed;
+  border-top-color: palette(neutral.light, 0.5);
+  border-bottom: border(1);
+  border-bottom-style: dashed;
+  border-bottom-color: palette(neutral.light, 0.5);
   
   /* Architectonic Corner Marks */
   &::before, &::after, .top-right-corner::before, .bottom-left-corner::after {
@@ -78,7 +82,8 @@
   padding: density(4);
   background: palette(surface.main);
   border-radius: radius(2);
-  border: 1px solid palette(divider);
+  border: border(1);
+  border-color: palette(divider);
 }
 
 .showcase-title {
@@ -102,10 +107,12 @@
   align-items: center;
   gap: density(4);
   padding: density(2) 0;
-  border-bottom: 1px dashed palette(divider);
+  border-bottom: border(1);
+  border-bottom-style: dashed;
+  border-bottom-color: palette(divider);
 
   &:last-child {
-    border-bottom: none;
+    border-bottom: border(0);
   }
 }
 
@@ -115,7 +122,8 @@
   color: palette(text.secondary);
   text-align: right;
   padding-right: density(2);
-  border-right: 2px solid palette(primary.main);
+  border-right: border(2);
+  border-right-color: palette(primary.main);
   height: 100%;
   display: flex;
   align-items: center;
@@ -126,7 +134,8 @@
   color: palette(text.primary);
   margin: 0 !important;
   padding: 0 !important;
-  border: 1px solid palette(neutral.main, 0.2);
+  border: border(1);
+  border-color: palette(neutral.main, 0.2);
   background: palette(surface.main);
   width: 100%;
   text-align: left;
@@ -135,7 +144,8 @@
 .live-preview-section {
   margin-bottom: 1.5rem;
   padding-bottom: 1.5rem;
-  border-bottom: 1px solid palette(neutral.light);
+  border-bottom: border(1);
+  border-bottom-color: palette(neutral.light);
   display: flex;
   justify-content: flex-start;
   background: palette(surface.dark);
@@ -148,8 +158,10 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   margin: 0 auto;
   background: transparent;
-  border-left: 1px solid palette(divider);
-  border-right: 1px solid palette(divider);
+  border-left: border(1);
+  border-left-color: palette(divider);
+  border-right: border(1);
+  border-right-color: palette(divider);
   min-height: 120px;
   padding: 0;
 }
@@ -179,9 +191,12 @@
   top: 0;
   bottom: 0;
   width: 4px;
-  border-left: 1px solid palette(primary.main);
-  border-top: 1px solid palette(primary.main);
-  border-bottom: 1px solid palette(primary.main);
+  border-left: border(1);
+  border-left-color: palette(primary.main);
+  border-top: border(1);
+  border-top-color: palette(primary.main);
+  border-bottom: border(1);
+  border-bottom-color: palette(primary.main);
   opacity: 0.3;
   pointer-events: none;
 }
@@ -192,7 +207,9 @@
   left: 0;
   right: 0;
   bottom: 0;
-  border: 1px dashed palette(primary.light);
+  border: border(1);
+  border-style: dashed;
+  border-color: palette(primary.light);
   opacity: 0.15;
   pointer-events: none;
 }
@@ -221,7 +238,8 @@
   background: palette(surface.main);
   padding: space(1);
   border-radius: 6px;
-  border: 1px solid palette(neutral.main);
+  border: border(1);
+  border-color: palette(neutral.main);
   flex: 1 1 auto;
   min-width: 0;
 }
@@ -230,7 +248,7 @@
   padding: space(2) space(4);
   background: transparent;
   color: palette(text.secondary);
-  border: none;
+  border: border(0);
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.8rem;
@@ -301,7 +319,7 @@
       position: absolute;
       left: 4px;
       background: transparent;
-      border: none;
+      border: border(0);
       cursor: pointer;
       color: palette(neutral.main);
       opacity: 0.5;
@@ -335,7 +353,7 @@
     button.fix-single {
        background: palette(primary.main);
        color: palette(primary.contrast);
-       border: none;
+       border: border(0);
        border-radius: 6px;
        padding: 6px 10px;
        cursor: pointer;
@@ -347,7 +365,8 @@
     button.fix-all {
        background: transparent;
        color: palette(primary.main);
-       border: 1px solid palette(primary.main);
+       border: border(1);
+       border-color: palette(primary.main);
        border-radius: 6px;
        padding: 6px 10px;
        cursor: pointer;
@@ -371,7 +390,9 @@
   padding: 1rem;
   border-radius: 6px;
   margin-bottom: 1.5rem;
-  border: 1px dashed palette(neutral.main);
+  border: border(1);
+  border-style: dashed;
+  border-color: palette(neutral.main);
   color: palette(primary.dark);
   text-align: left;
   overflow-x: auto;
@@ -399,7 +420,8 @@
   margin-bottom: 1.5rem;
   padding: 1rem;
   background: palette(surface.light);
-  border: 1px solid palette(neutral.light);
+  border: border(1);
+  border-color: palette(neutral.light);
   border-radius: 6px;
 }
 
@@ -426,7 +448,8 @@
   display: flex;
   align-items: center;
   overflow-x: auto;
-  border: 1px solid palette(neutral.dark);
+  border: border(1);
+  border-color: palette(neutral.dark);
 
   .selector {
     color: palette(secondary.light);
@@ -534,7 +557,8 @@
 
 .json-action-button {
   background: transparent;
-  border: 1px solid palette(divider);
+  border: border(1);
+  border-color: palette(divider);
   border-radius: 4px;
   padding: space(2);
   cursor: pointer;
@@ -550,7 +574,7 @@
   }
 
   &.delete-button {
-    border: none;
+    border: border(0);
     color: palette(text.disabled);
 
     &:hover {

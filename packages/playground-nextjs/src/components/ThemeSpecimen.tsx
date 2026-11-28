@@ -16,13 +16,21 @@ export default function ThemeSpecimen({ id }: { id: ThemePartId }) {
 
 function Drawing({ id }: { id: ThemePartId }) {
   switch (id) {
-    case 'colors':
+    case 'palette':
       return (
         <>
           {(['primary', 'secondary', 'success', 'warning'] as const).map((tone) => (
             <span key={tone} className={`tsp__dot tsp__dot--${tone}`} />
           ))}
         </>
+      )
+    case 'colors':
+      return (
+        <span className="tsp__ramp">
+          {([200, 400, 600, 800] as const).map((shade) => (
+            <span key={shade} className={`tsp__shade tsp__shade--${shade}`} />
+          ))}
+        </span>
       )
     case 'breakpoints':
       return <span className="tsp__bp" />
