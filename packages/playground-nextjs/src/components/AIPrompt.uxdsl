@@ -1,21 +1,28 @@
-/* "Name a theme" (AIPrompt) in the home page's hero. Every value is a UXDSL token, role or
-   directive; the literals left are layout (flex) and the spinner's motion. */
+/* "Name a theme" (AIPrompt) in the home page's hero: one quiet line under the brand, a small
+   field, the names to try and the theme in use. Every value is a UXDSL token, role or
+   directive; the literals left are layout (flex) and the spinner's motion. Quiet is not
+   small to the finger: the field and each name keep a height a thumb can hit (space(7)),
+   and on a phone the field's text is the body size, which a phone does not zoom into. */
 
 .ai-prompt {
   display: flex;
-  flex-direction: column;
-  gap: density(2);
-  width: 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: density(1) density(3);
 }
 
-/* The field: an outlined Input shape holding an icon, the text and the submit button. */
+/* The field: a pill with a quiet edge, holding an icon, the text and the submit button. */
 .ai-prompt__form {
   @ds-surface(outlined radius(pill));
 
+  box-sizing: border-box;
   display: flex;
+  flex: xs(1 1 100%) sm(0 1 space(16));
   align-items: center;
-  gap: density(2);
-  padding: density(1) density(1) density(1) density(3);
+  min-height: space(7);
+  gap: density(1);
+  padding: density(0) density(1) density(0) density(2);
+  border-color: palette(surface.dark);
   background: palette(surface.main);
 
   &:focus-within {
@@ -25,7 +32,7 @@
 
 .ai-prompt__icon {
   flex: none;
-  color: palette(primary.main);
+  color: palette(text.secondary);
 }
 
 .ai-prompt__input {
@@ -33,7 +40,7 @@
 
   flex: 1;
   min-width: 0;
-  padding: density(2) density(0);
+  padding: density(1) density(0);
   border: border(0);
   background: transparent;
   color: palette(text.primary);
@@ -51,11 +58,21 @@
   }
 }
 
+@media (--md) {
+  .ai-prompt__input {
+    @ds-typo(body-sm);
+  }
+}
+
 .ai-prompt__submit {
-  @ds-button(contained primary 2 radius(pill));
+  @ds-button(flat primary 1 radius(pill));
 
   display: inline-flex;
+  flex: none;
   align-items: center;
+  justify-content: center;
+  min-width: space(7);
+  min-height: space(7);
 }
 
 @keyframes ai-prompt-spin {
@@ -68,17 +85,24 @@
   animation: ai-prompt-spin 1s linear infinite;
 }
 
-/* Suggestions to play with, and the theme in use: small and quiet. */
+/* Names to try: text, not chips. */
 .ai-prompt__row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: density(1);
+  gap: density(0);
 }
 
 .ai-prompt__suggestion {
-  @ds-button(outlined 1 radius(pill));
+  @ds-button(flat 1);
   @ds-typo(caption);
+
+  min-height: space(7);
+  color: palette(text.secondary);
+
+  &:hover:not(:disabled) {
+    color: palette(primary.main);
+  }
 }
 
 .ai-prompt__status {
@@ -88,7 +112,6 @@
   flex-wrap: wrap;
   align-items: center;
   gap: density(1);
-  margin-left: auto;
   color: palette(text.secondary);
 }
 
@@ -99,10 +122,13 @@
   display: inline-flex;
   align-items: center;
   gap: density(1);
+  min-height: space(7);
 }
 
+/* A line of its own under the field. */
 .ai-prompt__error {
   @ds-typo(caption);
 
+  flex: 1 1 100%;
   color: palette(error.main);
 }

@@ -69,7 +69,7 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | --- | --- | --- | --- |
 | `lg` | live | live | `src/app/layout.uxdsl`, `src/app/page.uxdsl`, `src/components/CapabilityDocs.uxdsl` |
 | `md` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/layout.uxdsl`, `src/app/page.uxdsl` |
-| `sm` | live | live | `src/components/AppHeader.uxdsl`, `src/components/HeroFeed.uxdsl`, `src/components/PageToolbar.uxdsl` |
+| `sm` | live | live | `src/components/AIPrompt.uxdsl`, `src/components/AppHeader.uxdsl`, `src/components/HeroFeed.uxdsl` |
 | `xl` | live | live | `src/app/page.uxdsl`, `src/components/CapabilityDocs.uxdsl`, `src/components/HeroFeed.uxdsl` |
 | `xs` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/layout.uxdsl`, `src/app/page.uxdsl` |
 
@@ -78,7 +78,7 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | Capability | Requires | Level | Evidence |
 | --- | --- | --- | --- |
 | `--lg` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/components/BreakpointsEditor.uxdsl`, `src/components/SideNav.uxdsl` |
-| `--md` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/components/BreakpointsEditor.uxdsl` |
+| `--md` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/components/AIPrompt.uxdsl`, `src/components/BreakpointsEditor.uxdsl` |
 | `--sm` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl` |
 | `--xl` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl` |
 
@@ -105,9 +105,9 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 
 | Capability | Requires | Level | Evidence |
 | --- | --- | --- | --- |
-| `button.contained` | live | live | `src/components/AIPrompt.uxdsl`, `src/components/CapabilityDocs.uxdsl`, `src/components/DemoButtons.tsx` |
+| `button.contained` | live | live | `src/components/CapabilityDocs.uxdsl`, `src/components/DemoButtons.tsx`, `src/components/EdgesEditor.uxdsl` |
 | `button.flat` | live | live | `src/components/AIPrompt.uxdsl`, `src/components/DemoButtons.tsx`, `src/components/EdgesEditor.uxdsl` |
-| `button.outlined` | live | live | `src/components/AIPrompt.uxdsl`, `src/components/BreakpointsEditor.uxdsl`, `src/components/CapabilityDocs.uxdsl` |
+| `button.outlined` | live | live | `src/components/BreakpointsEditor.uxdsl`, `src/components/CapabilityDocs.uxdsl`, `src/components/DemoButtons.tsx` |
 | `input.contained` | live | live | `src/components/InputDemo.tsx`, `src/components/RuntimeEngines.tsx` |
 | `input.outlined` | live | live | `src/components/BreakpointsEditor.uxdsl`, `src/components/CapabilityDocs.uxdsl`, `src/components/ColorsEditor.uxdsl` |
 | `input.underline` | live | live | `src/components/InputDemo.tsx`, `src/components/RuntimeEngines.tsx`, `src/components/TypographyEditor.uxdsl` |

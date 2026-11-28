@@ -61,10 +61,6 @@ $hf-families: primary, secondary, success, info, warning, error;
   @ds-button(contained primary 2);
 }
 
-.hf__play {
-  max-width: calc(space(16) * 3);
-}
-
 /* A banner: its tone is a contained Surface, its padding a Density token, its layout one of three. */
 @each $tone in $hf-tones {
   .hf-tone--#{$tone} {
