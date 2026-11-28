@@ -1,5 +1,7 @@
-/* The home page. Above the fold on a laptop: the thesis, the example next to its compiled CSS,
-   the resizable frame and the three ways in. */
+/* The home page under the hero feed and the invitation to the theme handler: the thesis, the
+   example next to its compiled CSS, the resizable frame and what the theme decides. Every gap
+   is density(), every color palette(), every text a role. The literals left are layout, the
+   page's width (with the gutter the hero shares) and the type details of the code panels. */
 
 .home {
   display: flex;
@@ -12,7 +14,7 @@
   box-sizing: border-box;
   width: 100%;
   max-width: 1320px;
-  margin: 0 auto;
+  margin: density(0) auto;
   padding: density(5) xs(space(4)) md(space(6));
   display: grid;
   grid-template-columns: xs(minmax(0, 1fr)) lg(minmax(0, 5fr) minmax(0, 7fr));
@@ -28,7 +30,7 @@
 
 .home-hero__eyebrow {
   @ds-typo(caption);
-  margin: 0;
+  margin: density(0);
   color: palette(primary.main);
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -37,38 +39,38 @@
 
 .home-hero__title {
   @ds-typo(h2);
-  margin: 0;
+  margin: density(0);
   color: palette(surface.contrast);
   letter-spacing: -0.02em;
 }
 
 .home-hero__lede {
   @ds-typo(p);
-  margin: 0;
+  margin: density(0);
   color: palette(text.secondary);
 }
 
 .home-hero__code {
   display: grid;
   grid-template-columns: xs(minmax(0, 1fr)) md(minmax(0, 1fr) minmax(0, 1fr));
-  gap: space(4);
+  gap: density(4);
   min-width: 0;
 }
 
 .home-code {
   display: grid;
   align-content: start;
-  gap: space(2);
+  gap: density(2);
   min-width: 0;
 }
 
 .home-code__label {
   @ds-typo(caption);
-  margin: 0;
+  margin: density(0);
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  gap: space(2);
+  gap: density(2);
   font-weight: 700;
   color: palette(surface.contrast);
 }
@@ -91,33 +93,33 @@
   border-radius: radius(2);
 
   &:focus-visible {
-    outline: 2px solid palette(primary.main);
-    outline-offset: 2px;
+    outline: space(1) solid palette(primary.main);
+    outline-offset: space(1);
   }
 }
 
 .home-hero__frame {
   grid-column: 1 / -1;
   display: grid;
-  gap: space(2);
+  gap: density(2);
   min-width: 0;
 }
 
 .home-hero__frame-hint {
   @ds-typo(caption);
-  margin: 0;
+  margin: density(0);
   color: palette(text.secondary);
 }
 
 .home-section-title {
   @ds-typo(h3);
-  margin: 0 0 density(4);
+  margin: density(0) density(0) density(4);
 }
 
 .home-pillars {
   width: 100%;
   max-width: 1320px;
-  margin: 0 auto;
+  margin: density(0) auto;
   box-sizing: border-box;
   padding: density(8) xs(space(4)) md(space(6)) density(4);
 }
@@ -132,7 +134,7 @@
   @ds-surface(outlined);
   display: grid;
   align-content: start;
-  gap: space(3);
+  gap: density(3);
   color: palette(surface.contrast);
   text-decoration: none;
 
@@ -141,37 +143,37 @@
   }
 
   &:focus-visible {
-    outline: 2px solid palette(primary.main);
-    outline-offset: 2px;
+    outline: space(1) solid palette(primary.main);
+    outline-offset: space(1);
   }
 }
 
 .home-pillar__title {
   @ds-typo(h5);
-  margin: 0;
+  margin: density(0);
   color: palette(primary.main);
 }
 
 .home-pillar__text {
   @ds-typo(span);
-  margin: 0;
+  margin: density(0);
   color: palette(text.secondary);
 }
 
 .home-footer {
   margin-top: auto;
-  padding: density(6) space(4);
+  padding: density(6) density(4);
   background: palette(surface.light);
   border-top: border(1);
   display: grid;
   justify-items: center;
-  gap: space(4);
+  gap: density(4);
   width: 100%;
 }
 
 .home-footer__links {
   display: flex;
-  gap: space(6);
+  gap: density(6);
   flex-wrap: wrap;
   justify-content: center;
 }
@@ -179,7 +181,7 @@
 .home-footer__link {
   display: inline-flex;
   align-items: center;
-  gap: space(2);
+  gap: density(2);
   color: palette(text.secondary);
   text-decoration: none;
   font-weight: 500;
@@ -190,43 +192,13 @@
   }
 
   &:focus-visible {
-    outline: 2px solid palette(primary.main);
-    outline-offset: 2px;
+    outline: space(1) solid palette(primary.main);
+    outline-offset: space(1);
   }
 }
 
 .home-footer__copy {
   @ds-typo(caption);
-  margin: 0;
-  color: palette(text.secondary);
-}
-
-/* The theme editor under the hero feed, closed by default: the same container as every home section. */
-.home-live {
-  box-sizing: border-box;
-  width: 100%;
-  max-width: 1320px;
-  margin: 0 auto;
-  padding: density(0) xs(space(4)) md(space(6));
-}
-
-.home-live__details {
-  @ds-surface(outlined radius(3));
-}
-
-.home-live__summary {
-  @ds-typo(subtitle2);
-
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: density(2);
-  color: palette(text.primary);
-  cursor: pointer;
-}
-
-.home-live__hint {
-  @ds-typo(caption);
-
+  margin: density(0);
   color: palette(text.secondary);
 }

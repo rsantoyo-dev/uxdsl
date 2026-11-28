@@ -82,7 +82,7 @@ export default function PaletteFamilyEditor({ defaultFamily = 'primary' }: { def
   const currentRef = useRef<HTMLSpanElement>(null)
   const edited = `${family}.${variant}`
 
-  // Selecting another variant, or a change from elsewhere (the JSON tab, another theme),
+  // Selecting another variant, or a change from elsewhere (the JSON part, another theme),
   // shows the source that value is written with.
   useEffect(() => {
     setSource(classifyValue(current).source)

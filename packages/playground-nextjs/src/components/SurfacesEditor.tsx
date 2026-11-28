@@ -11,7 +11,7 @@ import UsageExample, { jsonBlock, Result } from './UsageExample'
 import { surfaceUsage } from '../lib/usage-snippets'
 
 // SurfacesEditor.uxdsl generates a class per role of the base theme and per tone, each one
-// @ds-surface(role tone) itself. A role added in the JSON tab has no compiled rule yet: it
+// @ds-surface(role tone) itself. A role added in the JSON part has no compiled rule yet: it
 // is listed and editable, and a rebuild draws it.
 export const SURFACE_ROLES = ['contained', 'outlined', 'flat']
 export const TONES = ['primary', 'secondary', 'tertiary', 'success', 'info', 'warning', 'error', 'neutral', 'dark', 'light', 'surface']
@@ -24,7 +24,7 @@ const surfaceClass = (role: string, tone: string) => (SURFACE_ROLES.includes(rol
  * composes from the other tokens, padding from Density, corners from Radii, colors from the
  * Palette, edge from Borders, depth from Shadows. Every role is drawn live with the tone
  * chosen above, and the Buttons and Inputs built on the chosen one are listed: they follow
- * it too. Changes go through setCustomTheme → applyTheme like every tab.
+ * it too. Changes go through setCustomTheme → applyTheme like every part.
  */
 export default function SurfacesEditor() {
   const { activeThemeData, setCustomTheme, customThemeName } = useTheme()

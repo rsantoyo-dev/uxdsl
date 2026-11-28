@@ -15,7 +15,8 @@
   align-items: center;
   gap: density(4);
   padding: density(3) density(4);
-  border-bottom: 1px solid palette(neutral.light);
+  border-bottom: border(1);
+  border-bottom-color: palette(neutral.light);
   background: palette(surface.main);
   flex-shrink: 0;
 }
@@ -46,7 +47,8 @@
 
 .InteractiveDemoContainer__toolbar {
   padding: density(3) density(4);
-  border-bottom: 1px solid palette(neutral.light);
+  border-bottom: border(1);
+  border-bottom-color: palette(neutral.light);
   background: palette(surface.light);
   display: flex;
   flex-direction: column;

@@ -1,0 +1,38 @@
+/* "From this page to your project" on /docs/theme (ThemeTakeHome.tsx). Every value is a UXDSL
+   token or role; the literals left are layout (flex). The card it shows is styled by
+   plan-card.uxdsl alone. */
+
+.tth {
+  display: flex;
+  flex-direction: column;
+  gap: density(2);
+  margin-top: density(8);
+  scroll-margin-top: space(11);
+}
+
+.tth__title {
+  @ds-typo(h3);
+
+  color: palette(surface.contrast);
+}
+
+.tth__lede {
+  @ds-typo(body);
+
+  color: palette(text.secondary);
+}
+
+.tth__link {
+  color: palette(primary.main);
+  font-weight: 600;
+
+  &:focus-visible {
+    outline: space(1) solid palette(primary.main);
+    outline-offset: space(1);
+  }
+}
+
+/* The component's stylesheet is short: it is shown whole, without a scroll of its own. */
+.tth .use__block:first-child .use__code {
+  max-height: none;
+}

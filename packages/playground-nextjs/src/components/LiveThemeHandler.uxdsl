@@ -1,20 +1,227 @@
-/* The Live theme handler (/docs/theme): editors that share a tab are stacked. */
+/* The Live theme handler (/docs/theme). Every color, size, corner, shadow and text style is a
+   UXDSL token, role or directive; the literals left are layout (flex) and the motion of a row. */
 
+/* The showcase, the quick looks, the parts and the download, one under the other. */
+.lth {
+  display: flex;
+  flex-direction: column;
+  gap: density(4);
+}
+
+/* The parts of the theme: the handler's main piece, so it is the one that stands out. */
+.lth__byhand {
+  @ds-surface(contained 3 radius(4) shadow(3));
+
+  display: flex;
+  flex-direction: column;
+  gap: density(2);
+  border-color: palette(primary.main);
+  background-image: linear-gradient(135deg, palette(primary.main, 0.1), palette(secondary.main, 0.06));
+}
+
+.lth__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: density(1) density(3);
+}
+
+.lth__title {
+  @ds-typo(h4);
+
+  display: inline-flex;
+  align-items: center;
+  gap: density(2);
+  color: palette(surface.contrast);
+}
+
+.lth__title-icon {
+  flex: none;
+  color: palette(primary.main);
+}
+
+.lth__lede {
+  @ds-typo(body-sm);
+
+  /* Beside the title where there is room for a line of it, under it otherwise. */
+  flex: 1 1 18rem;
+  min-width: 0;
+  color: palette(text.secondary);
+}
+
+.lth__lede code {
+  @ds-typo(code);
+
+  color: palette(text.primary);
+}
+
+.lth__close-all {
+  @ds-button(flat primary 1);
+  @ds-typo(caption);
+
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.lth__parts {
+  display: flex;
+  flex-direction: column;
+  gap: density(1);
+}
+
+/* One part: a header that opens and closes it, and its panel. */
+.lth__part {
+  @ds-surface(outlined radius(3));
+
+  padding: density(0);
+  /* A part that is an address (#surfaces) stops below the page's bars. */
+  scroll-margin-top: space(12);
+  background: palette(surface.main);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover,
+  &.is-open {
+    border-color: palette(primary.main);
+  }
+
+  &:hover {
+    box-shadow: shadow(2);
+  }
+}
+
+.lth__part-heading {
+  margin: density(0);
+}
+
+.lth__part-header {
+  @ds-button(flat 2 radius(3));
+  @ds-typo(body-sm);
+
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: density(3);
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* The drawing, in a box of one size so the names line up and the rows are the same height. */
+.lth__part-spec {
+  @ds-surface(flat radius(2));
+
+  box-sizing: border-box;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: xs(space(11)) md(space(12));
+  height: space(8);
+  padding: density(0);
+  background: palette(primary.main, 0.08);
+}
+
+.lth__part-name {
+  display: flex;
+  flex: xs(1) md(0 1 15rem);
+  flex-direction: column;
+  min-width: 0;
+}
+
+.lth__part-label {
+  @ds-typo(subtitle2);
+
+  color: palette(surface.contrast);
+  font-weight: 700;
+}
+
+.lth__part-hint {
+  @ds-typo(caption);
+
+  color: palette(text.secondary);
+}
+
+/* What the theme has in this part now. On a phone the header is the drawing and the name. */
+.lth__part-facts {
+  display: xs(none) md(flex);
+  flex: 1;
+  flex-wrap: wrap;
+  gap: density(1);
+  min-width: 0;
+}
+
+.lth__fact {
+  @ds-surface(outlined 1 radius(pill));
+  @ds-typo(caption);
+
+  padding-inline: density(2);
+  color: palette(text.secondary);
+  white-space: nowrap;
+}
+
+.lth__part-changed {
+  @ds-surface(contained primary 1 radius(pill));
+  @ds-typo(caption);
+
+  flex: none;
+  padding-inline: density(2);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.lth__part-chevron {
+  flex: none;
+  color: palette(primary.main);
+  transition: transform 0.15s ease;
+}
+
+.lth__part.is-open .lth__part-chevron {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lth__part,
+  .lth__part-chevron {
+    transition: none;
+  }
+}
+
+.lth__part-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: density(3);
+  border-top: border(1);
+
+  &[hidden] {
+    display: none;
+  }
+}
+
+.lth__part-close {
+  @ds-button(flat primary 1);
+  @ds-typo(caption);
+
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-end;
+  gap: density(1);
+  margin-top: density(3);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Editors that share a part are stacked. */
 .lth__stack {
   display: flex;
   flex-direction: column;
   gap: density(4);
 }
 
-/* The quick looks and the download, above the tabs. */
-.lth__bar {
+/* The showcase, on top under its own heading. */
+.lth__watch {
   display: flex;
   flex-direction: column;
-  gap: density(3);
-  margin-bottom: density(4);
-}
-
-.lth__tab {
-  display: flex;
-  flex-direction: column;
+  gap: density(2);
+  scroll-margin-top: space(12);
 }

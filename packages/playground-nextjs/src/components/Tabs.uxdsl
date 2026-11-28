@@ -1,4 +1,5 @@
-/* Tabs: a row of buttons over one visible panel. */
+/* Tabs: a row of buttons over one visible panel. Every value is a UXDSL token or role; the
+   literals left are layout. */
 
 .tabs {
   margin-block: density(4);
@@ -8,18 +9,21 @@
 .tabs__list {
   display: flex;
   flex-wrap: wrap;
-  gap: space(1);
+  gap: density(1);
   border-bottom: border(1);
 }
 
 .tabs__tab {
   @ds-typo(span);
-  margin: 0;
-  /* Narrower below sm, so four short labels share one row on a phone. */
-  padding-block: space(2);
-  padding-inline: xs(space(3)) sm(space(4));
-  border: 0;
-  border-bottom: 3px solid transparent;
+
+  margin: density(0);
+  /* A tab that is an address (#surfaces) stops below the fixed header. */
+  scroll-margin-top: space(11);
+  padding-block: density(2);
+  padding-inline: density(3);
+  border: border(0);
+  border-bottom: border(2);
+  border-bottom-color: transparent;
   background: transparent;
   color: palette(text.secondary);
   font-weight: 600;
@@ -35,8 +39,8 @@
   }
 
   &:focus-visible {
-    outline: 2px solid palette(primary.main);
-    outline-offset: -2px;
+    outline: space(1) solid palette(primary.main);
+    outline-offset: calc(space(1) * -1);
   }
 }
 

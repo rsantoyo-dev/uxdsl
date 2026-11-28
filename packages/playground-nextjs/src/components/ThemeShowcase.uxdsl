@@ -1,46 +1,14 @@
-/* The Live theme handler's showcase (/docs/theme): a small page styled only with UXDSL.
-   Roles for every surface, button and text; density() for every gap and padding;
-   palette() for every color; responsive values for the layout, which changes at md. */
+/* The Live theme handler's showcase (/docs/theme): a dummy page styled only with UXDSL.
+   Roles for every surface, button, field and text; density() for every gap and padding;
+   palette() for every color; responsive values for the layout: one column on a phone, the
+   cards in a row from md, the hero beside them from xl. The literals left are layout. */
 
 .shw {
   @ds-surface(outlined radius(3));
 
-  display: flex;
-  flex-direction: column;
-  gap: density(4);
-  margin-block: density(4);
-}
-
-/* Menu: stacked on a phone, one row from md. */
-.shw__nav {
-  display: flex;
-  flex-direction: xs(column) md(row);
-  align-items: xs(flex-start) md(center);
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: xs(minmax(0, 1fr)) xl(minmax(0, 1fr) minmax(0, 1fr));
   gap: density(3);
-  padding-bottom: density(3);
-  border-bottom: border(1);
-}
-
-.shw__brand {
-  @ds-typo(h5);
-
-  color: palette(primary.main);
-}
-
-.shw__menu {
-  display: flex;
-  flex-direction: xs(column) md(row);
-  gap: density(1);
-}
-
-.shw__link {
-  @ds-button(flat 2);
-  @ds-typo(subtitle2);
-}
-
-.shw__cta {
-  @ds-button(contained primary 2);
 }
 
 /* Hero: the primary color with its contrast text, the secondary color for the main action. */
@@ -49,81 +17,95 @@
 
   display: flex;
   flex-direction: column;
-  gap: density(3);
-  padding: density(6);
+  justify-content: center;
+  gap: density(2);
+  min-width: 0;
+  padding: density(4);
 }
 
 .shw__eyebrow {
-  @ds-typo(caption);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: density(1) density(2);
+  margin: density(0);
+}
 
-  text-transform: uppercase;
+/* The role the heading is drawn with, and the size the theme gives it. */
+.shw__role,
+.shw__size {
+  @ds-typo(code);
+
+  overflow-wrap: anywhere;
+}
+
+.shw__role {
+  @ds-surface(contained light 1 radius(pill));
+
+  padding-inline: density(2);
 }
 
 .shw__title {
   @ds-typo(h1);
+
+  margin: density(0);
+  overflow-wrap: break-word;
 }
 
 .shw__subtitle {
   @ds-typo(body);
 
   max-width: calc(space(16) * 2);
+  margin: density(0);
 }
 
 .shw__actions {
   display: flex;
-  flex-direction: xs(column) sm(row);
+  flex-wrap: wrap;
   gap: density(2);
 }
 
 .shw__primary {
-  @ds-button(contained secondary 3);
+  @ds-button(contained secondary 2);
 }
 
 .shw__secondary {
-  @ds-button(contained light 3);
+  @ds-button(contained light 2);
 }
 
-/* News: one column on a phone, two from md, three from lg. */
-.shw__news {
-  display: grid;
-  grid-template-columns: xs(minmax(0, 1fr)) md(repeat(2, minmax(0, 1fr))) lg(repeat(3, minmax(0, 1fr)));
-  gap: density(3);
+.shw__primary,
+.shw__secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: density(1);
+  text-decoration: none;
 }
 
-.shw__card {
-  @ds-surface(outlined radius(2));
-
+/* Beside the hero from xl, under it before: a field and a button, then the cards. */
+.shw__side {
   display: flex;
   flex-direction: column;
+  gap: density(3);
+  min-width: 0;
+}
+
+.shw__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: density(2);
 }
 
-/* A tag in its tone; the rule after it keeps the tag's own size. */
-.shw__tag--secondary { @ds-surface(contained secondary radius(pill)); }
-.shw__tag--info { @ds-surface(contained info radius(pill)); }
-.shw__tag--success { @ds-surface(contained success radius(pill)); }
+.shw__field {
+  @ds-input(outlined 1);
 
-.shw__tag {
-  @ds-typo(caption);
-
-  align-self: flex-start;
-  padding: density(1) density(2);
+  flex: 1 1 space(14);
+  width: auto;
+  min-width: 0;
 }
 
-.shw__card-title {
-  @ds-typo(h5);
-}
-
-.shw__card-body {
-  @ds-typo(body-sm);
-
-  color: palette(text.secondary);
-}
-
-.shw__meta {
-  @ds-typo(caption);
-
-  color: palette(primary.main);
+.shw__send {
+  @ds-button(contained primary 2);
 }
 
 /* The breakpoint the layout is at, written by a responsive value alone. */
@@ -131,10 +113,75 @@
   @ds-surface(contained dark radius(pill));
   @ds-typo(caption);
 
-  align-self: flex-end;
   padding: density(1) density(3);
 
   &::after {
     content: xs("xs") sm("sm") md("md") lg("lg") xl("xl");
   }
+}
+
+/* Cards: two columns on a phone, four in a row from md, two by two beside the hero from xl. */
+.shw__cards {
+  display: grid;
+  flex: 1;
+  grid-template-columns: xs(repeat(2, minmax(0, 1fr))) md(repeat(4, minmax(0, 1fr))) xl(repeat(2, minmax(0, 1fr)));
+  gap: density(2);
+}
+
+.shw__card {
+  @ds-surface(contained radius(2) shadow(2));
+
+  display: flex;
+  flex-direction: column;
+  gap: density(1);
+  min-width: 0;
+}
+
+/* The tag and the link, drawn above the title (the title comes first in the document). */
+.shw__card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: density(1) density(2);
+  order: -1;
+  margin: density(0);
+}
+
+/* A tag in its tone; the rule after it keeps the tag's own size. */
+.shw__tag--secondary { @ds-surface(contained secondary radius(pill)); }
+.shw__tag--info { @ds-surface(contained info radius(pill)); }
+.shw__tag--success { @ds-surface(contained success radius(pill)); }
+.shw__tag--warning { @ds-surface(contained warning radius(pill)); }
+
+.shw__tag {
+  @ds-typo(caption);
+
+  padding: density(0) density(2);
+}
+
+.shw__card-title {
+  @ds-typo(h5);
+
+  margin: density(0);
+}
+
+/* On a phone a card is its tag, its link and its title. */
+.shw__card-body {
+  @ds-typo(body-sm);
+
+  display: xs(none) sm(block);
+  flex: 1;
+  margin: density(0);
+  color: palette(text.secondary);
+}
+
+.shw__card-link {
+  @ds-typo(caption);
+
+  display: inline-flex;
+  align-items: center;
+  gap: density(1);
+  color: palette(primary.main);
+  font-weight: 600;
 }

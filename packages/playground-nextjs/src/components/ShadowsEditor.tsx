@@ -14,7 +14,7 @@ import { shadowUsage } from '../lib/usage-snippets'
 type Layer = { inset: boolean; x: string; y: string; blur: string; spread: string; color: string }
 
 // ShadowsEditor.uxdsl generates one class per token of the base theme, shadow(n), so every
-// tile is the token itself and follows each edit. A key added in the JSON tab is listed, drawn plain.
+// tile is the token itself and follows each edit. A key added in the JSON part is listed, drawn plain.
 const PREVIEW_KEYS = ['0', '1', '2', '3', '4', '5']
 const tokenClass = (key: string) => (PREVIEW_KEYS.includes(key) ? `esh-shadow--${key}` : '')
 const selected = (on: boolean) => (on ? ' is-selected' : '')
@@ -72,7 +72,7 @@ function LayerCard({ index, layer, listId, onChange, onRemove }: { index: number
  * Edits the Shadow tokens of the active theme (`shadows`). Every shadow(n) is drawn live, the
  * chosen one sits on a card, a button and a menu, and its layers can be changed at any
  * breakpoint: offsets, blur and spread with sliders, the color as a token or any CSS color,
- * inset, a layer added or removed. Changes go through setCustomTheme → applyTheme like every tab.
+ * inset, a layer added or removed. Changes go through setCustomTheme → applyTheme like every part.
  */
 export default function ShadowsEditor() {
   const { activeThemeData, setCustomTheme, customThemeName } = useTheme()

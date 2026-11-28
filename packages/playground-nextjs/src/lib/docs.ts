@@ -22,7 +22,7 @@ export const DOCS_SECTIONS: NavSection[] = [
     title: 'Reference',
     links: [
       { href: '/docs/language', label: 'Language' },
-      { href: '/docs/theme', label: 'Theme' },
+      { href: '/docs/theme', label: 'Theme handler' },
     ],
   },
   {

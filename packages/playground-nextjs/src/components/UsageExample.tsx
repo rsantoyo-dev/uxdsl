@@ -54,16 +54,17 @@ export function Result({ label, wide = false, children }: { label: string; wide?
 }
 
 /**
- * The end of every tab of the Live theme handler: what is selected above, written the way a
+ * The end of every part of the Live theme handler: what is selected above, written the way a
  * project writes it. The stylesheet that uses it, the part of uxdsl.theme.json that defines it,
- * and, where the tab has none above, the same code rendered live. Every block follows the
+ * and, where the part has none above, the same code rendered live. Every block follows the
  * selection and the theme, so it is always what the page is showing. `subject` names the
- * example where a tab holds two of them (Colors and Palette, Spacing and Density).
+ * example where a part holds two of them (Colors and Palette, Spacing and Density). `title`
+ * replaces the heading where the block stands on its own (the page's take-home example).
  */
-export default function UsageExample({ blocks, note, subject, children }: { blocks: UsageBlock[]; note?: ReactNode; subject?: string; children?: ReactNode }) {
+export default function UsageExample({ blocks, note, subject, title = 'Use it in your project', children }: { blocks: UsageBlock[]; note?: ReactNode; subject?: string; title?: string; children?: ReactNode }) {
   return (
-    <section className="use" aria-label={subject ? `Use it in your project: ${subject}` : 'Use it in your project'}>
-      <h3 className="use__title">Use it in your project</h3>
+    <section className="use" aria-label={subject ? `${title}: ${subject}` : title}>
+      <h3 className="use__title">{title}</h3>
       {note && <p className="use__note">{note}</p>}
       {children ? (
         <>

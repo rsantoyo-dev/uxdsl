@@ -9,7 +9,7 @@ type Row = { family: string; swatches: Array<{ key: string; label: string }> }
 /**
  * One color of the active theme as a background: what `background: color(key)` or
  * `color(key, alpha)` compiles to, from the engine. The collection is the active theme's,
- * colors added in the JSON tab included, so a swatch cannot be a class written ahead of time;
+ * colors added in the JSON part included, so a swatch cannot be a class written ahead of time;
  * this is the one place that turns a color key into a style.
  */
 export function ColorFill({ as = 'span', colorKey, alpha, ...rest }: { as?: 'span' | 'button'; colorKey: string; alpha?: number } & ButtonHTMLAttributes<HTMLButtonElement>) {

@@ -926,6 +926,15 @@ input[type=range]::-moz-range-thumb:hover {
   display: inline;
 } }
 
+/* The links that leave the site keep their icon alone until the header has room for every name. */
+.app-header__link-label--wide {
+  display: none;
+}
+@media (min-width: 1024px){
+.app-header__link-label--wide {
+  display: inline;
+} }
+
 .app-header__settings {
   display: flex;
   align-items: center;
@@ -6297,7 +6306,7 @@ input[type=range]::-moz-range-thumb:hover {
   box-shadow: var(--uxdsl__shadow__5) !important;
 }
 
-/* The Density tab of the Live theme handler (/docs/theme). Every value is a UXDSL token,
+/* The Density part of the Live theme handler (/docs/theme). Every value is a UXDSL token,
    role or directive; the literals left are layout (grid, flex) and SVG geometry. */
 /* One class per Density token of the base theme, so the live example uses density(n) for real.
    It is written on the example itself, so it wins over the outlined Surface's own padding. */
@@ -8365,7 +8374,8 @@ input[type=range]::-moz-range-thumb:hover {
   align-items: center;
   gap: var(--uxdsl__density__4);
   padding: var(--uxdsl__density__3) var(--uxdsl__density__4);
-  border-bottom: 1px solid var(--uxdsl__palette__neutral-light);
+  border-bottom: var(--uxdsl__border__1);
+  border-bottom-color: var(--uxdsl__palette__neutral-light);
   background: var(--uxdsl__palette__surface-main);
   flex-shrink: 0;
 }
@@ -8402,7 +8412,8 @@ input[type=range]::-moz-range-thumb:hover {
 
 .InteractiveDemoContainer__toolbar {
   padding: var(--uxdsl__density__3) var(--uxdsl__density__4);
-  border-bottom: 1px solid var(--uxdsl__palette__neutral-light);
+  border-bottom: var(--uxdsl__border__1);
+  border-bottom-color: var(--uxdsl__palette__neutral-light);
   background: var(--uxdsl__palette__surface-light);
   display: flex;
   flex-direction: column;
@@ -8423,24 +8434,333 @@ input[type=range]::-moz-range-thumb:hover {
   flex: 1;
 }
 
-/* The Live theme handler (/docs/theme): editors that share a tab are stacked. */
+/* The Live theme handler (/docs/theme). Every color, size, corner, shadow and text style is a
+   UXDSL token, role or directive; the literals left are layout (flex) and the motion of a row. */
+/* The showcase, the quick looks, the parts and the download, one under the other. */
+.lth {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__density__4);
+}
+
+/* The parts of the theme: the handler's main piece, so it is the one that stands out. */
+.lth__byhand {
+  padding: var(--uxdsl__density__3);
+  border-radius: var(--uxdsl__radius__4);
+  background: var(--uxdsl__surface__contained-bg);
+  color: var(--uxdsl__surface__contained-color);
+  border: var(--uxdsl__surface__contained-border);
+  box-shadow: var(--uxdsl__shadow__3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__density__2);
+  border-color: var(--uxdsl__palette__primary-main);
+  background-image: linear-gradient(135deg, color-mix(in srgb, var(--uxdsl__palette__primary-main) 10%, transparent), color-mix(in srgb, var(--uxdsl__palette__secondary-main) 6%, transparent));
+}
+
+.lth__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--uxdsl__density__1) var(--uxdsl__density__3);
+}
+
+.lth__title {
+  font-family: var(--uxdsl__typography__h4-font-family);
+  font-size: var(--uxdsl__typography__h4-font-size);
+  line-height: var(--uxdsl__typography__h4-line-height);
+  font-weight: var(--uxdsl__typography__h4-font-weight);
+  letter-spacing: var(--uxdsl__typography__h4-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__h4-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__h4-margin-block-end);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--uxdsl__density__2);
+  color: var(--uxdsl__palette__surface-contrast);
+}
+
+.lth__title-icon {
+  flex: none;
+  color: var(--uxdsl__palette__primary-main);
+}
+
+.lth__lede {
+  font-family: var(--uxdsl__typography__body-sm-font-family);
+  font-size: var(--uxdsl__typography__body-sm-font-size);
+  line-height: var(--uxdsl__typography__body-sm-line-height);
+  font-weight: var(--uxdsl__typography__body-sm-font-weight);
+  letter-spacing: var(--uxdsl__typography__body-sm-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__body-sm-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__body-sm-margin-block-end);
+  /* Beside the title where there is room for a line of it, under it otherwise. */
+  flex: 1 1 18rem;
+  min-width: 0;
+  color: var(--uxdsl__palette__text-secondary);
+}
+
+.lth__lede code {
+  font-family: var(--uxdsl__typography__code-font-family);
+  font-size: var(--uxdsl__typography__code-font-size);
+  line-height: var(--uxdsl__typography__code-line-height);
+  font-weight: var(--uxdsl__typography__code-font-weight);
+  letter-spacing: var(--uxdsl__typography__code-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__code-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__code-margin-block-end);
+  color: var(--uxdsl__palette__text-primary);
+}
+
+.lth__close-all { padding: var(--uxdsl__density__1); border-radius: var(--uxdsl__radius__1); background: transparent; color: var(--uxdsl__palette__primary-main); border: var(--uxdsl__surface__flat-border); box-shadow: var(--uxdsl__surface__flat-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast);
+  font-family: var(--uxdsl__typography__caption-font-family);
+  font-size: var(--uxdsl__typography__caption-font-size);
+  line-height: var(--uxdsl__typography__caption-line-height);
+  font-weight: var(--uxdsl__typography__caption-font-weight);
+  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.lth__close-all:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__flat-tone-primary-hover-color, var(--uxdsl__button__flat-hover-color)); }
+
+.lth__close-all:focus-visible { outline: var(--uxdsl__button__flat-tone-primary-focusvisible-outline, var(--uxdsl__button__flat-focusvisible-outline)); outline-offset: var(--uxdsl__button__flat-tone-primary-focusvisible-outline-offset, var(--uxdsl__button__flat-focusvisible-outline-offset)); }
+
+.lth__close-all.is-selected, .lth__close-all[aria-pressed="true"], .lth__close-all[aria-selected="true"] { color: var(--uxdsl__button__flat-tone-primary-selected-color, var(--uxdsl__button__flat-selected-color)); }
+
+.lth__close-all:disabled, .lth__close-all[aria-disabled="true"] { opacity: var(--uxdsl__button__flat-tone-primary-disabled-opacity, var(--uxdsl__button__flat-disabled-opacity)); cursor: var(--uxdsl__button__flat-tone-primary-disabled-cursor, var(--uxdsl__button__flat-disabled-cursor)); }
+
+.lth__parts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__density__1);
+}
+
+/* One part: a header that opens and closes it, and its panel. */
+.lth__part {
+  padding: var(--uxdsl__surface__outlined-padding);
+  border-radius: var(--uxdsl__radius__3);
+  background: var(--uxdsl__surface__outlined-bg);
+  color: var(--uxdsl__surface__outlined-color);
+  border: var(--uxdsl__surface__outlined-border);
+  box-shadow: var(--uxdsl__surface__outlined-shadow);
+  padding: var(--uxdsl__density__0);
+  /* A part that is an address (#surfaces) stops below the page's bars. */
+  scroll-margin-top: var(--uxdsl__space__12);
+  background: var(--uxdsl__palette__surface-main);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.lth__part:hover, .lth__part.is-open {
+  border-color: var(--uxdsl__palette__primary-main);
+}
+.lth__part:hover {
+  box-shadow: var(--uxdsl__shadow__2);
+}
+
+.lth__part-heading {
+  margin: var(--uxdsl__density__0);
+}
+
+.lth__part-header { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__3); background: var(--uxdsl__surface__flat-bg); color: var(--uxdsl__surface__flat-color); border: var(--uxdsl__surface__flat-border); box-shadow: var(--uxdsl__surface__flat-shadow);
+  font-family: var(--uxdsl__typography__body-sm-font-family);
+  font-size: var(--uxdsl__typography__body-sm-font-size);
+  line-height: var(--uxdsl__typography__body-sm-line-height);
+  font-weight: var(--uxdsl__typography__body-sm-font-weight);
+  letter-spacing: var(--uxdsl__typography__body-sm-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__body-sm-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__body-sm-margin-block-end);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: var(--uxdsl__density__3);
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+.lth__part-header:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__flat-hover-color); }
+
+.lth__part-header:focus-visible { outline: var(--uxdsl__button__flat-focusvisible-outline); outline-offset: var(--uxdsl__button__flat-focusvisible-outline-offset); }
+
+.lth__part-header.is-selected, .lth__part-header[aria-pressed="true"], .lth__part-header[aria-selected="true"] { color: var(--uxdsl__button__flat-selected-color); }
+
+.lth__part-header:disabled, .lth__part-header[aria-disabled="true"] { opacity: var(--uxdsl__button__flat-disabled-opacity); cursor: var(--uxdsl__button__flat-disabled-cursor); }
+
+/* The drawing, in a box of one size so the names line up and the rows are the same height. */
+.lth__part-spec {
+  padding: var(--uxdsl__surface__flat-padding);
+  border-radius: var(--uxdsl__radius__2);
+  background: var(--uxdsl__surface__flat-bg);
+  color: var(--uxdsl__surface__flat-color);
+  border: var(--uxdsl__surface__flat-border);
+  box-shadow: var(--uxdsl__surface__flat-shadow);
+  box-sizing: border-box;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--uxdsl__space__11);
+  height: var(--uxdsl__space__8);
+  padding: var(--uxdsl__density__0);
+  background: color-mix(in srgb, var(--uxdsl__palette__primary-main) 8%, transparent);
+}
+@media (min-width: 768px){
+.lth__part-spec {
+  width: var(--uxdsl__space__12);
+} }
+
+.lth__part-name {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+@media (min-width: 768px){
+
+.lth__part-name {
+  flex: 0 1 15rem;
+} }
+
+.lth__part-label {
+  font-family: var(--uxdsl__typography__subtitle2-font-family);
+  font-size: var(--uxdsl__typography__subtitle2-font-size);
+  line-height: var(--uxdsl__typography__subtitle2-line-height);
+  font-weight: var(--uxdsl__typography__subtitle2-font-weight);
+  letter-spacing: var(--uxdsl__typography__subtitle2-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__subtitle2-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__subtitle2-margin-block-end);
+  color: var(--uxdsl__palette__surface-contrast);
+  font-weight: 700;
+}
+
+.lth__part-hint {
+  font-family: var(--uxdsl__typography__caption-font-family);
+  font-size: var(--uxdsl__typography__caption-font-size);
+  line-height: var(--uxdsl__typography__caption-line-height);
+  font-weight: var(--uxdsl__typography__caption-font-weight);
+  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+  color: var(--uxdsl__palette__text-secondary);
+}
+
+/* What the theme has in this part now. On a phone the header is the drawing and the name. */
+.lth__part-facts {
+  display: none;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: var(--uxdsl__density__1);
+  min-width: 0;
+}
+@media (min-width: 768px){
+.lth__part-facts {
+  display: flex;
+} }
+
+.lth__fact {
+  padding: var(--uxdsl__density__1);
+  border-radius: 9999px;
+  background: var(--uxdsl__surface__outlined-bg);
+  color: var(--uxdsl__surface__outlined-color);
+  border: var(--uxdsl__surface__outlined-border);
+  box-shadow: var(--uxdsl__surface__outlined-shadow);
+  font-family: var(--uxdsl__typography__caption-font-family);
+  font-size: var(--uxdsl__typography__caption-font-size);
+  line-height: var(--uxdsl__typography__caption-line-height);
+  font-weight: var(--uxdsl__typography__caption-font-weight);
+  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+  padding-inline: var(--uxdsl__density__2);
+  color: var(--uxdsl__palette__text-secondary);
+  white-space: nowrap;
+}
+
+.lth__part-changed {
+  padding: var(--uxdsl__density__1);
+  border-radius: 9999px;
+  background: var(--uxdsl__palette__primary-main);
+  color: var(--uxdsl__palette__primary-contrast);
+  border: var(--uxdsl__surface__contained-border);
+  box-shadow: var(--uxdsl__surface__contained-shadow);
+  font-family: var(--uxdsl__typography__caption-font-family);
+  font-size: var(--uxdsl__typography__caption-font-size);
+  line-height: var(--uxdsl__typography__caption-line-height);
+  font-weight: var(--uxdsl__typography__caption-font-weight);
+  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+  flex: none;
+  padding-inline: var(--uxdsl__density__2);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.lth__part-chevron {
+  flex: none;
+  color: var(--uxdsl__palette__primary-main);
+  transition: transform 0.15s ease;
+}
+
+.lth__part.is-open .lth__part-chevron {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lth__part,
+  .lth__part-chevron {
+    transition: none;
+  }
+}
+.lth__part-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: var(--uxdsl__density__3);
+  border-top: var(--uxdsl__border__1);
+}
+.lth__part-panel[hidden] {
+  display: none;
+}
+
+.lth__part-close { padding: var(--uxdsl__density__1); border-radius: var(--uxdsl__radius__1); background: transparent; color: var(--uxdsl__palette__primary-main); border: var(--uxdsl__surface__flat-border); box-shadow: var(--uxdsl__surface__flat-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast);
+  font-family: var(--uxdsl__typography__caption-font-family);
+  font-size: var(--uxdsl__typography__caption-font-size);
+  line-height: var(--uxdsl__typography__caption-line-height);
+  font-weight: var(--uxdsl__typography__caption-font-weight);
+  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-end;
+  gap: var(--uxdsl__density__1);
+  margin-top: var(--uxdsl__density__3);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.lth__part-close:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__flat-tone-primary-hover-color, var(--uxdsl__button__flat-hover-color)); }
+
+.lth__part-close:focus-visible { outline: var(--uxdsl__button__flat-tone-primary-focusvisible-outline, var(--uxdsl__button__flat-focusvisible-outline)); outline-offset: var(--uxdsl__button__flat-tone-primary-focusvisible-outline-offset, var(--uxdsl__button__flat-focusvisible-outline-offset)); }
+
+.lth__part-close.is-selected, .lth__part-close[aria-pressed="true"], .lth__part-close[aria-selected="true"] { color: var(--uxdsl__button__flat-tone-primary-selected-color, var(--uxdsl__button__flat-selected-color)); }
+
+.lth__part-close:disabled, .lth__part-close[aria-disabled="true"] { opacity: var(--uxdsl__button__flat-tone-primary-disabled-opacity, var(--uxdsl__button__flat-disabled-opacity)); cursor: var(--uxdsl__button__flat-tone-primary-disabled-cursor, var(--uxdsl__button__flat-disabled-cursor)); }
+
+/* Editors that share a part are stacked. */
 .lth__stack {
   display: flex;
   flex-direction: column;
   gap: var(--uxdsl__density__4);
 }
 
-/* The quick looks and the download, above the tabs. */
-.lth__bar {
+/* The showcase, on top under its own heading. */
+.lth__watch {
   display: flex;
   flex-direction: column;
-  gap: var(--uxdsl__density__3);
-  margin-bottom: var(--uxdsl__density__4);
-}
-
-.lth__tab {
-  display: flex;
-  flex-direction: column;
+  gap: var(--uxdsl__density__2);
+  scroll-margin-top: var(--uxdsl__space__12);
 }
 
 /* PageTitle styles - Scoped */
@@ -8449,7 +8769,7 @@ input[type=range]::-moz-range-thumb:hover {
   display: flex;
   flex-direction: column;
   gap: var(--uxdsl__density__2);
-  padding: var(--uxdsl__density__6) 0 var(--uxdsl__density__4);
+  padding: var(--uxdsl__density__6) var(--uxdsl__density__0) var(--uxdsl__density__4);
 }
 #PageTitle .page-title__text {
   font-family: var(--uxdsl__typography__h1-font-family);
@@ -8459,7 +8779,7 @@ input[type=range]::-moz-range-thumb:hover {
   letter-spacing: var(--uxdsl__typography__h1-letter-spacing);
   margin-block-start: var(--uxdsl__typography__h1-margin-block-start);
   margin-block-end: var(--uxdsl__typography__h1-margin-block-end);
-  margin: 0;
+  margin: var(--uxdsl__density__0);
   /* Gradient Text Effect */
   background: linear-gradient(135deg, var(--uxdsl__palette__primary-main) 0%, var(--uxdsl__palette__primary-light) 50%, var(--uxdsl__palette__secondary-main) 100%);
   -webkit-background-clip: text;
@@ -8475,7 +8795,7 @@ input[type=range]::-moz-range-thumb:hover {
   margin-block-start: var(--uxdsl__typography__h4-margin-block-start);
   margin-block-end: var(--uxdsl__typography__h4-margin-block-end);
   color: var(--uxdsl__palette__surface-contrast); /* Maximum contrast */
-  margin: 0;
+  margin: var(--uxdsl__density__0);
   line-height: 1.4;
   font-weight: 400; /* Ensure regular weight, not bold, not light */
 }
@@ -9985,10 +10305,113 @@ input[type=range]::-moz-range-thumb:hover {
   color: var(--uxdsl__palette__surface-contrast);
 }
 
-/* The Live theme handler's quick looks (QuickLooks.tsx). Every value is a UXDSL token, role or
+/* The first thing in every open part of the Live theme handler (PartGuide.tsx). Every value
+   is a UXDSL token, role or directive; the literals left are layout (flex). */
+.pgd {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__density__2);
+  margin-bottom: var(--uxdsl__density__3);
+}
+
+.pgd__what {
+  font-family: var(--uxdsl__typography__body-font-family);
+  font-size: var(--uxdsl__typography__body-font-size);
+  line-height: var(--uxdsl__typography__body-line-height);
+  font-weight: var(--uxdsl__typography__body-font-weight);
+  letter-spacing: var(--uxdsl__typography__body-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__body-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__body-margin-block-end);
+  margin: var(--uxdsl__density__0);
+  color: var(--uxdsl__palette__text-primary);
+}
+
+.pgd__try {
+  padding: var(--uxdsl__surface__contained-padding);
+  border-radius: var(--uxdsl__radius__2);
+  background: var(--uxdsl__palette__primary-main);
+  color: var(--uxdsl__palette__primary-contrast);
+  border: var(--uxdsl__surface__contained-border);
+  box-shadow: var(--uxdsl__surface__contained-shadow);
+  font-family: var(--uxdsl__typography__body-sm-font-family);
+  font-size: var(--uxdsl__typography__body-sm-font-size);
+  line-height: var(--uxdsl__typography__body-sm-line-height);
+  font-weight: var(--uxdsl__typography__body-sm-font-weight);
+  letter-spacing: var(--uxdsl__typography__body-sm-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__body-sm-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__body-sm-margin-block-end);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--uxdsl__density__2);
+  margin: var(--uxdsl__density__0);
+}
+
+.pgd__badge {
+  font-family: var(--uxdsl__typography__caption-font-family);
+  font-size: var(--uxdsl__typography__caption-font-size);
+  line-height: var(--uxdsl__typography__caption-line-height);
+  font-weight: var(--uxdsl__typography__caption-font-weight);
+  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+/* No color, no size and no breakpoint of its own:
+   the component names roles and tokens, the theme decides them. */
+.plan-card {
+  padding: var(--uxdsl__surface__contained-padding);
+  border-radius: var(--uxdsl__surface__contained-radius);
+  background: var(--uxdsl__surface__contained-bg);
+  color: var(--uxdsl__surface__contained-color);
+  border: var(--uxdsl__surface__contained-border);
+  box-shadow: var(--uxdsl__surface__contained-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__density__3);
+}
+
+.plan-card__title {
+  font-family: var(--uxdsl__typography__h4-font-family);
+  font-size: var(--uxdsl__typography__h4-font-size);
+  line-height: var(--uxdsl__typography__h4-line-height);
+  font-weight: var(--uxdsl__typography__h4-font-weight);
+  letter-spacing: var(--uxdsl__typography__h4-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__h4-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__h4-margin-block-end);
+  color: var(--uxdsl__palette__primary-main);
+}
+
+.plan-card__text {
+  font-family: var(--uxdsl__typography__body-font-family);
+  font-size: var(--uxdsl__typography__body-font-size);
+  line-height: var(--uxdsl__typography__body-line-height);
+  font-weight: var(--uxdsl__typography__body-font-weight);
+  letter-spacing: var(--uxdsl__typography__body-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__body-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__body-margin-block-end);
+  color: var(--uxdsl__palette__text-secondary);
+}
+
+.plan-card__action { padding: var(--uxdsl__surface__contained-padding); border-radius: var(--uxdsl__surface__contained-radius); background: var(--uxdsl__palette__primary-main); color: var(--uxdsl__palette__primary-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast);
+  align-self: flex-start;
+}
+
+.plan-card__action:hover:not(:where(:disabled, [aria-disabled="true"])) { background: var(--uxdsl__button__contained-tone-primary-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-primary-hover-color, var(--uxdsl__button__contained-hover-color)); }
+
+.plan-card__action:focus-visible { outline: var(--uxdsl__button__contained-tone-primary-focusvisible-outline, var(--uxdsl__button__contained-focusvisible-outline)); outline-offset: var(--uxdsl__button__contained-tone-primary-focusvisible-outline-offset, var(--uxdsl__button__contained-focusvisible-outline-offset)); }
+
+.plan-card__action.is-selected, .plan-card__action[aria-pressed="true"], .plan-card__action[aria-selected="true"] { background: var(--uxdsl__button__contained-tone-primary-selected-bg, var(--uxdsl__button__contained-selected-bg)); color: var(--uxdsl__button__contained-tone-primary-selected-color, var(--uxdsl__button__contained-selected-color)); }
+
+.plan-card__action:disabled, .plan-card__action[aria-disabled="true"] { opacity: var(--uxdsl__button__contained-tone-primary-disabled-opacity, var(--uxdsl__button__contained-disabled-opacity)); cursor: var(--uxdsl__button__contained-tone-primary-disabled-cursor, var(--uxdsl__button__contained-disabled-cursor)); }
+
+/* The Live theme handler's quick looks (QuickLooks.tsx): dials, a font and brands, and one line
+   under it, so the parts of the theme come right after. Every value is a UXDSL token, role or
    directive; the literals left are layout (flex). */
 .qlk {
-  padding: var(--uxdsl__surface__contained-padding);
+  padding: var(--uxdsl__density__2);
   border-radius: var(--uxdsl__radius__3);
   background: var(--uxdsl__surface__contained-bg);
   color: var(--uxdsl__surface__contained-color);
@@ -9996,15 +10419,16 @@ input[type=range]::-moz-range-thumb:hover {
   box-shadow: var(--uxdsl__surface__contained-shadow);
   display: flex;
   flex-direction: column;
-  gap: var(--uxdsl__density__2);
+  gap: var(--uxdsl__density__1);
+  /* "Change it" in the page's head stops here, below the page's bars. */
+  scroll-margin-top: var(--uxdsl__space__12);
 }
 
-.qlk__head {
+.qlk__looks {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--uxdsl__density__2);
-  color: var(--uxdsl__palette__primary-main);
+  gap: var(--uxdsl__density__1) var(--uxdsl__density__2);
 }
 
 .qlk__title {
@@ -10015,10 +10439,26 @@ input[type=range]::-moz-range-thumb:hover {
   letter-spacing: var(--uxdsl__typography__subtitle2-letter-spacing);
   margin-block-start: var(--uxdsl__typography__subtitle2-margin-block-start);
   margin-block-end: var(--uxdsl__typography__subtitle2-margin-block-end);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--uxdsl__density__1);
+  margin-inline-end: var(--uxdsl__density__1);
   color: var(--uxdsl__palette__text-primary);
 }
 
-.qlk__hint {
+.qlk__icon {
+  flex: none;
+  color: var(--uxdsl__palette__primary-main);
+}
+
+/* A dial: its name, −, the level and +, in one pill. */
+.qlk__dial {
+  padding: var(--uxdsl__surface__outlined-padding);
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--uxdsl__palette__primary-main);
+  border: 1px solid var(--uxdsl__palette__primary-main);
+  box-shadow: var(--uxdsl__surface__outlined-shadow);
   font-family: var(--uxdsl__typography__caption-font-family);
   font-size: var(--uxdsl__typography__caption-font-size);
   line-height: var(--uxdsl__typography__caption-line-height);
@@ -10026,23 +10466,110 @@ input[type=range]::-moz-range-thumb:hover {
   letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
   margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
   margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
-  color: var(--uxdsl__palette__text-secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--uxdsl__density__0);
+  padding: var(--uxdsl__density__0) var(--uxdsl__density__1) var(--uxdsl__density__0) var(--uxdsl__density__3);
+  font-weight: 600;
+  /* Off the level of the theme the page started from. */
+}
+.qlk__dial.is-moved {
+  background: color-mix(in srgb, var(--uxdsl__palette__primary-main) 12%, transparent);
 }
 
-.qlk__looks {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--uxdsl__density__2);
+.qlk__dial-label {
+  margin-inline-end: var(--uxdsl__density__1);
 }
+
+.qlk__dial-step { padding: var(--uxdsl__density__1); border-radius: 9999px; background: transparent; color: var(--uxdsl__palette__primary-main); border: var(--uxdsl__surface__flat-border); box-shadow: var(--uxdsl__surface__flat-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--uxdsl__density__1);
+}
+
+.qlk__dial-step:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__flat-tone-primary-hover-color, var(--uxdsl__button__flat-hover-color)); }
+
+.qlk__dial-step:focus-visible { outline: var(--uxdsl__button__flat-tone-primary-focusvisible-outline, var(--uxdsl__button__flat-focusvisible-outline)); outline-offset: var(--uxdsl__button__flat-tone-primary-focusvisible-outline-offset, var(--uxdsl__button__flat-focusvisible-outline-offset)); }
+
+.qlk__dial-step.is-selected, .qlk__dial-step[aria-pressed="true"], .qlk__dial-step[aria-selected="true"] { color: var(--uxdsl__button__flat-tone-primary-selected-color, var(--uxdsl__button__flat-selected-color)); }
+
+.qlk__dial-step:disabled, .qlk__dial-step[aria-disabled="true"] { opacity: var(--uxdsl__button__flat-tone-primary-disabled-opacity, var(--uxdsl__button__flat-disabled-opacity)); cursor: var(--uxdsl__button__flat-tone-primary-disabled-cursor, var(--uxdsl__button__flat-disabled-cursor)); }
+
+.qlk__dial-value {
+  font-family: var(--uxdsl__typography__subtitle2-font-family);
+  font-size: var(--uxdsl__typography__subtitle2-font-size);
+  line-height: var(--uxdsl__typography__subtitle2-line-height);
+  font-weight: var(--uxdsl__typography__subtitle2-font-weight);
+  letter-spacing: var(--uxdsl__typography__subtitle2-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__subtitle2-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__subtitle2-margin-block-end);
+  min-width: var(--uxdsl__space__6);
+  color: var(--uxdsl__palette__text-primary);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+/* The font of the page: a pill like a dial, holding a list. */
+.qlk__font {
+  padding: var(--uxdsl__surface__outlined-padding);
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--uxdsl__palette__primary-main);
+  border: 1px solid var(--uxdsl__palette__primary-main);
+  box-shadow: var(--uxdsl__surface__outlined-shadow);
+  font-family: var(--uxdsl__typography__caption-font-family);
+  font-size: var(--uxdsl__typography__caption-font-size);
+  line-height: var(--uxdsl__typography__caption-line-height);
+  font-weight: var(--uxdsl__typography__caption-font-weight);
+  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--uxdsl__density__1);
+  padding: var(--uxdsl__density__1) var(--uxdsl__density__1) var(--uxdsl__density__1) var(--uxdsl__density__3);
+  font-weight: 600;
+}
+.qlk__font.is-moved {
+  background: color-mix(in srgb, var(--uxdsl__palette__primary-main) 12%, transparent);
+}
+
+.qlk__font-select { box-sizing: border-box; font: inherit; width: 100%; padding: var(--uxdsl__density__1); border-radius: 9999px; background: transparent; color: var(--uxdsl__palette__primary-main); border: 1px solid var(--uxdsl__palette__primary-main); box-shadow: var(--uxdsl__surface__outlined-shadow); caret-color: var(--uxdsl__input__outlined-tone-primary-base-caret, var(--uxdsl__input__outlined-base-caret)); --uxdsl__input__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__input__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__input__tone-contrast: var(--uxdsl__palette__primary-contrast);
+  font-family: var(--uxdsl__typography__caption-font-family);
+  font-size: var(--uxdsl__typography__caption-font-size);
+  line-height: var(--uxdsl__typography__caption-line-height);
+  font-weight: var(--uxdsl__typography__caption-font-weight);
+  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+  width: auto;
+  padding: var(--uxdsl__density__0) var(--uxdsl__density__1);
+  border: var(--uxdsl__border__0);
+  color: var(--uxdsl__palette__text-primary);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.qlk__font-select::placeholder { color: var(--uxdsl__input__outlined-tone-primary-base-placeholder, var(--uxdsl__input__outlined-base-placeholder)); }
+
+.qlk__font-select:focus { border: var(--uxdsl__input__outlined-tone-primary-focus-border, var(--uxdsl__input__outlined-focus-border)); }
+
+.qlk__font-select:invalid, .qlk__font-select[aria-invalid="true"] { border: var(--uxdsl__input__outlined-tone-primary-invalid-border, var(--uxdsl__input__outlined-invalid-border)); }
+
+.qlk__font-select:disabled, .qlk__font-select[aria-disabled="true"] { opacity: var(--uxdsl__input__outlined-tone-primary-disabled-opacity, var(--uxdsl__input__outlined-disabled-opacity)); cursor: var(--uxdsl__input__outlined-tone-primary-disabled-cursor, var(--uxdsl__input__outlined-disabled-cursor)); }
 
 .qlk__look { padding: var(--uxdsl__surface__outlined-padding); border-radius: 9999px; background: transparent; color: var(--uxdsl__palette__primary-main); border: 1px solid var(--uxdsl__palette__primary-main); box-shadow: var(--uxdsl__surface__outlined-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast);
-  font-family: var(--uxdsl__typography__body-sm-font-family);
-  font-size: var(--uxdsl__typography__body-sm-font-size);
-  line-height: var(--uxdsl__typography__body-sm-line-height);
-  font-weight: var(--uxdsl__typography__body-sm-font-weight);
-  letter-spacing: var(--uxdsl__typography__body-sm-letter-spacing);
-  margin-block-start: var(--uxdsl__typography__body-sm-margin-block-start);
-  margin-block-end: var(--uxdsl__typography__body-sm-margin-block-end);
+  font-family: var(--uxdsl__typography__caption-font-family);
+  font-size: var(--uxdsl__typography__caption-font-size);
+  line-height: var(--uxdsl__typography__caption-line-height);
+  font-weight: var(--uxdsl__typography__caption-font-weight);
+  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+  padding: var(--uxdsl__density__1) var(--uxdsl__density__3);
+  font-weight: 600;
 }
 
 .qlk__look:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__outlined-tone-primary-hover-color, var(--uxdsl__button__outlined-hover-color)); border: var(--uxdsl__button__outlined-tone-primary-hover-border, var(--uxdsl__button__outlined-hover-border)); }
@@ -10054,16 +10581,17 @@ input[type=range]::-moz-range-thumb:hover {
 .qlk__look:disabled, .qlk__look[aria-disabled="true"] { opacity: var(--uxdsl__button__outlined-tone-primary-disabled-opacity, var(--uxdsl__button__outlined-disabled-opacity)); cursor: var(--uxdsl__button__outlined-tone-primary-disabled-cursor, var(--uxdsl__button__outlined-disabled-cursor)); }
 
 .qlk__reset { padding: var(--uxdsl__surface__flat-padding); border-radius: 9999px; background: var(--uxdsl__surface__flat-bg); color: var(--uxdsl__surface__flat-color); border: var(--uxdsl__surface__flat-border); box-shadow: var(--uxdsl__surface__flat-shadow);
-  font-family: var(--uxdsl__typography__body-sm-font-family);
-  font-size: var(--uxdsl__typography__body-sm-font-size);
-  line-height: var(--uxdsl__typography__body-sm-line-height);
-  font-weight: var(--uxdsl__typography__body-sm-font-weight);
-  letter-spacing: var(--uxdsl__typography__body-sm-letter-spacing);
-  margin-block-start: var(--uxdsl__typography__body-sm-margin-block-start);
-  margin-block-end: var(--uxdsl__typography__body-sm-margin-block-end);
+  font-family: var(--uxdsl__typography__caption-font-family);
+  font-size: var(--uxdsl__typography__caption-font-size);
+  line-height: var(--uxdsl__typography__caption-line-height);
+  font-weight: var(--uxdsl__typography__caption-font-weight);
+  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
   display: inline-flex;
   align-items: center;
   gap: var(--uxdsl__density__1);
+  padding: var(--uxdsl__density__1) var(--uxdsl__density__2);
 }
 
 .qlk__reset:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__flat-hover-color); }
@@ -12864,7 +13392,7 @@ input[type=range]::-moz-range-thumb:hover {
   box-shadow: var(--uxdsl__surface__flat-shadow);
 }
 
-/* Shared by the Surfaces and the Buttons / Inputs tabs. */
+/* Shared by the Surfaces and the Buttons / Inputs parts. */
 .esf__toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -13027,61 +13555,8 @@ input[type=range]::-moz-range-thumb:hover {
   padding-inline-start: var(--uxdsl__density__4);
 }
 
-/* The head of every tab of the Live theme handler (TabGuide.tsx). Every value is a UXDSL
-   token, role or directive; the literals left are layout (flex). */
-.tgd {
-  display: flex;
-  flex-direction: column;
-  gap: var(--uxdsl__density__2);
-  margin-bottom: var(--uxdsl__density__3);
-}
-
-.tgd__what {
-  font-family: var(--uxdsl__typography__body-font-family);
-  font-size: var(--uxdsl__typography__body-font-size);
-  line-height: var(--uxdsl__typography__body-line-height);
-  font-weight: var(--uxdsl__typography__body-font-weight);
-  letter-spacing: var(--uxdsl__typography__body-letter-spacing);
-  margin-block-start: var(--uxdsl__typography__body-margin-block-start);
-  margin-block-end: var(--uxdsl__typography__body-margin-block-end);
-  margin: var(--uxdsl__density__0);
-  color: var(--uxdsl__palette__text-primary);
-}
-
-.tgd__try {
-  padding: var(--uxdsl__surface__contained-padding);
-  border-radius: var(--uxdsl__radius__2);
-  background: var(--uxdsl__palette__primary-main);
-  color: var(--uxdsl__palette__primary-contrast);
-  border: var(--uxdsl__surface__contained-border);
-  box-shadow: var(--uxdsl__surface__contained-shadow);
-  font-family: var(--uxdsl__typography__body-sm-font-family);
-  font-size: var(--uxdsl__typography__body-sm-font-size);
-  line-height: var(--uxdsl__typography__body-sm-line-height);
-  font-weight: var(--uxdsl__typography__body-sm-font-weight);
-  letter-spacing: var(--uxdsl__typography__body-sm-letter-spacing);
-  margin-block-start: var(--uxdsl__typography__body-sm-margin-block-start);
-  margin-block-end: var(--uxdsl__typography__body-sm-margin-block-end);
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--uxdsl__density__2);
-  margin: var(--uxdsl__density__0);
-}
-
-.tgd__badge {
-  font-family: var(--uxdsl__typography__caption-font-family);
-  font-size: var(--uxdsl__typography__caption-font-size);
-  line-height: var(--uxdsl__typography__caption-line-height);
-  font-weight: var(--uxdsl__typography__caption-font-weight);
-  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
-  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
-  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
-  font-weight: 700;
-  text-transform: uppercase;
-}
-
-/* Tabs: a row of buttons over one visible panel. */
+/* Tabs: a row of buttons over one visible panel. Every value is a UXDSL token or role; the
+   literals left are layout. */
 .tabs {
   margin-block: var(--uxdsl__density__4);
   min-width: 0;
@@ -13090,7 +13565,7 @@ input[type=range]::-moz-range-thumb:hover {
 .tabs__list {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--uxdsl__space__1);
+  gap: var(--uxdsl__density__1);
   border-bottom: var(--uxdsl__border__1);
 }
 
@@ -13102,23 +13577,19 @@ input[type=range]::-moz-range-thumb:hover {
   letter-spacing: var(--uxdsl__typography__span-letter-spacing);
   margin-block-start: var(--uxdsl__typography__span-margin-block-start);
   margin-block-end: var(--uxdsl__typography__span-margin-block-end);
-  margin: 0;
-  /* Narrower below sm, so four short labels share one row on a phone. */
-  padding-block: var(--uxdsl__space__2);
-  padding-inline: var(--uxdsl__space__3);
-  border: 0;
-  border-bottom: 3px solid transparent;
+  margin: var(--uxdsl__density__0);
+  /* A tab that is an address (#surfaces) stops below the fixed header. */
+  scroll-margin-top: var(--uxdsl__space__11);
+  padding-block: var(--uxdsl__density__2);
+  padding-inline: var(--uxdsl__density__3);
+  border: var(--uxdsl__border__0);
+  border-bottom: var(--uxdsl__border__2);
+  border-bottom-color: transparent;
   background: transparent;
   color: var(--uxdsl__palette__text-secondary);
   font-weight: 600;
   cursor: pointer;
 }
-
-@media (min-width: 480px){
-
-.tabs__tab {
-  padding-inline: var(--uxdsl__space__4);
-} }
 .tabs__tab:hover {
   color: var(--uxdsl__palette__primary-main);
 }
@@ -13127,8 +13598,8 @@ input[type=range]::-moz-range-thumb:hover {
   border-bottom-color: var(--uxdsl__palette__primary-main);
 }
 .tabs__tab:focus-visible {
-  outline: 2px solid var(--uxdsl__palette__primary-main);
-  outline-offset: -2px;
+  outline: var(--uxdsl__space__1) solid var(--uxdsl__palette__primary-main);
+  outline-offset: calc(var(--uxdsl__space__1) * -1);
 }
 
 .tabs__panel {
@@ -13136,7 +13607,7 @@ input[type=range]::-moz-range-thumb:hover {
   min-width: 0;
 }
 
-/* The JSON tab of the Live theme handler (/docs/theme): the theme as a JSON tree
+/* The JSON part of the Live theme handler (/docs/theme): the theme as a JSON tree
    (vanilla-jsoneditor). Every value is a UXDSL token, role or directive; the literals left
    are layout (flex) and sizes the editor needs. */
 .config-editor__toolbar {
@@ -13343,62 +13814,146 @@ input[type=range]::-moz-range-thumb:hover {
 
 .tdl__button--primary:disabled, .tdl__button--primary[aria-disabled="true"] { opacity: var(--uxdsl__button__contained-tone-primary-disabled-opacity, var(--uxdsl__button__contained-disabled-opacity)); cursor: var(--uxdsl__button__contained-tone-primary-disabled-cursor, var(--uxdsl__button__contained-disabled-cursor)); }
 
-/* The Live theme handler's showcase (/docs/theme): a small page styled only with UXDSL.
-   Roles for every surface, button and text; density() for every gap and padding;
-   palette() for every color; responsive values for the layout, which changes at md. */
-.shw {
-  padding: var(--uxdsl__surface__outlined-padding);
-  border-radius: var(--uxdsl__radius__3);
-  background: var(--uxdsl__surface__outlined-bg);
-  color: var(--uxdsl__surface__outlined-color);
-  border: var(--uxdsl__surface__outlined-border);
-  box-shadow: var(--uxdsl__surface__outlined-shadow);
-  display: flex;
-  flex-direction: column;
-  gap: var(--uxdsl__density__4);
-  margin-block: var(--uxdsl__density__4);
+/* The home page's invitation to the Live theme handler (ThemeHandlerInvite.tsx). Every color,
+   size, corner, shadow and text style is a UXDSL token, role or directive, so the card
+   changes with the theme (the nine drawings are ThemeSpecimen's). The literals left are layout (grid, flex), the
+   page's width and the motion on hover. */
+/* The home sections' container: same width and gutter, so the edges line up. */
+.thi {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1320px;
+  margin: var(--uxdsl__density__0) auto;
+  padding: var(--uxdsl__density__0) var(--uxdsl__space__4);
+}
+@media (min-width: 768px){
+.thi {
+  padding: var(--uxdsl__density__0) var(--uxdsl__space__6);
+} }
+
+.thi__card {
+  padding: var(--uxdsl__density__5);
+  border-radius: var(--uxdsl__radius__4);
+  background: var(--uxdsl__surface__contained-bg);
+  color: var(--uxdsl__surface__contained-color);
+  border: var(--uxdsl__surface__contained-border);
+  box-shadow: var(--uxdsl__shadow__3);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  gap: var(--uxdsl__density__6);
+  border-color: var(--uxdsl__palette__primary-main);
+  background-image: linear-gradient(135deg, color-mix(in srgb, var(--uxdsl__palette__primary-main) 10%, transparent), color-mix(in srgb, var(--uxdsl__palette__secondary-main) 6%, transparent));
 }
 
-/* Menu: stacked on a phone, one row from md. */
-.shw__nav {
+@media (min-width: 1024px){
+
+.thi__card {
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+} }
+
+.thi__intro {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  justify-content: space-between;
   gap: var(--uxdsl__density__3);
-  padding-bottom: var(--uxdsl__density__3);
-  border-bottom: var(--uxdsl__border__1);
+  min-width: 0;
 }
-@media (min-width: 768px){
-.shw__nav {
-  flex-direction: row;
-  align-items: center;
-} }
 
-.shw__brand {
-  font-family: var(--uxdsl__typography__h5-font-family);
-  font-size: var(--uxdsl__typography__h5-font-size);
-  line-height: var(--uxdsl__typography__h5-line-height);
-  font-weight: var(--uxdsl__typography__h5-font-weight);
-  letter-spacing: var(--uxdsl__typography__h5-letter-spacing);
-  margin-block-start: var(--uxdsl__typography__h5-margin-block-start);
-  margin-block-end: var(--uxdsl__typography__h5-margin-block-end);
+.thi__eyebrow {
+  font-family: var(--uxdsl__typography__caption-font-family);
+  font-size: var(--uxdsl__typography__caption-font-size);
+  line-height: var(--uxdsl__typography__caption-line-height);
+  font-weight: var(--uxdsl__typography__caption-font-weight);
+  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--uxdsl__density__1);
+  color: var(--uxdsl__palette__primary-main);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.thi__title {
+  font-family: var(--uxdsl__typography__h2-font-family);
+  font-size: var(--uxdsl__typography__h2-font-size);
+  line-height: var(--uxdsl__typography__h2-line-height);
+  font-weight: var(--uxdsl__typography__h2-font-weight);
+  letter-spacing: var(--uxdsl__typography__h2-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__h2-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__h2-margin-block-end);
+  color: var(--uxdsl__palette__surface-contrast);
+}
+
+.thi__lede {
+  font-family: var(--uxdsl__typography__body-font-family);
+  font-size: var(--uxdsl__typography__body-font-size);
+  line-height: var(--uxdsl__typography__body-line-height);
+  font-weight: var(--uxdsl__typography__body-font-weight);
+  letter-spacing: var(--uxdsl__typography__body-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__body-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__body-margin-block-end);
+  color: var(--uxdsl__palette__text-secondary);
+}
+
+.thi__steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__density__2);
+  margin: var(--uxdsl__density__0);
+  padding: var(--uxdsl__density__0);
+  list-style: none;
+}
+
+.thi__step {
+  font-family: var(--uxdsl__typography__body-sm-font-family);
+  font-size: var(--uxdsl__typography__body-sm-font-size);
+  line-height: var(--uxdsl__typography__body-sm-line-height);
+  font-weight: var(--uxdsl__typography__body-sm-font-weight);
+  letter-spacing: var(--uxdsl__typography__body-sm-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__body-sm-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__body-sm-margin-block-end);
+  display: flex;
+  align-items: center;
+  gap: var(--uxdsl__density__2);
+  color: var(--uxdsl__palette__text-primary);
+}
+
+.thi__num {
+  font-family: var(--uxdsl__typography__caption-font-family);
+  font-size: var(--uxdsl__typography__caption-font-size);
+  line-height: var(--uxdsl__typography__caption-line-height);
+  font-weight: var(--uxdsl__typography__caption-font-weight);
+  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--uxdsl__space__6);
+  height: var(--uxdsl__space__6);
+  border-radius: 50%;
+  background: var(--uxdsl__palette__primary-main);
+  color: var(--uxdsl__palette__primary-contrast);
+  font-weight: 700;
+}
+
+.thi__code {
+  font-family: var(--uxdsl__typography__code-font-family);
+  font-size: var(--uxdsl__typography__code-font-size);
+  line-height: var(--uxdsl__typography__code-line-height);
+  font-weight: var(--uxdsl__typography__code-font-weight);
+  letter-spacing: var(--uxdsl__typography__code-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__code-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__code-margin-block-end);
   color: var(--uxdsl__palette__primary-main);
 }
 
-.shw__menu {
-  display: flex;
-  flex-direction: column;
-  gap: var(--uxdsl__density__1);
-}
-
-@media (min-width: 768px){
-
-.shw__menu {
-  flex-direction: row;
-} }
-
-.shw__link { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: var(--uxdsl__surface__flat-bg); color: var(--uxdsl__surface__flat-color); border: var(--uxdsl__surface__flat-border); box-shadow: var(--uxdsl__surface__flat-shadow);
+.thi__cta { padding: var(--uxdsl__density__3); border-radius: 9999px; background: var(--uxdsl__palette__primary-main); color: var(--uxdsl__palette__primary-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast);
   font-family: var(--uxdsl__typography__subtitle2-font-family);
   font-size: var(--uxdsl__typography__subtitle2-font-size);
   line-height: var(--uxdsl__typography__subtitle2-line-height);
@@ -13406,26 +13961,139 @@ input[type=range]::-moz-range-thumb:hover {
   letter-spacing: var(--uxdsl__typography__subtitle2-letter-spacing);
   margin-block-start: var(--uxdsl__typography__subtitle2-margin-block-start);
   margin-block-end: var(--uxdsl__typography__subtitle2-margin-block-end);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--uxdsl__density__2);
+  padding-inline: var(--uxdsl__density__5);
+  font-weight: 700;
+  text-decoration: none;
 }
 
-.shw__link:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__flat-hover-color); }
+.thi__cta:hover:not(:where(:disabled, [aria-disabled="true"])) { background: var(--uxdsl__button__contained-tone-primary-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-primary-hover-color, var(--uxdsl__button__contained-hover-color)); }
 
-.shw__link:focus-visible { outline: var(--uxdsl__button__flat-focusvisible-outline); outline-offset: var(--uxdsl__button__flat-focusvisible-outline-offset); }
+.thi__cta:focus-visible { outline: var(--uxdsl__button__contained-tone-primary-focusvisible-outline, var(--uxdsl__button__contained-focusvisible-outline)); outline-offset: var(--uxdsl__button__contained-tone-primary-focusvisible-outline-offset, var(--uxdsl__button__contained-focusvisible-outline-offset)); }
 
-.shw__link.is-selected, .shw__link[aria-pressed="true"], .shw__link[aria-selected="true"] { color: var(--uxdsl__button__flat-selected-color); }
+.thi__cta.is-selected, .thi__cta[aria-pressed="true"], .thi__cta[aria-selected="true"] { background: var(--uxdsl__button__contained-tone-primary-selected-bg, var(--uxdsl__button__contained-selected-bg)); color: var(--uxdsl__button__contained-tone-primary-selected-color, var(--uxdsl__button__contained-selected-color)); }
 
-.shw__link:disabled, .shw__link[aria-disabled="true"] { opacity: var(--uxdsl__button__flat-disabled-opacity); cursor: var(--uxdsl__button__flat-disabled-cursor); }
+.thi__cta:disabled, .thi__cta[aria-disabled="true"] { opacity: var(--uxdsl__button__contained-tone-primary-disabled-opacity, var(--uxdsl__button__contained-disabled-opacity)); cursor: var(--uxdsl__button__contained-tone-primary-disabled-cursor, var(--uxdsl__button__contained-disabled-cursor)); }
 
-.shw__cta { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: var(--uxdsl__palette__primary-main); color: var(--uxdsl__palette__primary-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast);
+/* The nine parts of the theme, each a way into its row of the handler. */
+.thi__parts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__density__2);
+  min-width: 0;
 }
 
-.shw__cta:hover:not(:where(:disabled, [aria-disabled="true"])) { background: var(--uxdsl__button__contained-tone-primary-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-primary-hover-color, var(--uxdsl__button__contained-hover-color)); }
+.thi__parts-title {
+  font-family: var(--uxdsl__typography__caption-font-family);
+  font-size: var(--uxdsl__typography__caption-font-size);
+  line-height: var(--uxdsl__typography__caption-line-height);
+  font-weight: var(--uxdsl__typography__caption-font-weight);
+  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+  color: var(--uxdsl__palette__text-secondary);
+}
 
-.shw__cta:focus-visible { outline: var(--uxdsl__button__contained-tone-primary-focusvisible-outline, var(--uxdsl__button__contained-focusvisible-outline)); outline-offset: var(--uxdsl__button__contained-tone-primary-focusvisible-outline-offset, var(--uxdsl__button__contained-focusvisible-outline-offset)); }
+.thi__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--uxdsl__density__2);
+  margin: var(--uxdsl__density__0);
+  padding: var(--uxdsl__density__0);
+  list-style: none;
+}
 
-.shw__cta.is-selected, .shw__cta[aria-pressed="true"], .shw__cta[aria-selected="true"] { background: var(--uxdsl__button__contained-tone-primary-selected-bg, var(--uxdsl__button__contained-selected-bg)); color: var(--uxdsl__button__contained-tone-primary-selected-color, var(--uxdsl__button__contained-selected-color)); }
+.thi__item {
+  display: flex;
+  min-width: 0;
+}
 
-.shw__cta:disabled, .shw__cta[aria-disabled="true"] { opacity: var(--uxdsl__button__contained-tone-primary-disabled-opacity, var(--uxdsl__button__contained-disabled-opacity)); cursor: var(--uxdsl__button__contained-tone-primary-disabled-cursor, var(--uxdsl__button__contained-disabled-cursor)); }
+.thi__tile {
+  padding: var(--uxdsl__density__3);
+  border-radius: var(--uxdsl__radius__3);
+  background: var(--uxdsl__surface__outlined-bg);
+  color: var(--uxdsl__surface__outlined-color);
+  border: var(--uxdsl__surface__outlined-border);
+  box-shadow: var(--uxdsl__surface__outlined-shadow);
+  box-sizing: border-box;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--uxdsl__density__1);
+  min-width: 0;
+  background: var(--uxdsl__palette__surface-main);
+  text-decoration: none;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.thi__tile:hover {
+  border-color: var(--uxdsl__palette__primary-main);
+  box-shadow: var(--uxdsl__shadow__2);
+  transform: translateY(calc(var(--uxdsl__space__1) * -1));
+}
+.thi__tile:focus-visible {
+  outline: var(--uxdsl__space__1) solid var(--uxdsl__palette__primary-main);
+  outline-offset: var(--uxdsl__space__1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .thi__tile {
+    transition: none;
+  }
+  .thi__tile:hover {
+    transform: none;
+  }
+}
+.thi__label {
+  font-family: var(--uxdsl__typography__subtitle2-font-family);
+  font-size: var(--uxdsl__typography__subtitle2-font-size);
+  line-height: var(--uxdsl__typography__subtitle2-line-height);
+  font-weight: var(--uxdsl__typography__subtitle2-font-weight);
+  letter-spacing: var(--uxdsl__typography__subtitle2-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__subtitle2-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__subtitle2-margin-block-end);
+  color: var(--uxdsl__palette__surface-contrast);
+  font-weight: 700;
+}
+
+/* On a phone the tile is its drawing and its name. */
+.thi__hint {
+  font-family: var(--uxdsl__typography__caption-font-family);
+  font-size: var(--uxdsl__typography__caption-font-size);
+  line-height: var(--uxdsl__typography__caption-line-height);
+  font-weight: var(--uxdsl__typography__caption-font-weight);
+  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+  display: none;
+  color: var(--uxdsl__palette__text-secondary);
+}
+@media (min-width: 480px){
+.thi__hint {
+  display: block;
+} }
+
+/* The Live theme handler's showcase (/docs/theme): a dummy page styled only with UXDSL.
+   Roles for every surface, button, field and text; density() for every gap and padding;
+   palette() for every color; responsive values for the layout: one column on a phone, the
+   cards in a row from md, the hero beside them from xl. The literals left are layout. */
+.shw {
+  padding: var(--uxdsl__surface__outlined-padding);
+  border-radius: var(--uxdsl__radius__3);
+  background: var(--uxdsl__surface__outlined-bg);
+  color: var(--uxdsl__surface__outlined-color);
+  border: var(--uxdsl__surface__outlined-border);
+  box-shadow: var(--uxdsl__surface__outlined-shadow);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--uxdsl__density__3);
+}
+@media (min-width: 1280px){
+.shw {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+} }
 
 /* Hero: the primary color with its contrast text, the secondary color for the main action. */
 .shw__hero {
@@ -13437,19 +14105,41 @@ input[type=range]::-moz-range-thumb:hover {
   box-shadow: var(--uxdsl__surface__contained-shadow);
   display: flex;
   flex-direction: column;
-  gap: var(--uxdsl__density__3);
-  padding: var(--uxdsl__density__6);
+  justify-content: center;
+  gap: var(--uxdsl__density__2);
+  min-width: 0;
+  padding: var(--uxdsl__density__4);
 }
 
 .shw__eyebrow {
-  font-family: var(--uxdsl__typography__caption-font-family);
-  font-size: var(--uxdsl__typography__caption-font-size);
-  line-height: var(--uxdsl__typography__caption-line-height);
-  font-weight: var(--uxdsl__typography__caption-font-weight);
-  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
-  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
-  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
-  text-transform: uppercase;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--uxdsl__density__1) var(--uxdsl__density__2);
+  margin: var(--uxdsl__density__0);
+}
+
+/* The role the heading is drawn with, and the size the theme gives it. */
+.shw__role,
+.shw__size {
+  font-family: var(--uxdsl__typography__code-font-family);
+  font-size: var(--uxdsl__typography__code-font-size);
+  line-height: var(--uxdsl__typography__code-line-height);
+  font-weight: var(--uxdsl__typography__code-font-weight);
+  letter-spacing: var(--uxdsl__typography__code-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__code-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__code-margin-block-end);
+  overflow-wrap: anywhere;
+}
+
+.shw__role {
+  padding: var(--uxdsl__density__1);
+  border-radius: 9999px;
+  background: var(--uxdsl__palette__light-main);
+  color: var(--uxdsl__palette__light-contrast);
+  border: var(--uxdsl__surface__contained-border);
+  box-shadow: var(--uxdsl__surface__contained-shadow);
+  padding-inline: var(--uxdsl__density__2);
 }
 
 .shw__title {
@@ -13460,6 +14150,8 @@ input[type=range]::-moz-range-thumb:hover {
   letter-spacing: var(--uxdsl__typography__h1-letter-spacing);
   margin-block-start: var(--uxdsl__typography__h1-margin-block-start);
   margin-block-end: var(--uxdsl__typography__h1-margin-block-end);
+  margin: var(--uxdsl__density__0);
+  overflow-wrap: break-word;
 }
 
 .shw__subtitle {
@@ -13471,21 +14163,16 @@ input[type=range]::-moz-range-thumb:hover {
   margin-block-start: var(--uxdsl__typography__body-margin-block-start);
   margin-block-end: var(--uxdsl__typography__body-margin-block-end);
   max-width: calc(var(--uxdsl__space__16) * 2);
+  margin: var(--uxdsl__density__0);
 }
 
 .shw__actions {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   gap: var(--uxdsl__density__2);
 }
 
-@media (min-width: 480px){
-
-.shw__actions {
-  flex-direction: row;
-} }
-
-.shw__primary { padding: var(--uxdsl__density__3); border-radius: var(--uxdsl__radius__3); background: var(--uxdsl__palette__secondary-main); color: var(--uxdsl__palette__secondary-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__secondary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__secondary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__secondary-contrast);
+.shw__primary { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: var(--uxdsl__palette__secondary-main); color: var(--uxdsl__palette__secondary-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__secondary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__secondary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__secondary-contrast);
 }
 
 .shw__primary:hover:not(:where(:disabled, [aria-disabled="true"])) { background: var(--uxdsl__button__contained-tone-secondary-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-secondary-hover-color, var(--uxdsl__button__contained-hover-color)); }
@@ -13496,7 +14183,7 @@ input[type=range]::-moz-range-thumb:hover {
 
 .shw__primary:disabled, .shw__primary[aria-disabled="true"] { opacity: var(--uxdsl__button__contained-tone-secondary-disabled-opacity, var(--uxdsl__button__contained-disabled-opacity)); cursor: var(--uxdsl__button__contained-tone-secondary-disabled-cursor, var(--uxdsl__button__contained-disabled-cursor)); }
 
-.shw__secondary { padding: var(--uxdsl__density__3); border-radius: var(--uxdsl__radius__3); background: var(--uxdsl__palette__light-main); color: var(--uxdsl__palette__light-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__light-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__light-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__light-contrast);
+.shw__secondary { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: var(--uxdsl__palette__light-main); color: var(--uxdsl__palette__light-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__light-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__light-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__light-contrast);
 }
 
 .shw__secondary:hover:not(:where(:disabled, [aria-disabled="true"])) { background: var(--uxdsl__button__contained-tone-light-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-light-hover-color, var(--uxdsl__button__contained-hover-color)); }
@@ -13507,31 +14194,129 @@ input[type=range]::-moz-range-thumb:hover {
 
 .shw__secondary:disabled, .shw__secondary[aria-disabled="true"] { opacity: var(--uxdsl__button__contained-tone-light-disabled-opacity, var(--uxdsl__button__contained-disabled-opacity)); cursor: var(--uxdsl__button__contained-tone-light-disabled-cursor, var(--uxdsl__button__contained-disabled-cursor)); }
 
-/* News: one column on a phone, two from md, three from lg. */
-.shw__news {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--uxdsl__density__3);
+.shw__primary,
+.shw__secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--uxdsl__density__1);
+  text-decoration: none;
 }
+
+/* Beside the hero from xl, under it before: a field and a button, then the cards. */
+.shw__side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__density__3);
+  min-width: 0;
+}
+
+.shw__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--uxdsl__density__2);
+}
+
+.shw__field { box-sizing: border-box; font: inherit; width: 100%; padding: var(--uxdsl__density__1); border-radius: var(--uxdsl__radius__1); background: var(--uxdsl__surface__outlined-bg); color: var(--uxdsl__surface__outlined-color); border: var(--uxdsl__surface__outlined-border); box-shadow: var(--uxdsl__surface__outlined-shadow); caret-color: var(--uxdsl__input__outlined-base-caret);
+  flex: 1 1 var(--uxdsl__space__14);
+  width: auto;
+  min-width: 0;
+}
+
+.shw__field::placeholder { color: var(--uxdsl__input__outlined-base-placeholder); }
+
+.shw__field:focus { border: var(--uxdsl__input__outlined-focus-border); }
+
+.shw__field:invalid, .shw__field[aria-invalid="true"] { border: var(--uxdsl__input__outlined-invalid-border); }
+
+.shw__field:disabled, .shw__field[aria-disabled="true"] { opacity: var(--uxdsl__input__outlined-disabled-opacity); cursor: var(--uxdsl__input__outlined-disabled-cursor); }
+
+.shw__send { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: var(--uxdsl__palette__primary-main); color: var(--uxdsl__palette__primary-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast);
+}
+
+.shw__send:hover:not(:where(:disabled, [aria-disabled="true"])) { background: var(--uxdsl__button__contained-tone-primary-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-primary-hover-color, var(--uxdsl__button__contained-hover-color)); }
+
+.shw__send:focus-visible { outline: var(--uxdsl__button__contained-tone-primary-focusvisible-outline, var(--uxdsl__button__contained-focusvisible-outline)); outline-offset: var(--uxdsl__button__contained-tone-primary-focusvisible-outline-offset, var(--uxdsl__button__contained-focusvisible-outline-offset)); }
+
+.shw__send.is-selected, .shw__send[aria-pressed="true"], .shw__send[aria-selected="true"] { background: var(--uxdsl__button__contained-tone-primary-selected-bg, var(--uxdsl__button__contained-selected-bg)); color: var(--uxdsl__button__contained-tone-primary-selected-color, var(--uxdsl__button__contained-selected-color)); }
+
+.shw__send:disabled, .shw__send[aria-disabled="true"] { opacity: var(--uxdsl__button__contained-tone-primary-disabled-opacity, var(--uxdsl__button__contained-disabled-opacity)); cursor: var(--uxdsl__button__contained-tone-primary-disabled-cursor, var(--uxdsl__button__contained-disabled-cursor)); }
+
+/* The breakpoint the layout is at, written by a responsive value alone. */
+.shw__bp {
+  padding: var(--uxdsl__surface__contained-padding);
+  border-radius: 9999px;
+  background: var(--uxdsl__palette__dark-main);
+  color: var(--uxdsl__palette__dark-contrast);
+  border: var(--uxdsl__surface__contained-border);
+  box-shadow: var(--uxdsl__surface__contained-shadow);
+  font-family: var(--uxdsl__typography__caption-font-family);
+  font-size: var(--uxdsl__typography__caption-font-size);
+  line-height: var(--uxdsl__typography__caption-line-height);
+  font-weight: var(--uxdsl__typography__caption-font-weight);
+  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+  padding: var(--uxdsl__density__1) var(--uxdsl__density__3);
+}
+.shw__bp::after {
+  content: "xs";
+}
+@media (min-width: 480px){
+.shw__bp::after {
+  content: "sm";
+} }
 @media (min-width: 768px){
-.shw__news {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+.shw__bp::after {
+  content: "md";
 } }
 @media (min-width: 1024px){
-.shw__news {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+.shw__bp::after {
+  content: "lg";
+} }
+@media (min-width: 1280px){
+.shw__bp::after {
+  content: "xl";
+} }
+
+/* Cards: two columns on a phone, four in a row from md, two by two beside the hero from xl. */
+.shw__cards {
+  display: grid;
+  flex: 1;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--uxdsl__density__2);
+}
+@media (min-width: 768px){
+.shw__cards {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+} }
+@media (min-width: 1280px){
+.shw__cards {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 } }
 
 .shw__card {
-  padding: var(--uxdsl__surface__outlined-padding);
+  padding: var(--uxdsl__surface__contained-padding);
   border-radius: var(--uxdsl__radius__2);
-  background: var(--uxdsl__surface__outlined-bg);
-  color: var(--uxdsl__surface__outlined-color);
-  border: var(--uxdsl__surface__outlined-border);
-  box-shadow: var(--uxdsl__surface__outlined-shadow);
+  background: var(--uxdsl__surface__contained-bg);
+  color: var(--uxdsl__surface__contained-color);
+  border: var(--uxdsl__surface__contained-border);
+  box-shadow: var(--uxdsl__shadow__2);
   display: flex;
   flex-direction: column;
-  gap: var(--uxdsl__density__2);
+  gap: var(--uxdsl__density__1);
+  min-width: 0;
+}
+
+/* The tag and the link, drawn above the title (the title comes first in the document). */
+.shw__card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--uxdsl__density__1) var(--uxdsl__density__2);
+  order: -1;
+  margin: var(--uxdsl__density__0);
 }
 
 /* A tag in its tone; the rule after it keeps the tag's own size. */
@@ -13562,6 +14347,15 @@ input[type=range]::-moz-range-thumb:hover {
   box-shadow: var(--uxdsl__surface__contained-shadow);
 }
 
+.shw__tag--warning {
+  padding: var(--uxdsl__surface__contained-padding);
+  border-radius: 9999px;
+  background: var(--uxdsl__palette__warning-main);
+  color: var(--uxdsl__palette__warning-contrast);
+  border: var(--uxdsl__surface__contained-border);
+  box-shadow: var(--uxdsl__surface__contained-shadow);
+}
+
 .shw__tag {
   font-family: var(--uxdsl__typography__caption-font-family);
   font-size: var(--uxdsl__typography__caption-font-size);
@@ -13570,8 +14364,7 @@ input[type=range]::-moz-range-thumb:hover {
   letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
   margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
   margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
-  align-self: flex-start;
-  padding: var(--uxdsl__density__1) var(--uxdsl__density__2);
+  padding: var(--uxdsl__density__0) var(--uxdsl__density__2);
 }
 
 .shw__card-title {
@@ -13582,8 +14375,10 @@ input[type=range]::-moz-range-thumb:hover {
   letter-spacing: var(--uxdsl__typography__h5-letter-spacing);
   margin-block-start: var(--uxdsl__typography__h5-margin-block-start);
   margin-block-end: var(--uxdsl__typography__h5-margin-block-end);
+  margin: var(--uxdsl__density__0);
 }
 
+/* On a phone a card is its tag, its link and its title. */
 .shw__card-body {
   font-family: var(--uxdsl__typography__body-sm-font-family);
   font-size: var(--uxdsl__typography__body-sm-font-size);
@@ -13592,10 +14387,17 @@ input[type=range]::-moz-range-thumb:hover {
   letter-spacing: var(--uxdsl__typography__body-sm-letter-spacing);
   margin-block-start: var(--uxdsl__typography__body-sm-margin-block-start);
   margin-block-end: var(--uxdsl__typography__body-sm-margin-block-end);
+  display: none;
+  flex: 1;
+  margin: var(--uxdsl__density__0);
   color: var(--uxdsl__palette__text-secondary);
 }
+@media (min-width: 480px){
+.shw__card-body {
+  display: block;
+} }
 
-.shw__meta {
+.shw__card-link {
   font-family: var(--uxdsl__typography__caption-font-family);
   font-size: var(--uxdsl__typography__caption-font-size);
   line-height: var(--uxdsl__typography__caption-line-height);
@@ -13603,12 +14405,48 @@ input[type=range]::-moz-range-thumb:hover {
   letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
   margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
   margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--uxdsl__density__1);
   color: var(--uxdsl__palette__primary-main);
+  font-weight: 600;
 }
 
-/* The breakpoint the layout is at, written by a responsive value alone. */
-.shw__bp {
-  padding: var(--uxdsl__surface__contained-padding);
+/* The drawings of the parts of the theme (ThemeSpecimen.tsx). Each is made of the tokens its
+   part edits, so it changes with the theme. Every value is a UXDSL token, role or directive;
+   the literals left are layout (flex). */
+.tsp {
+  display: flex;
+  align-items: center;
+  gap: var(--uxdsl__density__1);
+  min-height: var(--uxdsl__space__7);
+}
+
+.tsp__dot {
+  width: var(--uxdsl__space__5);
+  height: var(--uxdsl__space__5);
+  border-radius: 50%;
+}
+
+.tsp__dot--primary {
+  background: var(--uxdsl__palette__primary-main);
+}
+
+.tsp__dot--secondary {
+  background: var(--uxdsl__palette__secondary-main);
+}
+
+.tsp__dot--success {
+  background: var(--uxdsl__palette__success-main);
+}
+
+.tsp__dot--warning {
+  background: var(--uxdsl__palette__warning-main);
+}
+
+/* The breakpoint the window is at, read from the theme. */
+.tsp__bp {
+  padding: var(--uxdsl__density__1);
   border-radius: 9999px;
   background: var(--uxdsl__palette__dark-main);
   color: var(--uxdsl__palette__dark-contrast);
@@ -13621,28 +14459,166 @@ input[type=range]::-moz-range-thumb:hover {
   letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
   margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
   margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
-  align-self: flex-end;
-  padding: var(--uxdsl__density__1) var(--uxdsl__density__3);
+  padding-inline: var(--uxdsl__density__3);
+  font-weight: 700;
 }
-.shw__bp::after {
+.tsp__bp::after {
   content: "xs";
 }
 @media (min-width: 480px){
-.shw__bp::after {
+.tsp__bp::after {
   content: "sm";
 } }
 @media (min-width: 768px){
-.shw__bp::after {
+.tsp__bp::after {
   content: "md";
 } }
 @media (min-width: 1024px){
-.shw__bp::after {
+.tsp__bp::after {
   content: "lg";
 } }
 @media (min-width: 1280px){
-.shw__bp::after {
+.tsp__bp::after {
   content: "xl";
 } }
+
+.tsp__box {
+  border-radius: var(--uxdsl__radius__1);
+  background: var(--uxdsl__palette__primary-main);
+}
+
+.tsp__box--3 {
+  width: var(--uxdsl__space__3);
+  height: var(--uxdsl__space__3);
+}
+
+.tsp__box--5 {
+  width: var(--uxdsl__space__5);
+  height: var(--uxdsl__space__5);
+}
+
+.tsp__box--7 {
+  width: var(--uxdsl__space__7);
+  height: var(--uxdsl__space__7);
+}
+
+.tsp__type {
+  font-family: var(--uxdsl__typography__h4-font-family);
+  font-size: var(--uxdsl__typography__h4-font-size);
+  line-height: var(--uxdsl__typography__h4-line-height);
+  font-weight: var(--uxdsl__typography__h4-font-weight);
+  letter-spacing: var(--uxdsl__typography__h4-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__h4-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__h4-margin-block-end);
+  color: var(--uxdsl__palette__primary-main);
+}
+
+.tsp__edge {
+  width: var(--uxdsl__space__8);
+  height: var(--uxdsl__space__6);
+  border: var(--uxdsl__border__2);
+  border-color: var(--uxdsl__palette__primary-main);
+  border-radius: var(--uxdsl__radius__3);
+}
+
+.tsp__shadow {
+  width: var(--uxdsl__space__8);
+  height: var(--uxdsl__space__6);
+  border: var(--uxdsl__border__1);
+  border-radius: var(--uxdsl__radius__2);
+  background: var(--uxdsl__palette__surface-main);
+  box-shadow: var(--uxdsl__shadow__4);
+}
+
+.tsp__surface {
+  padding: var(--uxdsl__density__1);
+  border-radius: var(--uxdsl__radius__1);
+  background: var(--uxdsl__palette__primary-main);
+  color: var(--uxdsl__palette__primary-contrast);
+  border: var(--uxdsl__surface__contained-border);
+  box-shadow: var(--uxdsl__surface__contained-shadow);
+  width: var(--uxdsl__space__8);
+  height: var(--uxdsl__space__6);
+}
+
+.tsp__button { padding: var(--uxdsl__density__1); border-radius: 9999px; background: var(--uxdsl__palette__primary-main); color: var(--uxdsl__palette__primary-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast);
+  font-family: var(--uxdsl__typography__caption-font-family);
+  font-size: var(--uxdsl__typography__caption-font-size);
+  line-height: var(--uxdsl__typography__caption-line-height);
+  font-weight: var(--uxdsl__typography__caption-font-weight);
+  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+  padding-inline: var(--uxdsl__density__3);
+  font-weight: 700;
+}
+
+.tsp__button:hover:not(:where(:disabled, [aria-disabled="true"])) { background: var(--uxdsl__button__contained-tone-primary-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-primary-hover-color, var(--uxdsl__button__contained-hover-color)); }
+
+.tsp__button:focus-visible { outline: var(--uxdsl__button__contained-tone-primary-focusvisible-outline, var(--uxdsl__button__contained-focusvisible-outline)); outline-offset: var(--uxdsl__button__contained-tone-primary-focusvisible-outline-offset, var(--uxdsl__button__contained-focusvisible-outline-offset)); }
+
+.tsp__button.is-selected, .tsp__button[aria-pressed="true"], .tsp__button[aria-selected="true"] { background: var(--uxdsl__button__contained-tone-primary-selected-bg, var(--uxdsl__button__contained-selected-bg)); color: var(--uxdsl__button__contained-tone-primary-selected-color, var(--uxdsl__button__contained-selected-color)); }
+
+.tsp__button:disabled, .tsp__button[aria-disabled="true"] { opacity: var(--uxdsl__button__contained-tone-primary-disabled-opacity, var(--uxdsl__button__contained-disabled-opacity)); cursor: var(--uxdsl__button__contained-tone-primary-disabled-cursor, var(--uxdsl__button__contained-disabled-cursor)); }
+
+.tsp__json {
+  font-family: var(--uxdsl__typography__h5-font-family);
+  font-size: var(--uxdsl__typography__h5-font-size);
+  line-height: var(--uxdsl__typography__h5-line-height);
+  font-weight: var(--uxdsl__typography__h5-font-weight);
+  letter-spacing: var(--uxdsl__typography__h5-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__h5-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__h5-margin-block-end);
+  color: var(--uxdsl__palette__primary-main);
+  font-family: var(--uxdsl__font__code), monospace;
+}
+
+/* "From this page to your project" on /docs/theme (ThemeTakeHome.tsx). Every value is a UXDSL
+   token or role; the literals left are layout (flex). The card it shows is styled by
+   plan-card.uxdsl alone. */
+.tth {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__density__2);
+  margin-top: var(--uxdsl__density__8);
+  scroll-margin-top: var(--uxdsl__space__11);
+}
+
+.tth__title {
+  font-family: var(--uxdsl__typography__h3-font-family);
+  font-size: var(--uxdsl__typography__h3-font-size);
+  line-height: var(--uxdsl__typography__h3-line-height);
+  font-weight: var(--uxdsl__typography__h3-font-weight);
+  letter-spacing: var(--uxdsl__typography__h3-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__h3-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__h3-margin-block-end);
+  color: var(--uxdsl__palette__surface-contrast);
+}
+
+.tth__lede {
+  font-family: var(--uxdsl__typography__body-font-family);
+  font-size: var(--uxdsl__typography__body-font-size);
+  line-height: var(--uxdsl__typography__body-line-height);
+  font-weight: var(--uxdsl__typography__body-font-weight);
+  letter-spacing: var(--uxdsl__typography__body-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__body-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__body-margin-block-end);
+  color: var(--uxdsl__palette__text-secondary);
+}
+
+.tth__link {
+  color: var(--uxdsl__palette__primary-main);
+  font-weight: 600;
+}
+.tth__link:focus-visible {
+  outline: var(--uxdsl__space__1) solid var(--uxdsl__palette__primary-main);
+  outline-offset: var(--uxdsl__space__1);
+}
+
+/* The component's stylesheet is short: it is shown whole, without a scroll of its own. */
+.tth .use__block:first-child .use__code {
+  max-height: none;
+}
 
 /* The Typography editor of the Live theme handler (/docs/theme). Every value is a UXDSL token,
    role or directive; the literals left are layout (grid, flex). */
@@ -14153,7 +15129,7 @@ input[type=range]::-moz-range-thumb:hover {
   text-overflow: ellipsis;
 }
 
-/* The "Use it in your project" block that ends every tab of the Live theme handler
+/* The "Use it in your project" block that ends every part of the Live theme handler
    (UsageExample.tsx). Every value is a UXDSL token, role or directive; the literals left are
    layout (grid, flex) and the code block's whitespace. */
 .use {
@@ -14603,6 +15579,153 @@ input[type=range]::-moz-range-thumb:hover {
   margin-top: 3rem;
 }
 
+/* /docs/theme, the Live theme handler's page: a small head (the title, one line and the three
+   steps as links), the handler, and the theme file's reference below it. Every value is a UXDSL
+   token, role or directive; the literals left are layout (grid, flex) and the title's gradient. */
+/* One column on a narrow window (title, line, steps); from lg the steps sit beside the title. */
+.thp__head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  gap: var(--uxdsl__density__1) var(--uxdsl__density__4);
+  padding-block: var(--uxdsl__density__2) var(--uxdsl__density__3);
+}
+@media (min-width: 1024px){
+.thp__head {
+  grid-template-columns: minmax(0, 1fr) auto;
+} }
+
+.thp__title {
+  font-family: var(--uxdsl__typography__h3-font-family);
+  font-size: var(--uxdsl__typography__h3-font-size);
+  line-height: var(--uxdsl__typography__h3-line-height);
+  font-weight: var(--uxdsl__typography__h3-font-weight);
+  letter-spacing: var(--uxdsl__typography__h3-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__h3-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__h3-margin-block-end);
+  grid-row: 1;
+  grid-column: 1;
+  margin: var(--uxdsl__density__0);
+  /* The same gradient as the other pages' title (PageTitle), at a smaller role. */
+  background: linear-gradient(135deg, var(--uxdsl__palette__primary-main) 0%, var(--uxdsl__palette__primary-light) 50%, var(--uxdsl__palette__secondary-main) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: var(--uxdsl__palette__primary-main);
+}
+
+.thp__subtitle {
+  font-family: var(--uxdsl__typography__body-font-family);
+  font-size: var(--uxdsl__typography__body-font-size);
+  line-height: var(--uxdsl__typography__body-line-height);
+  font-weight: var(--uxdsl__typography__body-font-weight);
+  letter-spacing: var(--uxdsl__typography__body-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__body-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__body-margin-block-end);
+  grid-row: 2;
+  grid-column: 1/-1;
+  margin: var(--uxdsl__density__0);
+  color: var(--uxdsl__palette__text-secondary);
+}
+
+.thp__nav {
+  grid-row: 3;
+  grid-column: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--uxdsl__density__2) var(--uxdsl__density__3);
+}
+
+@media (min-width: 1024px){
+
+.thp__nav {
+  grid-row: 1;
+  grid-column: 2;
+} }
+
+.thp__steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--uxdsl__density__2);
+  margin: var(--uxdsl__density__0);
+  padding: var(--uxdsl__density__0);
+  list-style: none;
+}
+
+/* A step is a link to where it happens on the page. */
+.thp__step { padding: var(--uxdsl__surface__outlined-padding); border-radius: 9999px; background: transparent; color: var(--uxdsl__palette__primary-main); border: 1px solid var(--uxdsl__palette__primary-main); box-shadow: var(--uxdsl__surface__outlined-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast);
+  font-family: var(--uxdsl__typography__caption-font-family);
+  font-size: var(--uxdsl__typography__caption-font-size);
+  line-height: var(--uxdsl__typography__caption-line-height);
+  font-weight: var(--uxdsl__typography__caption-font-weight);
+  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--uxdsl__density__2);
+  padding: var(--uxdsl__density__1) var(--uxdsl__density__3) var(--uxdsl__density__1) var(--uxdsl__density__1);
+  font-weight: 600;
+  text-decoration: none;
+}
+.thp__step:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__outlined-tone-primary-hover-color, var(--uxdsl__button__outlined-hover-color)); border: var(--uxdsl__button__outlined-tone-primary-hover-border, var(--uxdsl__button__outlined-hover-border)); }
+.thp__step:focus-visible { outline: var(--uxdsl__button__outlined-tone-primary-focusvisible-outline, var(--uxdsl__button__outlined-focusvisible-outline)); outline-offset: var(--uxdsl__button__outlined-tone-primary-focusvisible-outline-offset, var(--uxdsl__button__outlined-focusvisible-outline-offset)); }
+.thp__step.is-selected, .thp__step[aria-pressed="true"], .thp__step[aria-selected="true"] { background: var(--uxdsl__button__outlined-tone-primary-selected-bg, var(--uxdsl__button__outlined-selected-bg)); color: var(--uxdsl__button__outlined-tone-primary-selected-color, var(--uxdsl__button__outlined-selected-color)); border: var(--uxdsl__button__outlined-tone-primary-selected-border, var(--uxdsl__button__outlined-selected-border)); }
+.thp__step:disabled, .thp__step[aria-disabled="true"] { opacity: var(--uxdsl__button__outlined-tone-primary-disabled-opacity, var(--uxdsl__button__outlined-disabled-opacity)); cursor: var(--uxdsl__button__outlined-tone-primary-disabled-cursor, var(--uxdsl__button__outlined-disabled-cursor)); }
+
+.thp__num {
+  font-family: var(--uxdsl__typography__caption-font-family);
+  font-size: var(--uxdsl__typography__caption-font-size);
+  line-height: var(--uxdsl__typography__caption-line-height);
+  font-weight: var(--uxdsl__typography__caption-font-weight);
+  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--uxdsl__space__6);
+  height: var(--uxdsl__space__6);
+  border-radius: 50%;
+  background: var(--uxdsl__palette__primary-main);
+  color: var(--uxdsl__palette__primary-contrast);
+  font-weight: 700;
+}
+
+.thp__more {
+  font-family: var(--uxdsl__typography__caption-font-family);
+  font-size: var(--uxdsl__typography__caption-font-size);
+  line-height: var(--uxdsl__typography__caption-line-height);
+  font-weight: var(--uxdsl__typography__caption-font-weight);
+  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+  color: var(--uxdsl__palette__primary-main);
+  font-weight: 600;
+  text-underline-offset: var(--uxdsl__space__1);
+}
+.thp__more:focus-visible {
+  outline: var(--uxdsl__space__1) solid var(--uxdsl__palette__primary-main);
+  outline-offset: var(--uxdsl__space__1);
+  border-radius: var(--uxdsl__radius__1);
+}
+
+/* The page's anchors stop under the fixed header. */
+.thp__editor,
+.thp__reference h2,
+.thp__reference h3 {
+  scroll-margin-top: var(--uxdsl__space__11);
+}
+
+/* The reference starts a new part of the page. */
+.thp__reference {
+  margin-top: var(--uxdsl__density__8);
+  padding-top: var(--uxdsl__density__4);
+  border-top: var(--uxdsl__border__1);
+}
+
 /* NotFound styles - Scoped */
 .not-found-container {
   display: flex;
@@ -14751,8 +15874,10 @@ input[type=range]::-moz-range-thumb:hover {
   line-height: 1.5;
 }
 
-/* The home page. Above the fold on a laptop: the thesis, the example next to its compiled CSS,
-   the resizable frame and the three ways in. */
+/* The home page under the hero feed and the invitation to the theme handler: the thesis, the
+   example next to its compiled CSS, the resizable frame and what the theme decides. Every gap
+   is density(), every color palette(), every text a role. The literals left are layout, the
+   page's width (with the gutter the hero shares) and the type details of the code panels. */
 .home {
   display: flex;
   flex-direction: column;
@@ -14764,7 +15889,7 @@ input[type=range]::-moz-range-thumb:hover {
   box-sizing: border-box;
   width: 100%;
   max-width: 1320px;
-  margin: 0 auto;
+  margin: var(--uxdsl__density__0) auto;
   padding: var(--uxdsl__density__5) var(--uxdsl__space__4);
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -14798,7 +15923,7 @@ input[type=range]::-moz-range-thumb:hover {
   letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
   margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
   margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
-  margin: 0;
+  margin: var(--uxdsl__density__0);
   color: var(--uxdsl__palette__primary-main);
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -14813,7 +15938,7 @@ input[type=range]::-moz-range-thumb:hover {
   letter-spacing: var(--uxdsl__typography__h2-letter-spacing);
   margin-block-start: var(--uxdsl__typography__h2-margin-block-start);
   margin-block-end: var(--uxdsl__typography__h2-margin-block-end);
-  margin: 0;
+  margin: var(--uxdsl__density__0);
   color: var(--uxdsl__palette__surface-contrast);
   letter-spacing: -0.02em;
 }
@@ -14826,14 +15951,14 @@ input[type=range]::-moz-range-thumb:hover {
   letter-spacing: var(--uxdsl__typography__p-letter-spacing);
   margin-block-start: var(--uxdsl__typography__p-margin-block-start);
   margin-block-end: var(--uxdsl__typography__p-margin-block-end);
-  margin: 0;
+  margin: var(--uxdsl__density__0);
   color: var(--uxdsl__palette__text-secondary);
 }
 
 .home-hero__code {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--uxdsl__space__4);
+  gap: var(--uxdsl__density__4);
   min-width: 0;
 }
 
@@ -14846,7 +15971,7 @@ input[type=range]::-moz-range-thumb:hover {
 .home-code {
   display: grid;
   align-content: start;
-  gap: var(--uxdsl__space__2);
+  gap: var(--uxdsl__density__2);
   min-width: 0;
 }
 
@@ -14858,11 +15983,11 @@ input[type=range]::-moz-range-thumb:hover {
   letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
   margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
   margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
-  margin: 0;
+  margin: var(--uxdsl__density__0);
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  gap: var(--uxdsl__space__2);
+  gap: var(--uxdsl__density__2);
   font-weight: 700;
   color: var(--uxdsl__palette__surface-contrast);
 }
@@ -14889,14 +16014,14 @@ input[type=range]::-moz-range-thumb:hover {
   max-height: 19.5rem;
 } }
 .home-code__scroll:focus-visible {
-  outline: 2px solid var(--uxdsl__palette__primary-main);
-  outline-offset: 2px;
+  outline: var(--uxdsl__space__1) solid var(--uxdsl__palette__primary-main);
+  outline-offset: var(--uxdsl__space__1);
 }
 
 .home-hero__frame {
   grid-column: 1/-1;
   display: grid;
-  gap: var(--uxdsl__space__2);
+  gap: var(--uxdsl__density__2);
   min-width: 0;
 }
 
@@ -14908,7 +16033,7 @@ input[type=range]::-moz-range-thumb:hover {
   letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
   margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
   margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
-  margin: 0;
+  margin: var(--uxdsl__density__0);
   color: var(--uxdsl__palette__text-secondary);
 }
 
@@ -14920,13 +16045,13 @@ input[type=range]::-moz-range-thumb:hover {
   letter-spacing: var(--uxdsl__typography__h3-letter-spacing);
   margin-block-start: var(--uxdsl__typography__h3-margin-block-start);
   margin-block-end: var(--uxdsl__typography__h3-margin-block-end);
-  margin: 0 0 var(--uxdsl__density__4);
+  margin: var(--uxdsl__density__0) var(--uxdsl__density__0) var(--uxdsl__density__4);
 }
 
 .home-pillars {
   width: 100%;
   max-width: 1320px;
-  margin: 0 auto;
+  margin: var(--uxdsl__density__0) auto;
   box-sizing: border-box;
   padding: var(--uxdsl__density__8) var(--uxdsl__space__4) var(--uxdsl__density__4);
 }
@@ -14964,7 +16089,7 @@ input[type=range]::-moz-range-thumb:hover {
   box-shadow: var(--uxdsl__surface__outlined-shadow);
   display: grid;
   align-content: start;
-  gap: var(--uxdsl__space__3);
+  gap: var(--uxdsl__density__3);
   color: var(--uxdsl__palette__surface-contrast);
   text-decoration: none;
 }
@@ -14972,8 +16097,8 @@ input[type=range]::-moz-range-thumb:hover {
   border-color: var(--uxdsl__palette__primary-main);
 }
 .home-pillar:focus-visible {
-  outline: 2px solid var(--uxdsl__palette__primary-main);
-  outline-offset: 2px;
+  outline: var(--uxdsl__space__1) solid var(--uxdsl__palette__primary-main);
+  outline-offset: var(--uxdsl__space__1);
 }
 
 .home-pillar__title {
@@ -14984,7 +16109,7 @@ input[type=range]::-moz-range-thumb:hover {
   letter-spacing: var(--uxdsl__typography__h5-letter-spacing);
   margin-block-start: var(--uxdsl__typography__h5-margin-block-start);
   margin-block-end: var(--uxdsl__typography__h5-margin-block-end);
-  margin: 0;
+  margin: var(--uxdsl__density__0);
   color: var(--uxdsl__palette__primary-main);
 }
 
@@ -14996,24 +16121,24 @@ input[type=range]::-moz-range-thumb:hover {
   letter-spacing: var(--uxdsl__typography__span-letter-spacing);
   margin-block-start: var(--uxdsl__typography__span-margin-block-start);
   margin-block-end: var(--uxdsl__typography__span-margin-block-end);
-  margin: 0;
+  margin: var(--uxdsl__density__0);
   color: var(--uxdsl__palette__text-secondary);
 }
 
 .home-footer {
   margin-top: auto;
-  padding: var(--uxdsl__density__6) var(--uxdsl__space__4);
+  padding: var(--uxdsl__density__6) var(--uxdsl__density__4);
   background: var(--uxdsl__palette__surface-light);
   border-top: var(--uxdsl__border__1);
   display: grid;
   justify-items: center;
-  gap: var(--uxdsl__space__4);
+  gap: var(--uxdsl__density__4);
   width: 100%;
 }
 
 .home-footer__links {
   display: flex;
-  gap: var(--uxdsl__space__6);
+  gap: var(--uxdsl__density__6);
   flex-wrap: wrap;
   justify-content: center;
 }
@@ -15021,7 +16146,7 @@ input[type=range]::-moz-range-thumb:hover {
 .home-footer__link {
   display: inline-flex;
   align-items: center;
-  gap: var(--uxdsl__space__2);
+  gap: var(--uxdsl__density__2);
   color: var(--uxdsl__palette__text-secondary);
   text-decoration: none;
   font-weight: 500;
@@ -15031,8 +16156,8 @@ input[type=range]::-moz-range-thumb:hover {
   color: var(--uxdsl__palette__primary-main);
 }
 .home-footer__link:focus-visible {
-  outline: 2px solid var(--uxdsl__palette__primary-main);
-  outline-offset: 2px;
+  outline: var(--uxdsl__space__1) solid var(--uxdsl__palette__primary-main);
+  outline-offset: var(--uxdsl__space__1);
 }
 
 .home-footer__copy {
@@ -15043,55 +16168,6 @@ input[type=range]::-moz-range-thumb:hover {
   letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
   margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
   margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
-  margin: 0;
-  color: var(--uxdsl__palette__text-secondary);
-}
-
-/* The theme editor under the hero feed, closed by default: the same container as every home section. */
-.home-live {
-  box-sizing: border-box;
-  width: 100%;
-  max-width: 1320px;
-  margin: 0 auto;
-  padding: var(--uxdsl__density__0) var(--uxdsl__space__4);
-}
-@media (min-width: 768px){
-.home-live {
-  padding: var(--uxdsl__density__0) var(--uxdsl__space__6);
-} }
-
-.home-live__details {
-  padding: var(--uxdsl__surface__outlined-padding);
-  border-radius: var(--uxdsl__radius__3);
-  background: var(--uxdsl__surface__outlined-bg);
-  color: var(--uxdsl__surface__outlined-color);
-  border: var(--uxdsl__surface__outlined-border);
-  box-shadow: var(--uxdsl__surface__outlined-shadow);
-}
-
-.home-live__summary {
-  font-family: var(--uxdsl__typography__subtitle2-font-family);
-  font-size: var(--uxdsl__typography__subtitle2-font-size);
-  line-height: var(--uxdsl__typography__subtitle2-line-height);
-  font-weight: var(--uxdsl__typography__subtitle2-font-weight);
-  letter-spacing: var(--uxdsl__typography__subtitle2-letter-spacing);
-  margin-block-start: var(--uxdsl__typography__subtitle2-margin-block-start);
-  margin-block-end: var(--uxdsl__typography__subtitle2-margin-block-end);
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--uxdsl__density__2);
-  color: var(--uxdsl__palette__text-primary);
-  cursor: pointer;
-}
-
-.home-live__hint {
-  font-family: var(--uxdsl__typography__caption-font-family);
-  font-size: var(--uxdsl__typography__caption-font-size);
-  line-height: var(--uxdsl__typography__caption-line-height);
-  font-weight: var(--uxdsl__typography__caption-font-weight);
-  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
-  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
-  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+  margin: var(--uxdsl__density__0);
   color: var(--uxdsl__palette__text-secondary);
 }

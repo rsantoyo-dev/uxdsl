@@ -39,8 +39,8 @@ type Follower = { role: string; via: string | null }
  * Edits the color collection of the active theme (`colors`): pick a shade, change its value,
  * and see what follows it. A Palette role that says color(gray.900) changes with it, in the
  * mode where it says so, and so does every role linked to that one with palette(…). Changes go
- * through setCustomTheme → applyTheme like every tab, so the Palette editor below and the JSON
- * tab show them too.
+ * through setCustomTheme → applyTheme like every part, so the Palette editor below and the JSON
+ * part show them too.
  */
 export default function ColorsEditor({ defaultKey = 'purple.700' }: { defaultKey?: string }) {
   const { activeThemeData, setCustomTheme, customThemeName, isDark } = useTheme()

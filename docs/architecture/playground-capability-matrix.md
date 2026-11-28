@@ -46,32 +46,32 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 
 | Capability | Requires | Level | Evidence |
 | --- | --- | --- | --- |
-| `ds-button` | live | live | `src/components/AIPrompt.uxdsl`, `src/components/BreakpointsEditor.uxdsl`, `src/components/CapabilityDocs.uxdsl` |
+| `ds-button` | live | live | `src/app/docs/theme/theme-page.uxdsl`, `src/components/AIPrompt.uxdsl`, `src/components/BreakpointsEditor.uxdsl` |
 | `ds-input` | live | live | `src/components/BreakpointsEditor.uxdsl`, `src/components/CapabilityDocs.uxdsl`, `src/components/ColorsEditor.uxdsl` |
 | `ds-surface` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/not-found.uxdsl`, `src/app/page.uxdsl` |
-| `ds-typo` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/not-found.uxdsl`, `src/app/page.uxdsl` |
+| `ds-typo` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/docs/theme/theme-page.uxdsl`, `src/app/not-found.uxdsl` |
 
 ## Value functions
 
 | Capability | Requires | Level | Evidence |
 | --- | --- | --- | --- |
-| `border` | live | live | `src/app/page.uxdsl`, `src/components/AgentGuidance.uxdsl`, `src/components/AIPrompt.uxdsl` |
+| `border` | live | live | `src/app/docs/theme/theme-page.uxdsl`, `src/app/page.uxdsl`, `src/components/AgentGuidance.uxdsl` |
 | `color` | live | live | `src/components/AgentGuidance.uxdsl`, `src/components/AppHeader.uxdsl`, `src/components/BreakpointEditor.uxdsl` |
-| `density` | live | live | `src/app/app.uxdsl`, `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/not-found.uxdsl` |
-| `palette` | live | live | `src/app/app.uxdsl`, `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/layout.uxdsl` |
-| `radius` | live | live | `src/app/app.uxdsl`, `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/not-found.uxdsl` |
+| `density` | live | live | `src/app/app.uxdsl`, `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/docs/theme/theme-page.uxdsl` |
+| `palette` | live | live | `src/app/app.uxdsl`, `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/docs/theme/theme-page.uxdsl` |
+| `radius` | live | live | `src/app/app.uxdsl`, `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/docs/theme/theme-page.uxdsl` |
 | `shadow` | live | live | `src/app/app.uxdsl`, `src/app/not-found.uxdsl`, `src/components/AgentGuidance.uxdsl` |
-| `space` | live | live | `src/app/layout.uxdsl`, `src/app/page.uxdsl`, `src/components/AgentGuidance.uxdsl` |
+| `space` | live | live | `src/app/docs/theme/theme-page.uxdsl`, `src/app/layout.uxdsl`, `src/app/page.uxdsl` |
 
 ## Breakpoint functions
 
 | Capability | Requires | Level | Evidence |
 | --- | --- | --- | --- |
-| `lg` | live | live | `src/app/layout.uxdsl`, `src/app/page.uxdsl`, `src/components/CapabilityDocs.uxdsl` |
+| `lg` | live | live | `src/app/docs/theme/theme-page.uxdsl`, `src/app/layout.uxdsl`, `src/app/page.uxdsl` |
 | `md` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/layout.uxdsl`, `src/app/page.uxdsl` |
 | `sm` | live | live | `src/components/AIPrompt.uxdsl`, `src/components/AppHeader.uxdsl`, `src/components/HeroFeed.uxdsl` |
 | `xl` | live | live | `src/app/page.uxdsl`, `src/components/CapabilityDocs.uxdsl`, `src/components/HeroFeed.uxdsl` |
-| `xs` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/layout.uxdsl`, `src/app/page.uxdsl` |
+| `xs` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/docs/theme/theme-page.uxdsl`, `src/app/layout.uxdsl` |
 
 ## Breakpoint media queries
 
@@ -86,20 +86,20 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 
 | Capability | Requires | Level | Evidence |
 | --- | --- | --- | --- |
-| `borders` | live | live | `src/app/page.uxdsl`, `src/components/AgentGuidance.uxdsl`, `src/components/AIPrompt.uxdsl` |
-| `breakpoints` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/layout.uxdsl`, `src/app/page.uxdsl` |
-| `buttons` | live | live | `src/components/AIPrompt.uxdsl`, `src/components/BreakpointsEditor.uxdsl`, `src/components/CapabilityDocs.uxdsl` |
+| `borders` | live | live | `src/app/docs/theme/theme-page.uxdsl`, `src/app/page.uxdsl`, `src/components/AgentGuidance.uxdsl` |
+| `breakpoints` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/docs/theme/theme-page.uxdsl`, `src/app/layout.uxdsl` |
+| `buttons` | live | live | `src/app/docs/theme/theme-page.uxdsl`, `src/components/AIPrompt.uxdsl`, `src/components/BreakpointsEditor.uxdsl` |
 | `colors` | live | live | `src/components/AgentGuidance.uxdsl`, `src/components/AppHeader.uxdsl`, `src/components/BreakpointEditor.uxdsl` |
-| `densities` | live | live | `src/app/app.uxdsl`, `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/not-found.uxdsl` |
-| `fonts` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/layout.uxdsl`, `src/app/not-found.uxdsl` |
+| `densities` | live | live | `src/app/app.uxdsl`, `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/docs/theme/theme-page.uxdsl` |
+| `fonts` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/docs/theme/theme-page.uxdsl`, `src/app/layout.uxdsl` |
 | `inputs` | live | live | `src/components/BreakpointsEditor.uxdsl`, `src/components/CapabilityDocs.uxdsl`, `src/components/ColorsEditor.uxdsl` |
 | `modes` | live | live | `src/app/docs/theme/page.tsx`, `src/components/CodeBlock.tsx`, `src/components/ColorDocumentation.tsx` |
-| `palette` | live | live | `src/app/app.uxdsl`, `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/layout.uxdsl` |
-| `radii` | live | live | `src/app/app.uxdsl`, `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/not-found.uxdsl` |
+| `palette` | live | live | `src/app/app.uxdsl`, `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/docs/theme/theme-page.uxdsl` |
+| `radii` | live | live | `src/app/app.uxdsl`, `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/docs/theme/theme-page.uxdsl` |
 | `shadows` | live | live | `src/app/app.uxdsl`, `src/app/not-found.uxdsl`, `src/components/AgentGuidance.uxdsl` |
-| `spacing` | live | live | `src/app/layout.uxdsl`, `src/app/page.uxdsl`, `src/components/AgentGuidance.uxdsl` |
+| `spacing` | live | live | `src/app/docs/theme/theme-page.uxdsl`, `src/app/layout.uxdsl`, `src/app/page.uxdsl` |
 | `surfaces` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/not-found.uxdsl`, `src/app/page.uxdsl` |
-| `typography_details` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/not-found.uxdsl`, `src/app/page.uxdsl` |
+| `typography_details` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/docs/theme/theme-page.uxdsl`, `src/app/not-found.uxdsl` |
 
 ## Roles
 
@@ -107,12 +107,12 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | --- | --- | --- | --- |
 | `button.contained` | live | live | `src/components/CapabilityDocs.uxdsl`, `src/components/DemoButtons.tsx`, `src/components/EdgesEditor.uxdsl` |
 | `button.flat` | live | live | `src/components/AIPrompt.uxdsl`, `src/components/DemoButtons.tsx`, `src/components/EdgesEditor.uxdsl` |
-| `button.outlined` | live | live | `src/components/BreakpointsEditor.uxdsl`, `src/components/CapabilityDocs.uxdsl`, `src/components/DemoButtons.tsx` |
+| `button.outlined` | live | live | `src/app/docs/theme/theme-page.uxdsl`, `src/components/BreakpointsEditor.uxdsl`, `src/components/CapabilityDocs.uxdsl` |
 | `input.contained` | live | live | `src/components/InputDemo.tsx`, `src/components/RuntimeEngines.tsx` |
 | `input.outlined` | live | live | `src/components/BreakpointsEditor.uxdsl`, `src/components/CapabilityDocs.uxdsl`, `src/components/ColorsEditor.uxdsl` |
 | `input.underline` | live | live | `src/components/InputDemo.tsx`, `src/components/RuntimeEngines.tsx`, `src/components/TypographyEditor.uxdsl` |
 | `surface.contained` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/not-found.uxdsl`, `src/components/BreakpointsEditor.uxdsl` |
-| `surface.flat` | live | live | `src/components/ControlsEditor.tsx`, `src/components/DemoSurfaces.tsx`, `src/components/SideNav.uxdsl` |
+| `surface.flat` | live | live | `src/components/ControlsEditor.tsx`, `src/components/DemoSurfaces.tsx`, `src/components/LiveThemeHandler.uxdsl` |
 | `surface.outlined` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/page.uxdsl`, `src/components/AIPrompt.uxdsl` |
 
 ## Interaction states

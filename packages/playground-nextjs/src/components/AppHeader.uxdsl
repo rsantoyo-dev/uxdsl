@@ -115,6 +115,11 @@
   display: xs(none) md(inline);
 }
 
+/* The links that leave the site keep their icon alone until the header has room for every name. */
+.app-header__link-label--wide {
+  display: xs(none) lg(inline);
+}
+
 .app-header__settings {
   display: flex;
   align-items: center;

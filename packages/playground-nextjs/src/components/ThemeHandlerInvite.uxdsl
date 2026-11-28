@@ -1,0 +1,186 @@
+/* The home page's invitation to the Live theme handler (ThemeHandlerInvite.tsx). Every color,
+   size, corner, shadow and text style is a UXDSL token, role or directive, so the card
+   changes with the theme (the nine drawings are ThemeSpecimen's). The literals left are layout (grid, flex), the
+   page's width and the motion on hover. */
+
+/* The home sections' container: same width and gutter, so the edges line up. */
+.thi {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1320px;
+  margin: density(0) auto;
+  padding: density(0) xs(space(4)) md(space(6));
+}
+
+.thi__card {
+  @ds-surface(contained 5 radius(4) shadow(3));
+
+  display: grid;
+  grid-template-columns: xs(minmax(0, 1fr)) lg(minmax(0, 5fr) minmax(0, 7fr));
+  align-items: center;
+  gap: density(6);
+  border-color: palette(primary.main);
+  background-image: linear-gradient(135deg, palette(primary.main, 0.1), palette(secondary.main, 0.06));
+}
+
+.thi__intro {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: density(3);
+  min-width: 0;
+}
+
+.thi__eyebrow {
+  @ds-typo(caption);
+
+  display: inline-flex;
+  align-items: center;
+  gap: density(1);
+  color: palette(primary.main);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.thi__title {
+  @ds-typo(h2);
+
+  color: palette(surface.contrast);
+}
+
+.thi__lede {
+  @ds-typo(body);
+
+  color: palette(text.secondary);
+}
+
+.thi__steps {
+  display: flex;
+  flex-direction: column;
+  gap: density(2);
+  margin: density(0);
+  padding: density(0);
+  list-style: none;
+}
+
+.thi__step {
+  @ds-typo(body-sm);
+
+  display: flex;
+  align-items: center;
+  gap: density(2);
+  color: palette(text.primary);
+}
+
+.thi__num {
+  @ds-typo(caption);
+
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: space(6);
+  height: space(6);
+  border-radius: radius(circle);
+  background: palette(primary.main);
+  color: palette(primary.contrast);
+  font-weight: 700;
+}
+
+.thi__code {
+  @ds-typo(code);
+
+  color: palette(primary.main);
+}
+
+.thi__cta {
+  @ds-button(contained primary 3 radius(pill));
+  @ds-typo(subtitle2);
+
+  display: inline-flex;
+  align-items: center;
+  gap: density(2);
+  padding-inline: density(5);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+/* The nine parts of the theme, each a way into its row of the handler. */
+.thi__parts {
+  display: flex;
+  flex-direction: column;
+  gap: density(2);
+  min-width: 0;
+}
+
+.thi__parts-title {
+  @ds-typo(caption);
+
+  color: palette(text.secondary);
+}
+
+.thi__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: density(2);
+  margin: density(0);
+  padding: density(0);
+  list-style: none;
+}
+
+.thi__item {
+  display: flex;
+  min-width: 0;
+}
+
+.thi__tile {
+  @ds-surface(outlined 3);
+
+  box-sizing: border-box;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: density(1);
+  min-width: 0;
+  background: palette(surface.main);
+  text-decoration: none;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover {
+    border-color: palette(primary.main);
+    box-shadow: shadow(2);
+    transform: translateY(calc(space(1) * -1));
+  }
+
+  &:focus-visible {
+    outline: space(1) solid palette(primary.main);
+    outline-offset: space(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .thi__tile {
+    transition: none;
+
+    &:hover {
+      transform: none;
+    }
+  }
+}
+
+.thi__label {
+  @ds-typo(subtitle2);
+
+  color: palette(surface.contrast);
+  font-weight: 700;
+}
+
+/* On a phone the tile is its drawing and its name. */
+.thi__hint {
+  @ds-typo(caption);
+
+  display: xs(none) sm(block);
+  color: palette(text.secondary);
+}

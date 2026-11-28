@@ -17,7 +17,7 @@ const selected = (on: boolean) => (on ? ' is-selected' : '')
  * Edits one Density token of the active theme. The squares draw what it gives at each
  * breakpoint, one around the same content; the example below uses it for real
  * (padding and gap: density(n)), so it follows the window. Every change goes through
- * setCustomTheme → applyTheme, like the other tabs, and shows in the JSON tab.
+ * setCustomTheme → applyTheme, like the other parts, and shows in the JSON part.
  */
 export default function DensityEditor() {
   const { activeThemeData, setCustomTheme, customThemeName } = useTheme()

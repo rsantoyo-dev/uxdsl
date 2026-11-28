@@ -27,13 +27,13 @@ function jsonOf(content: Content): unknown {
  * The active theme as a JSON tree (vanilla-jsoneditor): every family expands and collapses,
  * values are edited in place, and the editor checks each edit against the packaged theme
  * schema as you type. A valid edit is applied through `setCustomTheme` (ThemeContext →
- * applyTheme), the same path as the other tabs, so they and the page follow it.
+ * applyTheme), the same path as the other parts, so they and the page follow it.
  *
- * The download above the tabs (ThemeDownload) saves what this tree shows as a project's
+ * The download bar (ThemeDownload) saves what this tree shows as a project's
  * uxdsl.theme.json.
  *
  * Breakpoints are the exception: applyTheme refuses them, so the tree shows the Breakpoints
- * tab's preview, and a moved width here moves that preview (BreakpointsProvider) instead.
+ * part's preview, and a moved width here moves that preview (BreakpointsProvider) instead.
  */
 export default function ThemeConfigJsonEditor() {
   const { activeThemeData: appliedTheme, setCustomTheme, customThemeName } = useTheme()
@@ -92,7 +92,7 @@ export default function ThemeConfigJsonEditor() {
     }, 500)
   }
 
-  // Create the editor once, in the browser only: it is loaded with the tab, not with the page.
+  // Create the editor once, in the browser only: it is loaded with the part, not with the page.
   useEffect(() => {
     let cancelled = false
     let editor: JSONEditor | null = null
@@ -123,7 +123,7 @@ export default function ThemeConfigJsonEditor() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // A change made elsewhere (the Palette tab, another theme, a reset) shows here. MIG-B6-30
+  // A change made elsewhere (the Palette editor, another theme, a reset) shows here. MIG-B6-30
   // (FEAT-008): an edit still waiting on the debounce is dropped first, so it cannot land on
   // the theme the user just switched to.
   useEffect(() => {
@@ -174,7 +174,7 @@ export default function ThemeConfigJsonEditor() {
             : status === 'loading'
               ? 'Loading the editor…'
               : preview
-                ? 'Synced with runtime theme. Its breakpoints are a preview on this page (Breakpoints tab).'
+                ? 'Synced with runtime theme. Its breakpoints are a preview on this page (see Breakpoints).'
                 : 'Synced with runtime theme.'}
         </div>
       </div>

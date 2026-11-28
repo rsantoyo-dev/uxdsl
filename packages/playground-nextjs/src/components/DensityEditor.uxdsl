@@ -1,4 +1,4 @@
-/* The Density tab of the Live theme handler (/docs/theme). Every value is a UXDSL token,
+/* The Density part of the Live theme handler (/docs/theme). Every value is a UXDSL token,
    role or directive; the literals left are layout (grid, flex) and SVG geometry. */
 
 /* One class per Density token of the base theme, so the live example uses density(n) for real.

@@ -17,7 +17,7 @@ $esf-tones: primary, secondary, tertiary, success, info, warning, error, neutral
   }
 }
 
-/* Shared by the Surfaces and the Buttons / Inputs tabs. */
+/* Shared by the Surfaces and the Buttons / Inputs parts. */
 .esf__toolbar {
   display: flex;
   flex-wrap: wrap;

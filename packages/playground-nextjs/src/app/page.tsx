@@ -4,7 +4,7 @@ import CodeBlock from '@/components/CodeBlock'
 import ParadigmFrame from '@/components/ParadigmFrame'
 import { AIPrompt } from '@/components/AIPrompt'
 import HeroFeed from '@/components/HeroFeed'
-import HomeThemeEditor from '@/components/HomeThemeEditor'
+import ThemeHandlerInvite from '@/components/ThemeHandlerInvite'
 import { GITHUB_URL, NPM_URL } from '@/lib/docs'
 import generated from '@/generated/examples.json'
 
@@ -28,7 +28,7 @@ export default function Home() {
         <AIPrompt />
       </HeroFeed>
 
-      <HomeThemeEditor />
+      <ThemeHandlerInvite />
 
       <section className="home-hero" aria-labelledby="home-title">
         <div className="home-hero__intro">
