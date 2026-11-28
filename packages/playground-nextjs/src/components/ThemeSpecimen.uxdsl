@@ -21,6 +21,24 @@
   }
 }
 
+/* The Colors: four shades of one family, side by side. */
+.tsp__ramp {
+  display: flex;
+  overflow: hidden;
+  border-radius: radius(1);
+}
+
+.tsp__shade {
+  width: space(5);
+  height: space(5);
+}
+
+@each $shade in 200, 400, 600, 800 {
+  .tsp__shade--#{$shade} {
+    background: color(gray.#{$shade});
+  }
+}
+
 /* The breakpoint the window is at, read from the theme. */
 .tsp__bp {
   @ds-surface(contained dark 1 radius(pill));

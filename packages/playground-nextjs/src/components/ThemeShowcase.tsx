@@ -13,7 +13,7 @@ import type { ThemePartId } from '../lib/theme-parts'
  * each edit, and its layout changes at md and xl like any component built with UXDSL.
  */
 const CARDS: { part: ThemePartId; tag: string; tone: string; title: string; body: string; link: string }[] = [
-  { part: 'colors', tag: 'Palette', tone: 'secondary', title: 'Colors with a job', body: 'This card names roles. The theme says which color each one is, in light and dark.', link: 'Recolor a role' },
+  { part: 'palette', tag: 'Palette', tone: 'secondary', title: 'Colors with a job', body: 'This card names roles. The theme says which color each one is, in light and dark.', link: 'Recolor a role' },
   { part: 'spacing', tag: 'Density', tone: 'info', title: 'Spacing per screen', body: 'Every gap here is a density token: one step of the scale per breakpoint.', link: 'Change a density' },
   { part: 'edges', tag: 'Radius', tone: 'success', title: 'Corners in one place', body: 'Round one radius token and every card, button and field rounds with it.', link: 'Round a corner' },
   { part: 'shadows', tag: 'Shadow', tone: 'warning', title: 'Depth as a token', body: 'These cards are raised by shadow(2). Edit its layers and they all move.', link: 'Lift a card' },
@@ -39,7 +39,7 @@ export default function ThemeShowcase() {
         <p className="shw__subtitle">One text role, sized per breakpoint by the theme.</p>
         <div className="shw__actions">
           <a className="shw__primary" href="#typography">Edit this H1 <ArrowRight size={16} aria-hidden="true" /></a>
-          <a className="shw__secondary" href="#colors">Recolor it</a>
+          <a className="shw__secondary" href="#palette">Recolor it</a>
         </div>
       </div>
 

@@ -53,7 +53,7 @@ export default function ThemeTakeHome({ source }: { source: string }) {
         note={
           changed === 0
             ? 'Nothing changed yet. Press + on a dial at the top of the page: the card changes, and the theme file below fills in.'
-            : `${changed} ${changed === 1 ? 'value' : 'values'} changed so far. The card follows them, and the theme file below is all a project needs to look the same. The download also carries this site's color collection, so every color() reference resolves there too.`
+            : `${changed} ${changed === 1 ? 'value' : 'values'} changed so far. The card follows them. The file below shows only those changes; the one you download adds this site's color collection, so every color() reference in it resolves in your project too.`
         }
       >
         <Result label=".plan-card" wide>

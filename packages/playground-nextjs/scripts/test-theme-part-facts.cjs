@@ -35,7 +35,8 @@ test('an edit counts in its own part and in the whole', () => {
     breakpoints: { md: 800 },
   });
   const changes = partChanges(diffOf(edited));
-  assert.equal(changes.colors, 2);
+  assert.equal(changes.palette, 2);
+  assert.equal(changes.colors, 0);
   assert.equal(changes.edges, 1);
   assert.equal(changes.breakpoints, 1);
   assert.equal(changes.shadows, 0);
@@ -66,7 +67,10 @@ test('the facts are read from the theme', () => {
   assert.deepEqual(facts.breakpoints, ['sm 480', 'md 768', 'lg 1024', 'xl 1280']);
   assert.deepEqual(facts.surfaces, ['contained', 'outlined', 'flat']);
   assert.equal(facts.typography[0], 'Inter');
-  assert.ok(facts.colors.includes('light + dark'));
+  assert.ok(facts.palette.includes('light + dark'));
+  // The Palette and the Colors are two parts: a shade edited counts in Colors, not in the Palette.
+  assert.equal(partChanges(diffOf(deepMergeTheme(themes.default, { colors: { gray: { 300: '#cccccc' } } }))).colors, 1);
+  assert.match(facts.colors[1], /^\d+ shades$/);
   for (const [part, list] of Object.entries(facts)) {
     assert.ok(list.length > 0, part);
     for (const fact of list) assert.equal(typeof fact, 'string', part);

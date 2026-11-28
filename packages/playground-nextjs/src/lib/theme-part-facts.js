@@ -6,7 +6,8 @@ const { FILE_NAME, themeFamilies, leafCount } = require('./theme-download.js');
 
 /** The theme families each part edits. `json` is the whole theme. */
 const PART_FAMILIES = {
-  colors: ['colors', 'palette', 'modes'],
+  palette: ['palette', 'modes'],
+  colors: ['colors'],
   breakpoints: ['breakpoints'],
   spacing: ['spacing', 'densities'],
   typography: ['fonts', 'typography_details'],
@@ -44,12 +45,14 @@ function partFacts(theme) {
   const font = String((t.fonts && t.fonts.families && t.fonts.families.ui) || '').split(',')[0].trim().replace(/^["']|["']$/g, '');
   const textRoles = keys(t.typography_details).filter((role) => role !== 'default');
   const surfaces = keys(t.surfaces);
+  // A color is a family of shades (gray.300) or one value (white).
+  const shades = Object.values(t.colors || {}).flatMap((color) => (keys(color).length > 0 ? keys(color) : [color]));
   return {
-    colors: [
+    palette: [
       count(keys(t.palette), 'role', 'roles'),
-      count(keys(t.colors), 'color', 'colors'),
       ...(keys(t.modes && t.modes.dark && t.modes.dark.palette).length > 0 ? ['light + dark'] : []),
     ],
+    colors: [count(keys(t.colors), 'color', 'colors'), count(shades, 'shade', 'shades')],
     breakpoints,
     spacing: [count(keys(t.spacing), 'size', 'sizes'), count(keys(t.densities), 'density', 'densities')],
     typography: [...(font ? [font] : []), count(textRoles, 'text role', 'text roles')],

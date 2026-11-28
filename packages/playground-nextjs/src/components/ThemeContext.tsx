@@ -4,6 +4,8 @@ import React, { createContext, useContext, useState, useEffect, useRef } from 'r
 import { applyTheme } from 'uxdsl/runtime'
 import { deepMergeTheme, validateTheme } from 'uxdsl/theme'
 import { createThemeScheduler } from '../lib/theme-scheduler'
+import { themeDiff, themeFamilies } from '../lib/theme-download'
+import { emptyStore, isGenericName, latestTheme, loadStore, nextId, nextName, persistStore, removeTheme, saveTheme, setActive } from '../lib/saved-themes'
 import { baseTheme, themes } from '../../themes'
 
 const { default: defaultTheme, green: greenTheme, purple: purpleTheme, slate: slateTheme } = themes
@@ -21,11 +23,34 @@ const THEME_STYLE_ID = 'uxdsl-ssr-theme'
 const RETIRED_ELEMENT_IDS = ['uxdsl-google-fonts', 'uxdsl-typography-theme', 'uxdsl-typo-overrides']
 
 export type ThemeName = 'default' | 'green' | 'purple' | 'slate' | 'custom'
+export type NamedTheme = Exclude<ThemeName, 'custom'>
+
+/** A theme the visitor made, kept in this browser (src/lib/saved-themes.js). */
+export interface SavedTheme {
+  id: string
+  name: string
+  /** The named theme its first edit was made on. */
+  origin: NamedTheme
+  updatedAt: number
+}
+
+type SavedRecord = SavedTheme & { override: Record<string, unknown>; backgroundImage?: string }
+type SavedStore = { version: number; active: string | null; themes: SavedRecord[] }
 
 interface ThemeContextType {
   isDark: boolean
   currentTheme: ThemeName
   customThemeName: string | null
+  /** The named theme the theme on the page started from: itself, or a saved theme's origin. */
+  customThemeOrigin: NamedTheme
+  /** Every theme made by editing, saved as it was edited. */
+  savedThemes: SavedTheme[]
+  /** The saved theme on the page, or null while a named theme is. */
+  savedThemeId: string | null
+  /** Puts a saved theme back on the page; false when it could not be applied (it is then removed). */
+  openSavedTheme: (id: string) => boolean
+  /** Forgets a saved theme; when it is on the page, the page goes back to the theme it started from. */
+  removeSavedTheme: (id: string) => void
   backgroundImage: string | null
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   activeThemeData: any
@@ -41,12 +66,40 @@ function retireOldManagedElements() {
   for (const id of RETIRED_ELEMENT_IDS) document.getElementById(id)?.remove()
 }
 
+/** The browser's storage, or null where it is refused (a private window, blocked site data). */
+function browserStorage(): Storage | null {
+  try {
+    return window.localStorage
+  } catch {
+    return null
+  }
+}
+
+/** A saved theme as the page applies it: its override over the base, as when it was edited. */
+function savedThemeData(record: SavedRecord) {
+  const theme = deepMergeTheme(baseTheme, record.override)
+  return record.backgroundImage ? { ...theme, backgroundImage: record.backgroundImage } : theme
+}
+
 export function ThemeContextProvider({ children }: { children: React.ReactNode }) {
   const [isDark, setIsDark] = useState(false)
   const [currentTheme, setCurrentTheme] = useState<ThemeName>('default')
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [customThemeData, setCustomThemeData] = useState<any>(null)
   const [customThemeName, setCustomThemeName] = useState<string | null>(null)
+  // The saved themes. The ref is what an edit reads and writes at once; the state is what renders.
+  const storeRef = useRef<SavedStore>(emptyStore())
+  const [savedThemes, setSavedThemes] = useState<SavedTheme[]>([])
+  const [savedThemeId, setSavedThemeId] = useState<string | null>(null)
+  // The saved theme last on the page: where the header's button returns to.
+  const lastSavedRef = useRef<string | null>(null)
+  const commitStore = (next: SavedStore) => {
+    if (next === storeRef.current) return
+    storeRef.current = next
+    setSavedThemes(next.themes)
+    const storage = browserStorage()
+    if (storage) persistStore(storage, next)
+  }
   const [backgroundImage, setBackgroundImage] = useState<string | null>('abstract purple curves')
 
   const activeThemeData = React.useMemo(() => {
@@ -100,7 +153,7 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
       onResult: (result: { ok: boolean }) => { lastApplyRef.current = result },
     })
   }
-  const pendingCustomRef = useRef<{ name: string; theme: unknown } | null>(null)
+  const pendingCustomRef = useRef<{ id: string; name: string; origin: NamedTheme; theme: unknown } | null>(null)
 
   useEffect(() => {
     const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark' ||
@@ -114,11 +167,56 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
   const scheduler = schedulerRef.current
   useEffect(() => {
     applyThemeNow(defaultTheme)
+    // Then what this browser saved: the list, and the saved theme that was on the page.
+    const storage = browserStorage()
+    if (storage) {
+      const stored = loadStore(storage) as SavedStore
+      storeRef.current = stored
+      setSavedThemes(stored.themes)
+      if (stored.active) openSavedTheme(stored.active)
+    }
     return () => { scheduler?.cancel() }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  const openSavedTheme = (id: string) => {
+    // A queued edit from the theme being left must not land on this one.
+    scheduler?.cancel()
+    pendingCustomRef.current = null
+    const record = storeRef.current.themes.find((theme) => theme.id === id)
+    if (!record) return false
+    const theme = savedThemeData(record)
+    // Saved by an earlier build of the site, a theme may no longer be one it can apply.
+    if (!validateTheme(themeFamilies(theme)).ok || !applyThemeNow(theme).ok) {
+      commitStore(removeTheme(storeRef.current, id))
+      return false
+    }
+    setCustomThemeData(theme)
+    setCustomThemeName(record.name)
+    setSavedThemeId(id)
+    lastSavedRef.current = id
+    if (record.backgroundImage) setBackgroundImage(record.backgroundImage)
+    setCurrentTheme('custom')
+    commitStore(setActive(storeRef.current, id))
+    return true
+  }
+
+  const removeSavedTheme = (id: string) => {
+    const record = storeRef.current.themes.find((theme) => theme.id === id)
+    if (!record) return
+    if (savedThemeId === id) switchTheme(record.origin)
+    if (lastSavedRef.current === id) lastSavedRef.current = null
+    commitStore(removeTheme(storeRef.current, id))
+  }
+
   const switchTheme = (themeName: ThemeName) => {
+    if (themeName === 'custom') {
+      // Back to the saved theme last on the page, or the one edited last.
+      const stored = storeRef.current.themes
+      const back = stored.find((theme) => theme.id === lastSavedRef.current) ?? latestTheme(stored)
+      if (back && currentTheme !== 'custom') openSavedTheme(back.id)
+      return
+    }
     // A queued edit from the theme being left must not land on the new one.
     scheduler?.cancel()
     pendingCustomRef.current = null
@@ -138,10 +236,6 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
         themeToApply = slateTheme;
         nextBackground = 'abstract geometric shapes';
         break;
-      case 'custom':
-        themeToApply = customThemeData;
-        if (customThemeData?.backgroundImage) nextBackground = customThemeData.backgroundImage;
-        break;
       case 'default': default:
         themeToApply = defaultTheme;
         nextBackground = 'abstract purple curves';
@@ -153,9 +247,12 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
     // theme must not leave the UI claiming a theme that is not on the page.
     if (!applyThemeNow(themeToApply).ok) return
     if (nextBackground) setBackgroundImage(nextBackground)
-    // Leaving the custom theme forgets its name, so a later edit is not filed under it.
-    if (themeName !== 'custom') setCustomThemeName(null)
+    // Leaving a saved theme keeps it saved, and forgets its name here, so a later edit is
+    // not filed under it: an edit on a named theme starts a new saved theme.
+    setCustomThemeName(null)
+    setSavedThemeId(null)
     setCurrentTheme(themeName)
+    commitStore(setActive(storeRef.current, null))
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -171,7 +268,25 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
     const checked = validateTheme(merged)
     if (!checked.ok) throw new Error(checked.errors.map(issue => `${issue.path}: ${issue.message}`).join('; '))
 
-    pendingCustomRef.current = { name, theme: merged }
+    // Which saved theme this edit belongs to. The one on the page (an edit still waiting
+    // for its frame included) when the editor passes no name of its own, or its name; a
+    // saved theme of that name otherwise; and a new one when there is neither, which is
+    // what an edit on a named theme makes.
+    const stored = storeRef.current.themes
+    const onPage = pendingCustomRef.current
+      ?? (currentTheme === 'custom' && savedThemeId ? { id: savedThemeId, name: customThemeName, origin: customThemeOrigin } : null)
+    const generic = isGenericName(name)
+    const target = generic || onPage?.name === name ? onPage : (stored.find((theme) => theme.name === name) ?? null)
+    const origin: NamedTheme = options?.replace && !generic
+      ? 'default'
+      : (onPage?.origin ?? (currentTheme === 'custom' ? 'default' : currentTheme))
+
+    pendingCustomRef.current = {
+      id: target?.id ?? nextId(stored),
+      name: target?.name ?? (generic ? nextName(stored) : name),
+      origin,
+      theme: merged,
+    }
     // Queued rather than applied inline, so sixty picker events in a second
     // generate one stylesheet instead of sixty. The React state below is set
     // from the frame callback, after the commit.
@@ -188,14 +303,29 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
       if (lastApplyRef.current && !lastApplyRef.current.ok) return
       setCustomThemeData(pending.theme)
       setCustomThemeName(pending.name)
+      setSavedThemeId(pending.id)
+      lastSavedRef.current = pending.id
       if (themeData?.backgroundImage) setBackgroundImage(themeData.backgroundImage)
       setCurrentTheme('custom')
+      // Saved the moment it is on the page, as what differs from the base theme.
+      commitStore(saveTheme(storeRef.current, {
+        id: pending.id,
+        name: pending.name,
+        origin: pending.origin,
+        override: themeDiff(themeFamilies(baseTheme), themeFamilies(pending.theme)),
+        backgroundImage: (pending.theme as { backgroundImage?: string }).backgroundImage,
+        now: Date.now(),
+      }) as SavedStore)
     }
     // `schedule` applies immediately when there is no frame scheduler, so the
     // commit has to follow the same rule rather than assume a frame exists.
     if (typeof requestAnimationFrame === 'function') requestAnimationFrame(commit)
     else commit()
   }
+
+  const customThemeOrigin: NamedTheme = currentTheme === 'custom'
+    ? (savedThemes.find((theme) => theme.id === savedThemeId)?.origin ?? 'default')
+    : currentTheme
 
   const toggleDarkMode = () => {
     const newIsDark = !isDark
@@ -204,7 +334,7 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
   }
 
   return (
-    <ThemeContext.Provider value={{ isDark, currentTheme, customThemeName, backgroundImage, activeThemeData, switchTheme, setCustomTheme, toggleDarkMode }}>
+    <ThemeContext.Provider value={{ isDark, currentTheme, customThemeName, customThemeOrigin, savedThemes, savedThemeId, openSavedTheme, removeSavedTheme, backgroundImage, activeThemeData, switchTheme, setCustomTheme, toggleDarkMode }}>
       {children}
     </ThemeContext.Provider>
   )

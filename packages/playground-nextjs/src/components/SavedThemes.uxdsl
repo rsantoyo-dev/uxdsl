@@ -1,0 +1,65 @@
+/* The saved themes (SavedThemes.tsx): one line under the quick looks, inside their surface.
+   Every value is a UXDSL token, role or directive; the literals left are layout (flex). */
+
+.svt {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: density(1) density(2);
+  padding-block-start: density(1);
+  border-block-start: border(1);
+  border-block-start-color: palette(divider.main);
+}
+
+.svt__title {
+  @ds-typo(caption);
+
+  display: inline-flex;
+  align-items: center;
+  gap: density(1);
+  color: palette(text.primary);
+  font-weight: 600;
+}
+
+.svt__icon {
+  flex: none;
+  color: palette(primary.main);
+}
+
+/* A saved theme: its name, which opens it, and a small button that removes it, in one pill. */
+.svt__theme {
+  @ds-surface(outlined primary radius(pill));
+
+  display: inline-flex;
+  align-items: center;
+  gap: density(0);
+  padding: density(0);
+
+  /* The one on the page. */
+  &.is-selected {
+    background: palette(primary.main, 0.12);
+  }
+}
+
+.svt__open {
+  @ds-button(flat primary 1 radius(pill));
+  @ds-typo(caption);
+
+  padding: density(1) density(1) density(1) density(3);
+  font-weight: 600;
+}
+
+.svt__remove {
+  @ds-button(flat 1 radius(pill));
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: density(1);
+}
+
+.svt__note {
+  @ds-typo(caption);
+
+  color: palette(text.secondary);
+}

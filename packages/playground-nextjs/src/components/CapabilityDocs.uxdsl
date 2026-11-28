@@ -159,7 +159,8 @@
 .cap-frame-wrap {
   max-width: 100%;
   overflow-x: auto;
-  border: 1px solid palette(neutral.light);
+  border: border(1);
+  border-color: palette(neutral.light);
   border-radius: radius(2);
   box-shadow: shadow(1);
 }
@@ -168,7 +169,7 @@
   display: block;
   width: 820px;
   height: 340px;
-  border: 0;
+  border: border(0);
 }
 
 .cap-stat {
@@ -207,7 +208,8 @@
 .cap-table-wrap th,
 .cap-table-wrap td {
   padding: space(2) space(3);
-  border-bottom: 1px solid palette(neutral.light);
+  border-bottom: border(1);
+  border-bottom-color: palette(neutral.light);
   vertical-align: top;
 }
 
@@ -215,7 +217,8 @@
   display: flex;
   flex-wrap: wrap;
   gap: density(3);
-  border: 1px solid palette(neutral.light);
+  border: border(1);
+  border-color: palette(neutral.light);
   border-radius: radius(1);
   padding: space(2) space(4);
 }

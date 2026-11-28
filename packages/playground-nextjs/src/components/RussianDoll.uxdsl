@@ -22,13 +22,15 @@
   @ds-typo(caption);
   font-weight: bold;
   color: palette(primary.dark);
-  border: 1px solid palette(neutral.light);
+  border: border(1);
+  border-color: palette(neutral.light);
 }
 
 .concentric-ring {
   position: absolute;
   border-radius: radius(2);
-  border: 1px solid palette(primary.main, 0.2);
+  border: border(1);
+  border-color: palette(primary.main, 0.2);
   background: palette(primary.main, 0.03);
   pointer-events: auto;
   transition: all 0.2s ease;

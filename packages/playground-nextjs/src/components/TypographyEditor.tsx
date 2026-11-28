@@ -10,6 +10,7 @@ import { useBreakpoints } from './BreakpointsProvider'
 import { InteractiveDemoContainer } from './InteractiveDemoContainer'
 import { lengthPx, buildDefinition, densityKeys, spaceKeyOf } from '../lib/density-editing'
 import {
+  FONT_GROUPS,
   FONT_PRESETS,
   roleOrder,
   fieldsOf,
@@ -199,7 +200,11 @@ export default function TypographyEditor({ defaultRole = 'h1' }: { defaultRole?:
                 <code className="tye__bp">{name}</code>
                 <select className="tye__select" value={presetOf(stack)?.name ?? ''} onChange={(event) => choosePreset(name, event.target.value)} aria-label={`fonts.families.${name}`}>
                   {!presetOf(stack) && <option value="">{stack}</option>}
-                  {FONT_PRESETS.map((preset) => <option key={preset.name} value={preset.name}>{preset.name}</option>)}
+                  {FONT_GROUPS.map((group) => (
+                    <optgroup key={group.label} label={group.label}>
+                      {group.presets.map((preset) => <option key={preset.name} value={preset.name}>{preset.name}</option>)}
+                    </optgroup>
+                  ))}
                 </select>
               </label>
             ))}

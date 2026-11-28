@@ -115,7 +115,8 @@
     padding: density(2);
     background: palette(surface.main);
     border-radius: radius(2);
-    border: 1px solid palette(neutral.light);
+    border: border(1);
+    border-color: palette(neutral.light);
     transition: border-color 0.2s;
   }
 
@@ -146,7 +147,8 @@
   .breakpoints-input-val {
     width: 80px;
     padding: space(2) space(3);
-    border: 1px solid palette(neutral.light);
+    border: border(1);
+    border-color: palette(neutral.light);
     border-radius: radius(1);
     font-family: font(code);
     text-align: right;
@@ -168,7 +170,8 @@
     padding: density(4);
     background: palette(surface.main);
     border-radius: radius(2);
-    border: 1px solid palette(neutral.light);
+    border: border(1);
+    border-color: palette(neutral.light);
     height: 100%;
   }
 
@@ -180,7 +183,8 @@
     padding: density(3);
     border-radius: radius(2);
     background: palette(surface.light);
-    border: 1px solid palette(neutral.light);
+    border: border(1);
+    border-color: palette(neutral.light);
     text-align: center;
   }
 

@@ -16,7 +16,10 @@ const THEMES = [
 ] as const
 
 export default function AppHeader() {
-  const { isDark, currentTheme, customThemeName, switchTheme, toggleDarkMode } = useTheme()
+  const { isDark, currentTheme, customThemeName, savedThemes, switchTheme, toggleDarkMode } = useTheme()
+  // Every edit on the site is saved as a theme of the visitor's: this button returns to the last one.
+  const onSaved = currentTheme === 'custom' && customThemeName
+  const savedTitle = onSaved ? `Your theme: ${customThemeName}` : `Back to your saved theme${savedThemes.length > 1 ? 's: the last one' : ''}`
 
   return (
     <header id="AppHeader" className="app-header">
@@ -62,12 +65,12 @@ export default function AppHeader() {
                 className={`theme-color-btn theme-color-btn--${name} ${currentTheme === name ? 'is-active' : ''}`}
               />
             ))}
-            {customThemeName && (
+            {savedThemes.length > 0 && (
               <button
                 type="button"
                 onClick={() => switchTheme('custom')}
-                title={`Custom: ${customThemeName}`}
-                aria-label={`Custom theme: ${customThemeName}`}
+                title={savedTitle}
+                aria-label={savedTitle}
                 aria-pressed={currentTheme === 'custom'}
                 className={`theme-color-btn theme-color-btn--custom ${currentTheme === 'custom' ? 'is-active' : ''}`}
               />

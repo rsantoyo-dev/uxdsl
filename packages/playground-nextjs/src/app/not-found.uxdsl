@@ -74,7 +74,8 @@
   transition: all 0.2s ease;
   cursor: pointer;
   text-decoration: none;
-  border: 1px solid transparent;
+  border: border(1);
+  border-color: transparent;
   height: 100%;
 
   &:hover {

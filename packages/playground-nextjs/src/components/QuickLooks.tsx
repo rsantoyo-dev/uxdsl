@@ -2,13 +2,12 @@
 
 import { useState } from 'react'
 import { Minus, Plus, RotateCcw, Sparkles, Type } from 'lucide-react'
-import { useTheme, type ThemeName } from './ThemeContext'
+import { useTheme } from './ThemeContext'
+import SavedThemes from './SavedThemes'
 import { DIALS, HOME, TOP, dialById, dialLevel, dialStep, dialHint, LOOKS, lookById, lookPatch, lookIsOn, lookOffPatch } from '../lib/quick-looks'
-import { FONT_PRESETS, fontPresetPatch, presetOf } from '../lib/typography-editing'
+import { FONT_GROUPS, FONT_PRESETS, fontPresetPatch, presetOf } from '../lib/typography-editing'
 import { checkPatch } from '../lib/theme-patch'
 import { themes } from '../../themes'
-
-type NamedTheme = Exclude<ThemeName, 'custom'>
 
 /**
  * The Live theme handler's shortcuts, kept to one row and one line so the parts under them
@@ -19,20 +18,26 @@ type NamedTheme = Exclude<ThemeName, 'custom'>
  * and the brand that is pressed are read from the theme on the page, not remembered: an edit
  * in a part, another theme or "Start over" shows here at once, and a dial whose family was
  * edited by hand steps from those values. Level 2, what
- * taking a brand off gives back and where "Start over" goes is the named theme the page had
- * before the first edit (Green stays green). Each step goes through applyTheme like any edit
- * in the parts; the parts below then count the values it moved, and the download bar takes
- * the result to a project.
+ * taking a brand off gives back and where "Start over" goes is the named theme the theme on
+ * the page was started from (Green stays green; a saved theme remembers its own). Each step
+ * goes through applyTheme like any edit in the parts; the parts below then count the values
+ * it moved, and the download bar takes the result to a project. Under the status line,
+ * SavedThemes lists the themes these edits were saved as.
  */
 export default function QuickLooks() {
-  const { activeThemeData, currentTheme, setCustomTheme, customThemeName, switchTheme } = useTheme()
+  const { activeThemeData, currentTheme, setCustomTheme, customThemeName, customThemeOrigin: origin, savedThemeId, switchTheme } = useTheme()
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  // The last named theme shown: an edit makes the theme "custom", which keeps this one.
-  const [origin, setOrigin] = useState<NamedTheme>('default')
-  if (currentTheme !== 'custom' && currentTheme !== origin) {
-    setOrigin(currentTheme)
-    setError(null)
+  // What a step said holds while its theme is on the page. A named theme chosen in the
+  // header, or another saved theme opened, starts again; a step's own first save (a named
+  // theme becoming a saved one) does not.
+  const [seen, setSeen] = useState({ theme: currentTheme, saved: savedThemeId })
+  if (seen.theme !== currentTheme || seen.saved !== savedThemeId) {
+    setSeen({ theme: currentTheme, saved: savedThemeId })
+    if (currentTheme !== 'custom' || (seen.saved !== null && savedThemeId !== null)) {
+      setMessage(null)
+      setError(null)
+    }
   }
   const startTheme = themes[origin]
 
@@ -120,7 +125,11 @@ export default function QuickLooks() {
           <span className="qlk__dial-label">Font</span>
           <select className="qlk__font-select" value={font?.name ?? ''} onChange={(event) => chooseFont(event.target.value)} aria-label="Font of the page (fonts.families.ui)">
             {!font && <option value="">{stack || 'as written'}</option>}
-            {FONT_PRESETS.map((preset) => <option key={preset.name} value={preset.name}>{preset.name}</option>)}
+            {FONT_GROUPS.map((group) => (
+              <optgroup key={group.label} label={group.label}>
+                {group.presets.map((preset) => <option key={preset.name} value={preset.name}>{preset.name}</option>)}
+              </optgroup>
+            ))}
           </select>
         </label>
         {LOOKS.map((look) => {
@@ -143,9 +152,9 @@ export default function QuickLooks() {
         </button>
       </div>
       <p className={`qlk__status${error ? ' is-invalid' : ''}`} role="status">
-        {/* What a step said holds while its theme is on the page: a named theme chosen in the header starts again. */}
         {error ?? (currentTheme === 'custom' ? message : null) ?? `Each dial steps one family of the theme from 0 to ${TOP}, a little at a time, and the whole site follows: ${HOME} is the theme you started from. They combine with the font and a brand.`}
       </p>
+      <SavedThemes />
     </section>
   )
 }
