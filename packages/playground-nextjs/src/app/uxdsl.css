@@ -576,16 +576,19 @@ input[type=range]::-moz-range-thumb:hover {
   margin-block: var(--uxdsl__space__4);
 }
 
-/* "Name a theme" (AIPrompt) in the home page's hero. Every value is a UXDSL token, role or
-   directive; the literals left are layout (flex) and the spinner's motion. */
+/* "Name a theme" (AIPrompt) in the home page's hero: one quiet line under the brand, a small
+   field, the names to try and the theme in use. Every value is a UXDSL token, role or
+   directive; the literals left are layout (flex) and the spinner's motion. Quiet is not
+   small to the finger: the field and each name keep a height a thumb can hit (space(7)),
+   and on a phone the field's text is the body size, which a phone does not zoom into. */
 .ai-prompt {
   display: flex;
-  flex-direction: column;
-  gap: var(--uxdsl__density__2);
-  width: 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--uxdsl__density__1) var(--uxdsl__density__3);
 }
 
-/* The field: an outlined Input shape holding an icon, the text and the submit button. */
+/* The field: a pill with a quiet edge, holding an icon, the text and the submit button. */
 .ai-prompt__form {
   padding: var(--uxdsl__surface__outlined-padding);
   border-radius: 9999px;
@@ -593,19 +596,27 @@ input[type=range]::-moz-range-thumb:hover {
   color: var(--uxdsl__surface__outlined-color);
   border: var(--uxdsl__surface__outlined-border);
   box-shadow: var(--uxdsl__surface__outlined-shadow);
+  box-sizing: border-box;
   display: flex;
+  flex: 1 1 100%;
   align-items: center;
-  gap: var(--uxdsl__density__2);
-  padding: var(--uxdsl__density__1) var(--uxdsl__density__1) var(--uxdsl__density__1) var(--uxdsl__density__3);
+  min-height: var(--uxdsl__space__7);
+  gap: var(--uxdsl__density__1);
+  padding: var(--uxdsl__density__0) var(--uxdsl__density__1) var(--uxdsl__density__0) var(--uxdsl__density__2);
+  border-color: var(--uxdsl__palette__surface-dark);
   background: var(--uxdsl__palette__surface-main);
 }
+@media (min-width: 480px){
+.ai-prompt__form {
+  flex: 0 1 var(--uxdsl__space__16);
+} }
 .ai-prompt__form:focus-within {
   border-color: var(--uxdsl__palette__primary-main);
 }
 
 .ai-prompt__icon {
   flex: none;
-  color: var(--uxdsl__palette__primary-main);
+  color: var(--uxdsl__palette__text-secondary);
 }
 
 .ai-prompt__input {
@@ -618,7 +629,7 @@ input[type=range]::-moz-range-thumb:hover {
   margin-block-end: var(--uxdsl__typography__body-margin-block-end);
   flex: 1;
   min-width: 0;
-  padding: var(--uxdsl__density__2) var(--uxdsl__density__0);
+  padding: var(--uxdsl__density__1) var(--uxdsl__density__0);
   border: var(--uxdsl__border__0);
   background: transparent;
   color: var(--uxdsl__palette__text-primary);
@@ -636,18 +647,29 @@ input[type=range]::-moz-range-thumb:hover {
   border-radius: var(--uxdsl__radius__1);
 }
 
-.ai-prompt__submit { padding: var(--uxdsl__density__2); border-radius: 9999px; background: var(--uxdsl__palette__primary-main); color: var(--uxdsl__palette__primary-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast);
-  display: inline-flex;
-  align-items: center;
+@media (min-width: 768px) {
+  .ai-prompt__input {
+    font-family: var(--uxdsl__typography__body-sm-font-family);
+    font-size: var(--uxdsl__typography__body-sm-font-size);
+    line-height: var(--uxdsl__typography__body-sm-line-height);
+    font-weight: var(--uxdsl__typography__body-sm-font-weight);
+    letter-spacing: var(--uxdsl__typography__body-sm-letter-spacing);
+    margin-block-start: var(--uxdsl__typography__body-sm-margin-block-start);
+    margin-block-end: var(--uxdsl__typography__body-sm-margin-block-end);
+  }
 }
-
-.ai-prompt__submit:hover:not(:where(:disabled, [aria-disabled="true"])) { background: var(--uxdsl__button__contained-tone-primary-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-primary-hover-color, var(--uxdsl__button__contained-hover-color)); }
-
-.ai-prompt__submit:focus-visible { outline: var(--uxdsl__button__contained-tone-primary-focusvisible-outline, var(--uxdsl__button__contained-focusvisible-outline)); outline-offset: var(--uxdsl__button__contained-tone-primary-focusvisible-outline-offset, var(--uxdsl__button__contained-focusvisible-outline-offset)); }
-
-.ai-prompt__submit.is-selected, .ai-prompt__submit[aria-pressed="true"], .ai-prompt__submit[aria-selected="true"] { background: var(--uxdsl__button__contained-tone-primary-selected-bg, var(--uxdsl__button__contained-selected-bg)); color: var(--uxdsl__button__contained-tone-primary-selected-color, var(--uxdsl__button__contained-selected-color)); }
-
-.ai-prompt__submit:disabled, .ai-prompt__submit[aria-disabled="true"] { opacity: var(--uxdsl__button__contained-tone-primary-disabled-opacity, var(--uxdsl__button__contained-disabled-opacity)); cursor: var(--uxdsl__button__contained-tone-primary-disabled-cursor, var(--uxdsl__button__contained-disabled-cursor)); }
+.ai-prompt__submit { padding: var(--uxdsl__density__1); border-radius: 9999px; background: transparent; color: var(--uxdsl__palette__primary-main); border: var(--uxdsl__surface__flat-border); box-shadow: var(--uxdsl__surface__flat-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast);
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--uxdsl__space__7);
+  min-height: var(--uxdsl__space__7);
+}
+.ai-prompt__submit:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__flat-tone-primary-hover-color, var(--uxdsl__button__flat-hover-color)); }
+.ai-prompt__submit:focus-visible { outline: var(--uxdsl__button__flat-tone-primary-focusvisible-outline, var(--uxdsl__button__flat-focusvisible-outline)); outline-offset: var(--uxdsl__button__flat-tone-primary-focusvisible-outline-offset, var(--uxdsl__button__flat-focusvisible-outline-offset)); }
+.ai-prompt__submit.is-selected, .ai-prompt__submit[aria-pressed="true"], .ai-prompt__submit[aria-selected="true"] { color: var(--uxdsl__button__flat-tone-primary-selected-color, var(--uxdsl__button__flat-selected-color)); }
+.ai-prompt__submit:disabled, .ai-prompt__submit[aria-disabled="true"] { opacity: var(--uxdsl__button__flat-tone-primary-disabled-opacity, var(--uxdsl__button__flat-disabled-opacity)); cursor: var(--uxdsl__button__flat-tone-primary-disabled-cursor, var(--uxdsl__button__flat-disabled-cursor)); }
 
 @keyframes ai-prompt-spin {
   to {
@@ -658,15 +680,15 @@ input[type=range]::-moz-range-thumb:hover {
   animation: ai-prompt-spin 1s linear infinite;
 }
 
-/* Suggestions to play with, and the theme in use: small and quiet. */
+/* Names to try: text, not chips. */
 .ai-prompt__row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--uxdsl__density__1);
+  gap: var(--uxdsl__density__0);
 }
 
-.ai-prompt__suggestion { padding: var(--uxdsl__density__1); border-radius: 9999px; background: var(--uxdsl__surface__outlined-bg); color: var(--uxdsl__surface__outlined-color); border: var(--uxdsl__surface__outlined-border); box-shadow: var(--uxdsl__surface__outlined-shadow);
+.ai-prompt__suggestion { padding: var(--uxdsl__density__1); border-radius: var(--uxdsl__radius__1); background: var(--uxdsl__surface__flat-bg); color: var(--uxdsl__surface__flat-color); border: var(--uxdsl__surface__flat-border); box-shadow: var(--uxdsl__surface__flat-shadow);
   font-family: var(--uxdsl__typography__caption-font-family);
   font-size: var(--uxdsl__typography__caption-font-size);
   line-height: var(--uxdsl__typography__caption-line-height);
@@ -674,15 +696,20 @@ input[type=range]::-moz-range-thumb:hover {
   letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
   margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
   margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+  min-height: var(--uxdsl__space__7);
+  color: var(--uxdsl__palette__text-secondary);
 }
 
-.ai-prompt__suggestion:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__outlined-hover-color); border: var(--uxdsl__button__outlined-hover-border); }
+.ai-prompt__suggestion:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__flat-hover-color); }
 
-.ai-prompt__suggestion:focus-visible { outline: var(--uxdsl__button__outlined-focusvisible-outline); outline-offset: var(--uxdsl__button__outlined-focusvisible-outline-offset); }
+.ai-prompt__suggestion:focus-visible { outline: var(--uxdsl__button__flat-focusvisible-outline); outline-offset: var(--uxdsl__button__flat-focusvisible-outline-offset); }
 
-.ai-prompt__suggestion.is-selected, .ai-prompt__suggestion[aria-pressed="true"], .ai-prompt__suggestion[aria-selected="true"] { background: var(--uxdsl__button__outlined-selected-bg); color: var(--uxdsl__button__outlined-selected-color); border: var(--uxdsl__button__outlined-selected-border); }
+.ai-prompt__suggestion.is-selected, .ai-prompt__suggestion[aria-pressed="true"], .ai-prompt__suggestion[aria-selected="true"] { color: var(--uxdsl__button__flat-selected-color); }
 
-.ai-prompt__suggestion:disabled, .ai-prompt__suggestion[aria-disabled="true"] { opacity: var(--uxdsl__button__outlined-disabled-opacity); cursor: var(--uxdsl__button__outlined-disabled-cursor); }
+.ai-prompt__suggestion:disabled, .ai-prompt__suggestion[aria-disabled="true"] { opacity: var(--uxdsl__button__flat-disabled-opacity); cursor: var(--uxdsl__button__flat-disabled-cursor); }
+.ai-prompt__suggestion:hover:not(:disabled) {
+  color: var(--uxdsl__palette__primary-main);
+}
 
 .ai-prompt__status {
   font-family: var(--uxdsl__typography__caption-font-family);
@@ -696,7 +723,6 @@ input[type=range]::-moz-range-thumb:hover {
   flex-wrap: wrap;
   align-items: center;
   gap: var(--uxdsl__density__1);
-  margin-left: auto;
   color: var(--uxdsl__palette__text-secondary);
 }
 
@@ -711,6 +737,7 @@ input[type=range]::-moz-range-thumb:hover {
   display: inline-flex;
   align-items: center;
   gap: var(--uxdsl__density__1);
+  min-height: var(--uxdsl__space__7);
 }
 
 .ai-prompt__reset:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__flat-hover-color); }
@@ -721,6 +748,7 @@ input[type=range]::-moz-range-thumb:hover {
 
 .ai-prompt__reset:disabled, .ai-prompt__reset[aria-disabled="true"] { opacity: var(--uxdsl__button__flat-disabled-opacity); cursor: var(--uxdsl__button__flat-disabled-cursor); }
 
+/* A line of its own under the field. */
 .ai-prompt__error {
   font-family: var(--uxdsl__typography__caption-font-family);
   font-size: var(--uxdsl__typography__caption-font-size);
@@ -729,6 +757,7 @@ input[type=range]::-moz-range-thumb:hover {
   letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
   margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
   margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+  flex: 1 1 100%;
   color: var(--uxdsl__palette__error-main);
 }
 
@@ -7571,10 +7600,6 @@ input[type=range]::-moz-range-thumb:hover {
 .hf__cta--primary.is-selected, .hf__cta--primary[aria-pressed="true"], .hf__cta--primary[aria-selected="true"] { background: var(--uxdsl__button__contained-tone-primary-selected-bg, var(--uxdsl__button__contained-selected-bg)); color: var(--uxdsl__button__contained-tone-primary-selected-color, var(--uxdsl__button__contained-selected-color)); }
 
 .hf__cta--primary:disabled, .hf__cta--primary[aria-disabled="true"] { opacity: var(--uxdsl__button__contained-tone-primary-disabled-opacity, var(--uxdsl__button__contained-disabled-opacity)); cursor: var(--uxdsl__button__contained-tone-primary-disabled-cursor, var(--uxdsl__button__contained-disabled-cursor)); }
-
-.hf__play {
-  max-width: calc(var(--uxdsl__space__16) * 3);
-}
 
 /* A banner: its tone is a contained Surface, its padding a Density token, its layout one of three. */
 .hf-tone--primary {

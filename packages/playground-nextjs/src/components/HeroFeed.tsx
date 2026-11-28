@@ -146,7 +146,8 @@ export default function HeroFeed({ children }: { children?: ReactNode }) {
         </div>
       </div>
 
-      {/* Above the banners, what lets a visitor change them: the page puts "Name a theme" here. */}
+      {/* Above the banners, what lets a visitor change them: the page puts "Name a theme" here,
+          one line that sizes itself. */}
       {children && <div className="hf__play">{children}</div>}
 
       <div
