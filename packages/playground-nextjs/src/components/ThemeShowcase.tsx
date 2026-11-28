@@ -1,53 +1,68 @@
+'use client'
+
+import { ArrowRight } from 'lucide-react'
+import { useTheme } from './ThemeContext'
+import type { ThemePartId } from '../lib/theme-parts'
+
 /**
- * The Live theme handler's showcase: a small page — a menu, a hero, news — styled only
- * with UXDSL (ThemeShowcase.uxdsl). It has no state and no inline style: every color,
- * space, type size and layout change is the theme's, so it follows each edit in the tabs
- * below, and its layout changes at md like any component built with UXDSL.
+ * The Live theme handler's showcase: a dummy page — a hero, a field, four cards — styled only
+ * with UXDSL (ThemeShowcase.uxdsl). Its content is about what it is made of: the heading is
+ * the h1 text role and shows the size the theme gives that role, and each card names the
+ * token it is drawn with and opens the part of the handler that edits it. No inline style:
+ * every color, space, type size and layout change is the theme's, so it follows each dial, each look and
+ * each edit, and its layout changes at md and xl like any component built with UXDSL.
  */
-const NEWS = [
-  { tag: 'Design', tone: 'secondary', title: 'A palette is a set of roles', body: 'Name what a color is for, and a theme can change which color that is without touching a component.', meta: '5 min read' },
-  { tag: 'Release', tone: 'info', title: 'Dark mode without a second theme', body: 'The dark palette lives next to the light one, and a component reads the same role in both.', meta: '3 min read' },
-  { tag: 'Guide', tone: 'success', title: 'Spacing that follows the screen', body: 'A Density token gives each breakpoint its step of the scale, for every component that names it.', meta: '8 min read' },
+const CARDS: { part: ThemePartId; tag: string; tone: string; title: string; body: string; link: string }[] = [
+  { part: 'colors', tag: 'Palette', tone: 'secondary', title: 'Colors with a job', body: 'This card names roles. The theme says which color each one is, in light and dark.', link: 'Recolor a role' },
+  { part: 'spacing', tag: 'Density', tone: 'info', title: 'Spacing per screen', body: 'Every gap here is a density token: one step of the scale per breakpoint.', link: 'Change a density' },
+  { part: 'edges', tag: 'Radius', tone: 'success', title: 'Corners in one place', body: 'Round one radius token and every card, button and field rounds with it.', link: 'Round a corner' },
+  { part: 'shadows', tag: 'Shadow', tone: 'warning', title: 'Depth as a token', body: 'These cards are raised by shadow(2). Edit its layers and they all move.', link: 'Lift a card' },
 ]
 
-export default function ThemeShowcase() {
-  return (
-    <section className="shw" aria-label="Theme showcase">
-      <header className="shw__nav">
-        <span className="shw__brand">Tile</span>
-        <nav className="shw__menu" aria-label="Showcase menu">
-          {['Home', 'News', 'Topics', 'About'].map((item, index) => (
-            <button key={item} type="button" className={`shw__link${index === 1 ? ' is-selected' : ''}`}>{item}</button>
-          ))}
-        </nav>
-        <button type="button" className="shw__cta">Subscribe</button>
-      </header>
+type TextRoles = Record<string, { fontSize?: string } | undefined>
 
+export default function ThemeShowcase() {
+  const { activeThemeData } = useTheme()
+  // The size the theme on the page gives h1 (its own field, or the default role's): it changes as Typography is edited.
+  const roles = ((activeThemeData as { typography_details?: TextRoles } | null)?.typography_details ?? {}) as TextRoles
+  const h1Size = roles.h1?.fontSize ?? roles.default?.fontSize
+
+  return (
+    <div className="shw">
       <div className="shw__hero">
-        <span className="shw__eyebrow">Theme showcase</span>
-        <h3 className="shw__title">Design news, one tile at a time</h3>
-        <p className="shw__subtitle">
-          A small news page drawn with tokens alone. Every color, space and type size here is a token of the theme you are
-          editing.
+        <p className="shw__eyebrow">
+          <code className="shw__role">@ds-typo(h1)</code>
+          {h1Size && <code className="shw__size">{h1Size}</code>}
         </p>
+        {/* The h1 text role on an h3: the role is how it looks, the element is where it sits in the page. */}
+        <h3 className="shw__title">Handle your H1 dynamically!</h3>
+        <p className="shw__subtitle">One text role, sized per breakpoint by the theme.</p>
         <div className="shw__actions">
-          <button type="button" className="shw__primary">Read the news</button>
-          <button type="button" className="shw__secondary">Browse topics</button>
+          <a className="shw__primary" href="#typography">Edit this H1 <ArrowRight size={16} aria-hidden="true" /></a>
+          <a className="shw__secondary" href="#colors">Recolor it</a>
         </div>
       </div>
 
-      <div className="shw__news">
-        {NEWS.map((item) => (
-          <article key={item.title} className="shw__card">
-            <span className={`shw__tag shw__tag--${item.tone}`}>{item.tag}</span>
-            <h4 className="shw__card-title">{item.title}</h4>
-            <p className="shw__card-body">{item.body}</p>
-            <span className="shw__meta">{item.meta}</span>
-          </article>
-        ))}
+      <div className="shw__side">
+        <div className="shw__bar">
+          <input className="shw__field" type="text" aria-label="A sample field" placeholder="A field: type here, focus it" />
+          <button type="button" className="shw__send">A button</button>
+          <span className="shw__bp">Layout at </span>
+        </div>
+        <div className="shw__cards">
+          {CARDS.map((card) => (
+            <article key={card.part} className="shw__card">
+              <h4 className="shw__card-title">{card.title}</h4>
+              <p className="shw__card-body">{card.body}</p>
+              {/* Shown first: the token the card is about, and the way to its editor. */}
+              <p className="shw__card-head">
+                <span className={`shw__tag shw__tag--${card.tone}`}>{card.tag}</span>
+                <a className="shw__card-link" href={`#${card.part}`}>{card.link} <ArrowRight size={12} aria-hidden="true" /></a>
+              </p>
+            </article>
+          ))}
+        </div>
       </div>
-
-      <span className="shw__bp">Layout at </span>
-    </section>
+    </div>
   )
 }

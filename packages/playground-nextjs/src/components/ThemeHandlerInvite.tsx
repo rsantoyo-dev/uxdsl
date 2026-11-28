@@ -1,71 +1,18 @@
 import Link from 'next/link'
 import { ArrowRight, SlidersHorizontal } from 'lucide-react'
-import { THEME_HANDLER_HREF, THEME_TABS, themeTabHref, type ThemeTabId } from '@/lib/theme-tabs'
-
-/**
- * What each part of the theme is called on the home page and what a visitor does with it.
- * Keyed by tab id, so a tab added to src/lib/theme-tabs.ts fails here until it has a tile.
- */
-const PARTS: Record<ThemeTabId, { label: string; hint: string }> = {
-  colors: { label: 'Colors & palette', hint: 'Recolor a role, light and dark' },
-  breakpoints: { label: 'Breakpoints', hint: 'Move where layouts switch' },
-  spacing: { label: 'Spacing & density', hint: 'Let the whole site breathe' },
-  typography: { label: 'Typography', hint: 'Change fonts and the type scale' },
-  edges: { label: 'Borders & radii', hint: 'Round or sharpen every corner' },
-  shadows: { label: 'Shadows', hint: 'Lift or flatten every card' },
-  surfaces: { label: 'Surfaces', hint: 'Restyle every container' },
-  controls: { label: 'Buttons & inputs', hint: 'Every state of every control' },
-  json: { label: 'JSON', hint: 'The whole theme, as one file' },
-}
+import { THEME_HANDLER_HREF, THEME_PARTS, themePartHref } from '@/lib/theme-parts'
+import ThemeSpecimen from './ThemeSpecimen'
 
 const STEPS = [
-  { title: 'Change it.', text: 'A one-click look, or any token of the theme.' },
+  { title: 'Change it.', text: 'Rounder, roomier or deeper with one +, or any token of the theme.' },
   { title: 'Watch the site follow.', text: 'Live, on every page, in light and dark.' },
   { title: 'Take it home.', text: <>Download it as <code className="thi__code">uxdsl.theme.json</code>.</> },
 ]
 
 /**
- * A small drawing of each part, made of the very tokens it edits: it changes with the theme
- * like everything else on the page. Decoration only; the tile's text says what it is.
- */
-function Specimen({ id }: { id: ThemeTabId }) {
-  switch (id) {
-    case 'colors':
-      return (
-        <>
-          {(['primary', 'secondary', 'success', 'warning'] as const).map((tone) => (
-            <span key={tone} className={`thi__dot thi__dot--${tone}`} />
-          ))}
-        </>
-      )
-    case 'breakpoints':
-      return <span className="thi__bp" />
-    case 'spacing':
-      return (
-        <>
-          <span className="thi__step-box thi__step-box--3" />
-          <span className="thi__step-box thi__step-box--5" />
-          <span className="thi__step-box thi__step-box--7" />
-        </>
-      )
-    case 'typography':
-      return <span className="thi__type">Aa</span>
-    case 'edges':
-      return <span className="thi__edge" />
-    case 'shadows':
-      return <span className="thi__shadow" />
-    case 'surfaces':
-      return <span className="thi__surface" />
-    case 'controls':
-      return <span className="thi__button">Button</span>
-    case 'json':
-      return <span className="thi__json">{'{ }'}</span>
-  }
-}
-
-/**
  * The home page's invitation to the Live theme handler (/docs/theme): what it is, in three
- * steps, one way in, and a shortcut to each part of the theme (its tabs have addresses).
+ * steps, one way in, and a shortcut to each part of the theme (each has an address; the
+ * list and the drawings are the handler's own, src/lib/theme-parts.ts and ThemeSpecimen).
  * Static: the editor itself loads on its own page.
  */
 export default function ThemeHandlerInvite() {
@@ -99,12 +46,12 @@ export default function ThemeHandlerInvite() {
         <nav className="thi__parts" aria-label="Parts of the theme">
           <p className="thi__parts-title">Or go straight to a part of the theme</p>
           <ul className="thi__grid">
-            {THEME_TABS.map(({ id }) => (
+            {THEME_PARTS.map(({ id, label, hint }) => (
               <li key={id} className="thi__item">
-                <Link href={themeTabHref(id)} className="thi__tile">
-                  <span className="thi__spec" aria-hidden="true"><Specimen id={id} /></span>
-                  <span className="thi__label">{PARTS[id].label}</span>
-                  <span className="thi__hint">{PARTS[id].hint}</span>
+                <Link href={themePartHref(id)} className="thi__tile">
+                  <ThemeSpecimen id={id} />
+                  <span className="thi__label">{label}</span>
+                  <span className="thi__hint">{hint}</span>
                 </Link>
               </li>
             ))}

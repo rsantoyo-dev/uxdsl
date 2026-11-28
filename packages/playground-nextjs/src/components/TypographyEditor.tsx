@@ -83,7 +83,7 @@ function FieldRow({ role, item, fonts, onWrite }: { role: string; item: Field; f
  * Pick a role: it is shown live at this width, its font size at every breakpoint, and each
  * field it emits can be changed, its own or one it takes from `default`. The whole scale
  * below follows, so a change to `default` shows in every role that inherits it. Changes go
- * through setCustomTheme → applyTheme like every tab.
+ * through setCustomTheme → applyTheme like every part.
  */
 export default function TypographyEditor({ defaultRole = 'h1' }: { defaultRole?: string }) {
   const { activeThemeData, setCustomTheme, customThemeName } = useTheme()

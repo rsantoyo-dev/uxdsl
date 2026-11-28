@@ -1,0 +1,92 @@
+/* The drawings of the parts of the theme (ThemeSpecimen.tsx). Each is made of the tokens its
+   part edits, so it changes with the theme. Every value is a UXDSL token, role or directive;
+   the literals left are layout (flex). */
+
+.tsp {
+  display: flex;
+  align-items: center;
+  gap: density(1);
+  min-height: space(7);
+}
+
+.tsp__dot {
+  width: space(5);
+  height: space(5);
+  border-radius: radius(circle);
+}
+
+@each $tone in primary, secondary, success, warning {
+  .tsp__dot--#{$tone} {
+    background: palette(#{$tone}.main);
+  }
+}
+
+/* The breakpoint the window is at, read from the theme. */
+.tsp__bp {
+  @ds-surface(contained dark 1 radius(pill));
+  @ds-typo(caption);
+
+  padding-inline: density(3);
+  font-weight: 700;
+
+  &::after {
+    content: xs("xs") sm("sm") md("md") lg("lg") xl("xl");
+  }
+}
+
+.tsp__box {
+  border-radius: radius(1);
+  background: palette(primary.main);
+}
+
+@each $n in 3, 5, 7 {
+  .tsp__box--#{$n} {
+    width: space(#{$n});
+    height: space(#{$n});
+  }
+}
+
+.tsp__type {
+  @ds-typo(h4);
+
+  color: palette(primary.main);
+}
+
+.tsp__edge {
+  width: space(8);
+  height: space(6);
+  border: border(2);
+  border-color: palette(primary.main);
+  border-radius: radius(3);
+}
+
+.tsp__shadow {
+  width: space(8);
+  height: space(6);
+  border: border(1);
+  border-radius: radius(2);
+  background: palette(surface.main);
+  box-shadow: shadow(4);
+}
+
+.tsp__surface {
+  @ds-surface(contained primary 1);
+
+  width: space(8);
+  height: space(6);
+}
+
+.tsp__button {
+  @ds-button(contained primary 1 radius(pill));
+  @ds-typo(caption);
+
+  padding-inline: density(3);
+  font-weight: 700;
+}
+
+.tsp__json {
+  @ds-typo(h5);
+
+  color: palette(primary.main);
+  font-family: var(--uxdsl__font__code), monospace;
+}

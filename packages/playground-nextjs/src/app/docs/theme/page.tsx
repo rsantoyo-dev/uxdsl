@@ -2,7 +2,6 @@ import Link from 'next/link'
 import schema from 'uxdsl/schema/theme.schema.json'
 import base from 'uxdsl/theme/base.json'
 import { deepMergeTheme, validateTheme, googleFontsImportUrls } from 'uxdsl/theme'
-import { PageTitle } from '@/components/PageTitle'
 import LiveThemeHandler from '@/components/LiveThemeHandler'
 import ThemeTakeHome from '@/components/ThemeTakeHome'
 import { ThemeResolution, FontsImport, ValueGrammar } from '@/components/RuntimeEngines'
@@ -64,38 +63,19 @@ const fontImports = googleFontsImportUrls((base as { fonts: { google: string[] }
 export default function DocsThemePage() {
   return (
     <>
-      <PageTitle title="Live theme handler" subtitle="Restyle this whole site while you look at it, then take the theme home as one JSON file." />
-
-      <ol className="thp__steps">
-        <li className="thp__step">
-          <span className="thp__num" aria-hidden="true">1</span>
-          <h2 className="thp__step-title">Change it</h2>
-          <p className="thp__step-text">
-            Start with a <a href="#editor">one-click look</a> (Rounder, Compact, Ocean brand…; they combine), or open a tab and
-            change one token or role.
-          </p>
-        </li>
-        <li className="thp__step">
-          <span className="thp__num" aria-hidden="true">2</span>
-          <h2 className="thp__step-title">Watch the site follow</h2>
-          <p className="thp__step-text">
-            Every edit goes through <code>applyTheme</code>, the runtime API your project gets too. It reaches the showcase, the
-            navigation and every page at once, in light and dark mode.
-          </p>
-        </li>
-        <li className="thp__step">
-          <span className="thp__num" aria-hidden="true">3</span>
-          <h2 className="thp__step-title">Take it home</h2>
-          <p className="thp__step-text">
-            Download <code>uxdsl.theme.json</code>: only what you changed. <a href="#take-home">From this page to your project</a>{' '}
-            shows a component following it, and where the file goes.
-          </p>
-        </li>
-      </ol>
-      <p className="thp__more">
-        Everything here is built with UXDSL, which is why one theme can change all of it. The file itself (its families, how an
-        override merges, values, dark mode, fonts) is described in <a href="#reference">The theme file</a>, further down.
-      </p>
+      {/* The head is small on purpose: the handler, and its parts, start in the first screen. */}
+      <header className="thp__head">
+        <h1 className="thp__title">Live theme handler</h1>
+        <p className="thp__subtitle">Restyle this whole site while you look at it, then take the theme home as one JSON file.</p>
+        <nav className="thp__nav" aria-label="On this page">
+          <ol className="thp__steps">
+            <li><a className="thp__step" href="#looks"><span className="thp__num" aria-hidden="true">1</span>Change it</a></li>
+            <li><a className="thp__step" href="#showcase"><span className="thp__num" aria-hidden="true">2</span>Watch the site follow</a></li>
+            <li><a className="thp__step" href="#take-home"><span className="thp__num" aria-hidden="true">3</span>Take it home</a></li>
+          </ol>
+          <a className="thp__more" href="#reference">The theme file</a>
+        </nav>
+      </header>
 
       <section id="editor" className="thp__editor" aria-label="Live theme handler">
         <LiveThemeHandler />

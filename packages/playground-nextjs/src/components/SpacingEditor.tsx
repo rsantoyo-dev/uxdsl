@@ -30,7 +30,7 @@ const reference = (family: string, path: string) =>
  * Edits the spacing scale of the active theme. Each step is drawn as a square of its size
  * (the real space(k), so it follows every edit), and the chosen one lists everything that
  * names it: a Density, a radius, a border or a text role moves with it, at the breakpoints
- * where it says space(k). Changes go through setCustomTheme → applyTheme like every tab.
+ * where it says space(k). Changes go through setCustomTheme → applyTheme like every part.
  */
 export default function SpacingEditor() {
   const { activeThemeData, setCustomTheme, customThemeName } = useTheme()

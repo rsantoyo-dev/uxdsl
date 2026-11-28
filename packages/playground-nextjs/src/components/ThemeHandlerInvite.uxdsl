@@ -1,6 +1,6 @@
 /* The home page's invitation to the Live theme handler (ThemeHandlerInvite.tsx). Every color,
-   size, corner, shadow and text style is a UXDSL token, role or directive, so the card and
-   its nine drawings change with the theme. The literals left are layout (grid, flex), the
+   size, corner, shadow and text style is a UXDSL token, role or directive, so the card
+   changes with the theme (the nine drawings are ThemeSpecimen's). The literals left are layout (grid, flex), the
    page's width and the motion on hover. */
 
 /* The home sections' container: same width and gutter, so the edges line up. */
@@ -106,7 +106,7 @@
   text-decoration: none;
 }
 
-/* The nine parts of the theme, each a way into its tab. */
+/* The nine parts of the theme, each a way into its row of the handler. */
 .thi__parts {
   display: flex;
   flex-direction: column;
@@ -183,94 +183,4 @@
 
   display: xs(none) sm(block);
   color: palette(text.secondary);
-}
-
-/* The drawings. Each is made of the tokens its tab edits. */
-.thi__spec {
-  display: flex;
-  align-items: center;
-  gap: density(1);
-  min-height: space(8);
-}
-
-.thi__dot {
-  width: space(5);
-  height: space(5);
-  border-radius: radius(circle);
-}
-
-@each $tone in primary, secondary, success, warning {
-  .thi__dot--#{$tone} {
-    background: palette(#{$tone}.main);
-  }
-}
-
-/* The breakpoint the window is at, read from the theme. */
-.thi__bp {
-  @ds-surface(contained dark 1 radius(pill));
-  @ds-typo(caption);
-
-  padding-inline: density(3);
-  font-weight: 700;
-
-  &::after {
-    content: xs("xs") sm("sm") md("md") lg("lg") xl("xl");
-  }
-}
-
-.thi__step-box {
-  border-radius: radius(1);
-  background: palette(primary.main);
-}
-
-@each $n in 3, 5, 7 {
-  .thi__step-box--#{$n} {
-    width: space(#{$n});
-    height: space(#{$n});
-  }
-}
-
-.thi__type {
-  @ds-typo(h3);
-
-  color: palette(primary.main);
-}
-
-.thi__edge {
-  width: space(8);
-  height: space(7);
-  border: border(2);
-  border-color: palette(primary.main);
-  border-radius: radius(4);
-}
-
-.thi__shadow {
-  width: space(8);
-  height: space(7);
-  border-radius: radius(2);
-  border: border(1);
-  background: palette(surface.main);
-  box-shadow: shadow(4);
-}
-
-.thi__surface {
-  @ds-surface(contained primary 1);
-
-  width: space(8);
-  height: space(7);
-}
-
-.thi__button {
-  @ds-button(contained primary 1 radius(pill));
-  @ds-typo(caption);
-
-  padding-inline: density(3);
-  font-weight: 700;
-}
-
-.thi__json {
-  @ds-typo(h4);
-
-  color: palette(primary.main);
-  font-family: var(--uxdsl__font__code), monospace;
 }

@@ -1,68 +1,88 @@
-/* /docs/theme, the Live theme handler's page: the three steps under the title, the handler,
-   and the theme file's reference below it. Every value is a UXDSL token, role or directive;
-   the literals left are layout (grid). */
+/* /docs/theme, the Live theme handler's page: a small head (the title, one line and the three
+   steps as links), the handler, and the theme file's reference below it. Every value is a UXDSL
+   token, role or directive; the literals left are layout (grid, flex) and the title's gradient. */
+
+/* One column on a narrow window (title, line, steps); from lg the steps sit beside the title. */
+.thp__head {
+  display: grid;
+  grid-template-columns: xs(minmax(0, 1fr)) lg(minmax(0, 1fr) auto);
+  align-items: center;
+  gap: density(1) density(4);
+  padding-block: density(2) density(3);
+}
+
+.thp__title {
+  @ds-typo(h3);
+
+  grid-row: 1;
+  grid-column: 1;
+  margin: density(0);
+  /* The same gradient as the other pages' title (PageTitle), at a smaller role. */
+  background: linear-gradient(135deg, palette(primary.main) 0%, palette(primary.light) 50%, palette(secondary.main) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: palette(primary.main);
+}
+
+.thp__subtitle {
+  @ds-typo(body);
+
+  grid-row: 2;
+  grid-column: 1 / -1;
+  margin: density(0);
+  color: palette(text.secondary);
+}
+
+.thp__nav {
+  grid-row: xs(3) lg(1);
+  grid-column: xs(1) lg(2);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: density(2) density(3);
+}
 
 .thp__steps {
-  display: grid;
-  grid-template-columns: xs(minmax(0, 1fr)) md(repeat(3, minmax(0, 1fr)));
-  gap: density(3);
+  display: flex;
+  flex-wrap: wrap;
+  gap: density(2);
   margin: density(0);
   padding: density(0);
   list-style: none;
 }
 
+/* A step is a link to where it happens on the page. */
 .thp__step {
-  @ds-surface(contained 4 radius(3));
-
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
-  align-content: start;
-  gap: density(2);
-}
-
-.thp__num {
-  @ds-typo(subtitle2);
+  @ds-button(outlined primary radius(pill));
+  @ds-typo(caption);
 
   display: inline-flex;
   align-items: center;
+  gap: density(2);
+  padding: density(1) density(3) density(1) density(1);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.thp__num {
+  @ds-typo(caption);
+
+  display: inline-flex;
+  flex: none;
+  align-items: center;
   justify-content: center;
-  width: space(7);
-  height: space(7);
+  width: space(6);
+  height: space(6);
   border-radius: radius(circle);
   background: palette(primary.main);
   color: palette(primary.contrast);
   font-weight: 700;
 }
 
-.thp__step-title {
-  @ds-typo(h5);
-
-  color: palette(surface.contrast);
-}
-
-.thp__step-text {
-  @ds-typo(body-sm);
-
-  grid-column: 1 / -1;
-  color: palette(text.secondary);
-}
-
-.thp__step-text code {
-  @ds-typo(code);
-
-  color: palette(text.primary);
-}
-
 .thp__more {
-  @ds-typo(body-sm);
+  @ds-typo(caption);
 
-  margin-block: density(3) density(5);
-  color: palette(text.secondary);
-}
-
-.thp__step-text a,
-.thp__more a {
   color: palette(primary.main);
   font-weight: 600;
   text-underline-offset: space(1);

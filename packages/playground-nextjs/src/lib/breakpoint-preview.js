@@ -100,7 +100,7 @@ function withBreakpoints(theme, breakpoints) {
 }
 
 /**
- * Splits an edit of the whole theme (the JSON tab) into what applyTheme can take and what
+ * Splits an edit of the whole theme (the JSON part) into what applyTheme can take and what
  * only the preview can: the theme with its compiled breakpoints back, and the previewed
  * breakpoints (null when they are the compiled ones). A breakpoint can be moved, not added
  * or removed: that changes which xs()...xl() functions exist, and needs a rebuild.

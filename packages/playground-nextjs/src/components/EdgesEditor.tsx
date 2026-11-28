@@ -15,7 +15,7 @@ type Kind = 'borders' | 'radii'
 
 // EdgesEditor.uxdsl generates one class per token of the base theme, border(n) and radius(n),
 // so every box below is the token itself and follows each edit. A key the base theme does
-// not have (one added in the JSON tab) has no class: it is listed, and drawn plain.
+// not have (one added in the JSON part) has no class: it is listed, and drawn plain.
 const PREVIEW_KEYS = ['0', '1', '2', '3', '4', '5']
 const tokenClass = (kind: Kind, key: string) => (PREVIEW_KEYS.includes(key) ? `ede-${kind === 'borders' ? 'border' : 'radius'}--${key}` : '')
 const selected = (on: boolean) => (on ? ' is-selected' : '')
@@ -79,7 +79,7 @@ function BorderRow({ bp, index, written, inherited, spacing, spaceKeys, colors, 
  * Edits the Border and Radius tokens of the active theme (`borders`, `radii`). Every token is
  * drawn live, a card, a button and a field show the chosen one on real components, and its
  * value can be set per breakpoint: for a Border its width, style and color, for a Radius its
- * size. Changes go through setCustomTheme → applyTheme like every tab, and show in the JSON tab.
+ * size. Changes go through setCustomTheme → applyTheme like every part, and show in the JSON part.
  */
 export default function EdgesEditor() {
   const { activeThemeData, setCustomTheme, customThemeName } = useTheme()

@@ -52,7 +52,7 @@ export default function ThemeTakeHome({ source }: { source: string }) {
         ]}
         note={
           changed === 0
-            ? 'Nothing changed yet. Click a look at the top of the page: the card changes, and the theme file below fills in.'
+            ? 'Nothing changed yet. Press + on a dial at the top of the page: the card changes, and the theme file below fills in.'
             : `${changed} ${changed === 1 ? 'value' : 'values'} changed so far. The card follows them, and the theme file below is all a project needs to look the same. The download also carries this site's color collection, so every color() reference resolves there too.`
         }
       >

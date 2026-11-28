@@ -1,4 +1,4 @@
-/* The JSON tab of the Live theme handler (/docs/theme): the theme as a JSON tree
+/* The JSON part of the Live theme handler (/docs/theme): the theme as a JSON tree
    (vanilla-jsoneditor). Every value is a UXDSL token, role or directive; the literals left
    are layout (flex) and sizes the editor needs. */
 
